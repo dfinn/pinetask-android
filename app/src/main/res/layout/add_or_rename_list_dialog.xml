@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:orientation="vertical"
+              android:background="@color/colorBackground"
+              android:layout_width="wrap_content"
+              android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/titleTextView"
+        tools:text="@string/add_list"
+        android:textSize="20sp"
+        android:textColor="@color/black"
+        android:layout_marginTop="24dp"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:layout_marginBottom="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/listNameEditText"
+        android:layout_marginLeft="24dp"
+        android:layout_marginRight="24dp"
+        android:layout_marginBottom="20dp"
+        android:hint="@string/list_name_hint"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"/>
+
+    <include layout="@layout/dialog_button_bar"/>
+
+</LinearLayout>

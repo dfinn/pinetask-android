@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:background="@color/white"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/iconImageView"
+        android:layout_margin="16dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:src="@drawable/launcher_icon"
+        android:layout_width="50dp"
+        android:layout_height="50dp"/>
+
+    <TextView
+        android:id="@+id/appNameAndVersionTextView"
+        android:text="@string/app_name"
+        android:layout_toRightOf="@id/iconImageView"
+        android:layout_alignTop="@id/iconImageView"
+        android:textColor="@color/black_87percent"
+        android:textSize="20sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/copyrightTextView"
+        android:text="@string/copyright_info"
+        android:layout_toRightOf="@id/iconImageView"
+        android:layout_below="@id/appNameAndVersionTextView"
+        android:textColor="@color/black_87percent"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/licenseNoticeHeaderTextView"
+        android:layout_below="@id/iconImageView"
+        android:text="@string/license_info_header"
+        android:textColor="@color/black_87percent"
+        android:textSize="16sp"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="16dp"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <ScrollView
+        android:layout_below="@id/licenseNoticeHeaderTextView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        >
+
+        <TextView
+            android:id="@+id/licenseInfoTextView"
+            android:text="@string/license_info"
+            android:padding="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        </TextView>
+
+    </ScrollView>
+
+</RelativeLayout>

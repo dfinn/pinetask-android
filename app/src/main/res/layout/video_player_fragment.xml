@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:paddingBottom="@dimen/appIntroBottomBarHeight"
+              android:background="@color/colorPrimary20Percent"
+              android:paddingLeft="16dp"
+              android:paddingRight="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/titleTextView"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:textStyle="bold"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:text="@string/completing_uncompleting_items_title"
+        android:gravity="center"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/descriptionTextView"
+        android:textColor="@color/white"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:textSize="18dp"
+        android:textStyle="bold"
+        android:text="@string/adding_lists_description"
+        android:gravity="left|center"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_below="@id/titleTextView"
+        android:layout_above="@id/descriptionTextView"
+        android:layout_height="0dp">
+
+        <VideoView
+            android:id="@+id/videoView"
+            android:background="@android:color/transparent"
+            android:layout_gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    </FrameLayout>
+
+
+
+
+</RelativeLayout>

@@ -1,0 +1,29 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:buttonStyle">@style/FlatButton</item>
+    </style>
+
+    <style name="FlatButton" parent="Base.Widget.AppCompat.Button.Borderless.Colored">
+        <item name="android:gravity">center</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">?attr/colorAccent</item>
+        <item name="android:background">@drawable/flat_button_selector</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="PineTaskToolbarStyle" parent="@style/ThemeOverlay.AppCompat.ActionBar">
+        <!-- Navigation drawer icon color -->
+        <item name="colorControlNormal">@color/white</item>
+
+        <!-- Overflow menu icon color -->
+        <item name="android:textColorSecondary">@color/white</item>
+    </style>
+
+</resources>

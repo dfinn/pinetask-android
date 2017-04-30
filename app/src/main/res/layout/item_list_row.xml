@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:padding="5dp"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+
+    <ImageButton
+        android:id="@+id/optionsImageButton"
+        android:src="@drawable/ic_more_horiz_white_24dp"
+        android:background="@drawable/round_button_background"
+        android:layout_margin="3dp"
+        android:layout_width="@dimen/icon_size"
+        android:layout_height="@dimen/icon_size"/>
+
+    <ImageButton
+        android:id="@+id/claimImageButton"
+        android:src="@drawable/ic_pan_tool_white_24dp"
+        android:background="@drawable/round_button_background"
+        android:visibility="visible"
+        android:layout_margin="3dp"
+        android:layout_width="@dimen/icon_size"
+        android:layout_height="@dimen/icon_size"/>
+
+    <TextView
+        android:id="@+id/claimedByTextView"
+        android:textSize="20dp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:layout_gravity="top"
+        android:layout_marginTop="0dp"
+        android:gravity="center"
+        android:layout_margin="3dp"
+        android:layout_width="@dimen/icon_size"
+        android:layout_height="@dimen/icon_size"/>
+
+    <ImageButton
+        android:id="@+id/completedImageButton"
+        android:src="@drawable/ic_done_white_24dp"
+        android:background="@drawable/round_button_background"
+        android:visibility="visible"
+        android:layout_margin="3dp"
+        android:layout_width="@dimen/icon_size"
+        android:layout_height="@dimen/icon_size"/>
+
+    <TextView
+        android:id="@+id/itemDescriptionTextView"
+        android:background="@drawable/highlight_selector"
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:paddingTop="8dp"
+        android:layout_marginLeft="8dp"
+        android:text="Food"
+        android:clickable="false"
+        android:textColor="@color/black"
+        android:minHeight="@dimen/icon_size"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

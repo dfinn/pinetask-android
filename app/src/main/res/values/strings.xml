@@ -1,0 +1,162 @@
+<resources>
+
+    <!-- Intro tutorial -->
+    <string name="welcome_title">Welcome to PineTask</string>
+    <string name="welcome_description">This quick tutorial will help you get started with PineTask.\n\nYou can view it again at any time by choosing "Help" from the side menu.</string>
+    <string name="adding_lists_title">Adding Lists</string>
+    <string name="adding_lists_description">Click \"...\" on the top menu bar and choose \"Manage Lists\".  Then, click \"+\" and enter a name.</string>
+    <string name="adding_deleting_items_title">Adding/Deleting Items</string>
+    <string name="adding_deleting_items_description">To add an item, click \"+\" and enter a name. To delete an item, click its \"...\" button and choose \"Delete\".</string>
+    <string name="claiming_unclaiming_items_title">Claiming/Unclaiming Items</string>
+    <string name="claiming_unclaiming_items_description">To claim an item, click its hand icon (\“I’ll get this one!\”).  It will then show your initials on it.  To unclaim an item, click its \"...\" button and choose \"Unclaim\".</string>
+    <string name="completing_uncompleting_items_title">Completing/Uncompleting Items</string>
+    <string name="completing_uncompleting_items_description">To complete an item, click its checkmark icon.  To un-complete an item, click its \"...\" button and choose \"Uncomplete\".</string>
+    <string name="sharing_lists_title">Sharing Lists</string>
+    <string name="sharing_lists_description">Allow others to access your list by sending them an invite link.  Click \"...\" on the top menu bar, and choose \"Share List\".  Select the people to invite, optionally enter a message to include, and click the send button.</string>
+    <string name="renaming_deleting_lists_title">Rename/Delete Lists</string>
+    <string name="renaming_deleting_lists_description">Click \"...\" on the top menu bar and choose \"Manage Lists\".  Click the pencil icon to rename a list, or the trash icon to delete a list.</string>
+    <string name="chat_title">Chat</string>
+    <string name="chat_description">Click on the \"Chat\" tab, type a message, and hit send. Each list has its own chat conversation between everyone the list has been shared with.</string>
+    <string name="purge_completed_items_title">Purge Completed Items</string>
+    <string name="purge_completed_items_description">To permanently delete completed items, click \"...\" on the top menu bar and choose \"Purge Completed Items\".</string>
+
+    <!-- Launch / signin screens -->
+    <string name="signup_intro_text">To share your lists or be able to access them later, you\'ll need to create an account.  Or, you can just try the app now and sign up later.</string>
+    <string name="login_or_signup">Sign up / Log in</string>
+    <string name="signup_later">Sign up later</string>
+    <string name="what_is_your_name">What is your name? Others will see this when you share lists with them, and your initials will show on chat messages and list items you claim.</string>
+    <string name="finishing_account_setup">Finishing account setup...</string>
+
+    <!-- Manage Lists Activity -->
+    <string name="loading_lists">Loading lists...</string>
+
+    <!-- Delete List dialog -->
+    <string name="really_delete_list_x">Do you really want to delete the list \'%1$s\'?</string>
+    <string name="no_network_connection_try_again_later">No network connection. Please try again later.</string>
+    <string name="error_getting_connection_state">Error getting connection state.</string>
+
+    <!-- Other -->
+    <string name="add_item">Add Item</string>
+    <string name="share_list">Share List</string>
+    <string name="add_list">Add List</string>
+    <string name="rename_list">Rename List</string>
+    <string name="list_name_hint">List name (ex: Grocery Shopping)</string>
+    <string name="manage_lists">Manage Lists</string>
+    <string name="settings">Settings</string>
+    <string name="purge_completed_items">Purge Completed Items</string>
+    <string name="edit_item">Edit Item</string>
+    <string name="continue_str">Continue</string>
+    <string name="error_during_sign_in">Error during sign in.</string>
+    <string name="delete">Delete</string>
+    <string name="revoke">Revoke</string>
+    <string name="confirm_delete">Confirm Delete</string>
+    <string name="really_revoke_access_to_list_x_for_user_y">Do you really want to revoke access to the list \'%1$s\' for member %2$s?</string>
+    <string name="really_purge_completed_items_in_list_x">Do you really want to delete all completed items in the list \'%1$s\'?</string>
+    <string name="unclaim">Unclaim</string>
+    <string name="uncomplete">Uncomplete</string>
+    <string name="edit">Edit</string>
+    <string name="description">Description</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="groceries">Groceries</string>
+    <string name="days_abbreviation">d</string>
+    <string name="hours_abbreviation">h</string>
+    <string name="minutes_abbreviation">m</string>
+    <string name="chat">Chat</string>
+    <string name="members">Members</string>
+    <string name="owner">[owner]</string>
+    <string name="error_loading_lists">Error loading lists.</string>
+    <string name="error_getting_username">Error looking up username.</string>
+    <string name="error_getting_list_name">Error looking up list name.</string>
+    <string name="error_getting_completed_items">Error getting list of completed items.</string>
+    <string name="error_sending_invite">Error sending invite.</string>
+    <string name="error_no_current_list">Error: no current list.</string>
+    <string name="error_in_operation_x_msg_x">Error in operation \'%1$s\' - %2$s</string>
+    <string name="no_lists_found">No lists found.</string>
+    <string name="error_accepting_invite_x">Error accepting invite: %1$s</string>
+    <string name="error_accepting_invite_see_log_for_details">Error accepting invite. See log for details.</string>
+    <string name="access_granted_to_list_x">You\'ve been granted access to the list \'%1$s\'.</string>
+    <string name="invite_already_used">Sorry, this invitation has already been used. Please ask the list owner to send you a new invitation.</string>
+    <string name="error_deleting_list_x">Error deleting list: %1$s</string>
+    <string name="current_list_deleted">The current list was deleted.</string>
+    <string name="current_list_deleted_will_display_x">The current list was deleted. Will display first available list \'%s\'.</string>
+    <string name="list_items">List Items</string>
+    <string name="chat_messages">Chat</string>
+    <string name="no_lists_found_please_use_the_add_button_to_create_one">No lists found.\nPlease use the \'add\' button to create one.</string>
+    <string name="no_items_found_please_use_the_add_button_to_create_one">No items found.\nPlease use the \'add\' button to create one.</string>
+    <string name="please_create_first_list">Please create your first list by entering a list name below</string>
+    <string name="user_not_signed_in">User not signed in, exiting</string>
+    <string name="drawer_open">Open Navigation Drawer</string>
+    <string name="drawer_close">Close Navigation Drawer</string>
+
+    <!-- Settings activity -->
+    <string name="username">Name</string>
+    <string name="account_setup_not_yet_completed">You have not yet completed account setup. Create a login account to make sure you can access your lists later.</string>
+
+    <!-- Side drawer -->
+    <string name="help">Help</string>
+    <string name="about">About</string>
+
+    <!-- About Dialog / License Info -->
+    <string name="app_name">PineTask</string>
+    <string name="version">version</string>
+    <string name="copyright_info">Copyright 2016 Dain Finn</string>
+    <string name="license_info_header">Open Source License Notices</string>
+    <string name="license_info">
+        PineTask makes use of several open source libraries.  Following is information about them required to be included in this app.
+        \n\n-----------------------------------------
+        \n\nButter Knife
+        \nhttp://jakewharton.github.io/butterknife/
+        \nCopyright 2013 Jake Wharton
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttp://www.apache.org/licenses/LICENSE-2.0
+        \n\n-----------------------------------------
+        \n\nAppIntro library
+        \nhttps://github.com/apl-devs/AppIntro
+        \nCopyright 2015 Paolo Rotolo
+        \nCopyright 2016 Maximilian Narr
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttp://www.apache.org/licenses/LICENSE-2.0
+        \n\n------------------------------------------
+        \n\nJoda Time
+        \nhttp://www.joda.org/joda-time/
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttp://www.joda.org/joda-time/license.html
+        \n\n------------------------------------------
+        \n\nCrashlytics
+        \nhttps://try.crashlytics.com/
+        \nhttp://try.crashlytics.com/terms/
+        \n\n------------------------------------------
+        \n\nOtto
+        \nhttp://square.github.io/otto/
+        \nCopyright 2013 Square, Inc.
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttp://www.apache.org/licenses/LICENSE-2.0
+        \n\n------------------------------------------
+        \n\nFirebase
+        \nhttps://firebase.google.com/
+        \n\n------------------------------------------
+        \n\nFirebaseUI
+        \nhttps://github.com/firebase/FirebaseUI-Android
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttps://github.com/firebase/FirebaseUI/blob/master/LICENSE
+        \n\n------------------------------------------
+        \n\nGlide
+        \nhttps://github.com/bumptech/glide
+        \nhttps://github.com/bumptech/glide/blob/master/LICENSE
+        \n\n------------------------------------------
+        \n\nRxJava
+        \nCopyright (c) 2016-present, RxJava Contributors.
+        \nhttps://github.com/ReactiveX/RxJava
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttp://www.apache.org/licenses/LICENSE-2.0
+        \n\n------------------------------------------
+        \n\nRetrolambda
+        \nhttps://github.com/evant/gradle-retrolambda
+        \nCopyright 2013 Evan Tatarka
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttp://www.apache.org/licenses/LICENSE-2.0
+        \n\n------------------------------------------
+    </string>
+
+</resources>

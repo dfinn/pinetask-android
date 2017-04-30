@@ -1,0 +1,9 @@
+./gif_animate welcome_to_pinetask 50
+./gif_animate adding_lists 100
+./gif_animate adding_deleting_items 100
+./gif_animate claiming_unclaiming_items 100
+./gif_animate completing_uncompleting_items 100
+./gif_animate sharing_lists 100
+./gif_animate renaming_deleting_lists 100
+./gif_animate chat 100
+./gif_animate purge_completed_items 100

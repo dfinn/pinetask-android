@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <variable name="user" type="com.pinetask.app.PineTaskUser"/>
+    </data>
+
+    <RelativeLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_alignParentTop="true"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            android:elevation="4dp"
+            android:title="@string/settings"
+            android:theme="@style/PineTaskToolbarStyle"
+            app:title="@string/settings"
+            app:titleTextColor="@color/white"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+
+        <TextView
+            android:id="@+id/nameTextView"
+            android:layout_below="@id/toolbar"
+            android:text="@string/username"
+            android:layout_margin="16dp"
+            android:textColor="@color/black_67percent"
+            android:layout_width="wrap_content"
+            android:gravity="center"
+            android:padding="16dp"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/nameEditText"
+            android:enabled="false"
+            android:layout_toRightOf="@id/nameTextView"
+            android:layout_alignTop="@id/nameTextView"
+            android:layout_alignParentRight="true"
+            android:text='@={user.userName}'
+            android:layout_width="0dp"
+            android:layout_marginRight="16dp"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:id="@+id/anonymousLayout"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:layout_below="@id/nameEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="@string/account_setup_not_yet_completed"
+                android:layout_width="wrap_content"
+                android:textSize="18sp"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/signUpOrLoginButton"
+                android:text="@string/login_or_signup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</layout>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:padding="24dp"
+              android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/introMessageTextView"
+        android:text="@string/signup_intro_text"
+        android:textColor="@color/black_87percent"
+        android:textSize="18sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/signUpOrLoginButton"
+        android:layout_marginTop="24dp"
+        android:text="@string/login_or_signup"
+        style="@style/FlatButton"
+        android:gravity="left|center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/signUpLaterButton"
+        android:layout_marginTop="24dp"
+        android:text="@string/signup_later"
+        style="@style/FlatButton"
+        android:gravity="left|center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+
+</LinearLayout>

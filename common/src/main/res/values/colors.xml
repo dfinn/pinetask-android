@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Background color -->
+    <color name="colorBackground">#ffffff</color>
+
+    <!-- Primary color: Green 500-->
+    <color name="colorPrimary">#4CAF50</color>
+    <color name="colorPrimary80Percent">#cc4CAF50</color>
+    <color name="colorPrimary20Percent">#dbefdc</color>
+
+    <!-- Secondary color: Blue Gray # 400 -->
+    <color name="colorSecondary">#78909C</color>
+
+    <!-- Secondary color, dark: Blue Gray #700 -->
+    <color name="colorSecondaryDark">#455A64</color>
+
+    <!-- Primary color for dark theme -->
+    <color name="colorPrimaryDark">#3F51B5</color>
+
+    <!-- Accent color: Indigo A700 -->
+    <color name="colorAccent">#304FFE</color>
+    <color name="colorAccent40Percent">#66304FFE</color>
+    <color name="colorAccent20Percent">#33304FFE</color>
+
+    <!-- For dark text on light backgrounds -->
+    <color name="black">#ff000000</color>
+    <color name="black_87percent">#dd000000</color>
+    <color name="black_67percent">#aa000000</color>
+    <color name="black_30percent">#4c000000</color>
+
+    <!-- For light text on dark backgrounds -->
+    <color name="white">#ffffff</color>
+    <color name="white_87percent">#ddffffff</color>
+    <color name="white_67percent">#aaffffff</color>
+</resources>

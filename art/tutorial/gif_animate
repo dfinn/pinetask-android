@@ -1,0 +1,4 @@
+echo "Creating animation $1.gif with delay $2"
+convert -delay $2 +dither -layers OptimizeTransparency -colors 16 -loop 0 $1/*.png $1/temp.gif
+gifsicle -O3 --scale .80 $1/temp.gif > ../../app/src/main/res/raw/$1.gif 
+rm $1/temp.gif
