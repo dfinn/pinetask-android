@@ -4,7 +4,7 @@
     <string name="welcome_title">Welcome to PineTask</string>
     <string name="welcome_description">This quick tutorial will help you get started with PineTask.\n\nYou can view it again at any time by choosing "Help" from the side menu.</string>
     <string name="adding_lists_title">Adding Lists</string>
-    <string name="adding_lists_description">Click \"...\" on the top menu bar and choose \"Manage Lists\".  Then, click \"+\" and enter a name.</string>
+    <string name="adding_lists_description">Open the side menu and choose \"Manage Lists\".  Then, click \"+\" and enter a name.</string>
     <string name="adding_deleting_items_title">Adding/Deleting Items</string>
     <string name="adding_deleting_items_description">To add an item, click \"+\" and enter a name. To delete an item, click its \"...\" button and choose \"Delete\".</string>
     <string name="claiming_unclaiming_items_title">Claiming/Unclaiming Items</string>
@@ -12,9 +12,9 @@
     <string name="completing_uncompleting_items_title">Completing/Uncompleting Items</string>
     <string name="completing_uncompleting_items_description">To complete an item, click its checkmark icon.  To un-complete an item, click its \"...\" button and choose \"Uncomplete\".</string>
     <string name="sharing_lists_title">Sharing Lists</string>
-    <string name="sharing_lists_description">Allow others to access your list by sending them an invite link.  Click \"...\" on the top menu bar, and choose \"Share List\".  Select the people to invite, optionally enter a message to include, and click the send button.</string>
+    <string name="sharing_lists_description">Allow others to access your list by sending them an invite link.  Go to the \"Members\" tab, click \"+\", select the people to invite, and click the send button.</string>
     <string name="renaming_deleting_lists_title">Rename/Delete Lists</string>
-    <string name="renaming_deleting_lists_description">Click \"...\" on the top menu bar and choose \"Manage Lists\".  Click the pencil icon to rename a list, or the trash icon to delete a list.</string>
+    <string name="renaming_deleting_lists_description">Open the side menu and choose \"Manage Lists\".  Click the pencil icon to rename a list, or the trash icon to delete a list.</string>
     <string name="chat_title">Chat</string>
     <string name="chat_description">Click on the \"Chat\" tab, type a message, and hit send. Each list has its own chat conversation between everyone the list has been shared with.</string>
     <string name="purge_completed_items_title">Purge Completed Items</string>
