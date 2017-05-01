@@ -1,0 +1,5 @@
+# Remove bottom border
+mogrify -gravity South -chop 0x97 *.png
+
+# Remove top border
+mogrify -chop 0x50 *.png
