@@ -18,4 +18,3 @@
 
 -dontwarn org.joda.convert.**
 
--keep class com.pinetask.app.ObservableStringQuery {*;}
