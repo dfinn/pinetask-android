@@ -4,10 +4,14 @@ A sample Android project using the Firebase realtime database.  Users can create
 
 <table>
 <tr>
-<td><img src="art/tutorial/adding_lists/image06.png" width="200"/></td>
-<td><img src="art/tutorial/adding_deleting_items/image01.png" width="200"/></td>
-<td><img src="art/tutorial/chat/image03.png" width="200"/></td>
-<td><img src="art/tutorial/sharing_lists/image5.png" width="200"/></td>
+<td><img src="art/tutorial/adding_lists/image06.png" width="300"/></td>
+<td><img src="art/tutorial/adding_lists/image07.png" width="300"/></td>
+<td><img src="art/tutorial/adding_deleting_items/image01.png" width="300"/></td>
+</tr>
+<tr>
+<td><img src="art/tutorial/adding_deleting_items/image04.png" width="300"/></td>
+<td><img src="art/tutorial/purge_completed_items/image05.png" width="300"/></td>
+<td><img src="art/tutorial/chat/image03.png" width="300"/></td>
 </tr>
 </table>
 
