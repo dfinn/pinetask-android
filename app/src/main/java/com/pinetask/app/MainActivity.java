@@ -300,14 +300,37 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             return true;
         }
 
+        String currentListId = mPrefsManager.getCurrentListId();
+
         switch (item.getItemId())
         {
             case R.id.purgeCompletedItems:
-                String currentListId = mPrefsManager.getCurrentListId();
                 if (currentListId != null)
                 {
                     PurgeCompletedItemsDialogFragment dialog = PurgeCompletedItemsDialogFragment.newInstance(currentListId);
                     getSupportFragmentManager().beginTransaction().add(dialog, PurgeCompletedItemsDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
+                }
+                else
+                {
+                    showUserMessage(true, getString(R.string.error_no_current_list));
+                }
+                return true;
+            case R.id.exportList:
+                if (currentListId != null)
+                {
+                    DbHelper.getListAsString(currentListId)
+                            .subscribe(strList ->
+                            {
+                                Intent sendIntent = new Intent();
+                                sendIntent.setAction(Intent.ACTION_SEND);
+                                sendIntent.putExtra(Intent.EXTRA_TEXT, strList);
+                                sendIntent.setType("text/plain");
+                                startActivity(Intent.createChooser(sendIntent, getResources().getText(R.string.export_list)));
+                            }, ex ->
+                            {
+                                logException(ex);
+                                showUserMessage(true, getString(R.string.error_exporting_list_x), ex.getMessage());
+                            });
                 }
                 else
                 {

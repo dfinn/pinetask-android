@@ -55,4 +55,10 @@ public class PineTaskItem implements Serializable
         mIsCompleted = updatedItem.getIsCompleted();
         mCreatedAt = updatedItem.getCreatedAt();
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format("[%s] %s", mIsCompleted ? "X" : " ", mItemDescription);
+    }
 }

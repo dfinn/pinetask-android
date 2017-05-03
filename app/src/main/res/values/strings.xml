@@ -44,6 +44,7 @@
     <string name="manage_lists">Manage Lists</string>
     <string name="settings">Settings</string>
     <string name="purge_completed_items">Purge Completed Items</string>
+    <string name="export_list">Export List</string>
     <string name="edit_item">Edit Item</string>
     <string name="continue_str">Continue</string>
     <string name="error_during_sign_in">Error during sign in.</string>
@@ -71,6 +72,7 @@
     <string name="error_getting_completed_items">Error getting list of completed items.</string>
     <string name="error_sending_invite">Error sending invite.</string>
     <string name="error_no_current_list">Error: no current list.</string>
+    <string name="error_exporting_list_x">Error exporting list: %1$s</string>
     <string name="error_in_operation_x_msg_x">Error in operation \'%1$s\' - %2$s</string>
     <string name="no_lists_found">No lists found.</string>
     <string name="error_accepting_invite_x">Error accepting invite: %1$s</string>

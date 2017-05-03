@@ -130,6 +130,12 @@ public class DbHelper
         return getDb().getReference(LIST_COLLABORATORS_NODE_NAME).child(listId);
     }
 
+    /** Returns a reference to /list_items/$listId **/
+    private static DatabaseReference getListItemsRef(String listId)
+    {
+        return getDb().getReference(LIST_ITEMS_NODE_NAME).child(listId);
+    }
+
     public static void purgeCompletedItems(String listId)
     {
         logMsg("Purging completed items from list %s", listId);
@@ -678,5 +684,57 @@ public class DbHelper
                 }
             });
         });
+    }
+
+    /** Enumerate items at the specified database reference, and return each one deserialized as an item of the class specified. **/
+    public static <T> Observable<T> getItemsOfType(Class T, DatabaseReference dbRef)
+    {
+        return Observable.create(new ObservableOnSubscribe<T>()
+        {
+            @Override
+            public void subscribe(ObservableEmitter<T> emitter) throws Exception
+            {
+                dbRef.addListenerForSingleValueEvent(new ValueEventListener()
+                {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot)
+                    {
+                        for (DataSnapshot ds : dataSnapshot.getChildren())
+                        {
+                            T item = (T) ds.getValue(T);
+                            emitter.onNext(item);
+                        }
+                        emitter.onComplete();
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError)
+                    {
+                        emitter.onError(new DbOperationCanceledException(dbRef, databaseError, "get item"));
+                    }
+                });
+            }
+        });
+    }
+
+    /** Returns a string representation of the list with the ID specified. String will include the list name, followed by each list item description. Example:
+     *  Grocery Shopping:
+     *  [ ] Apples
+     *  [X] Oranges
+     *  [ ] Bread
+     **/
+    public static Single<String> getListAsString(String listId)
+    {
+        return getListName(listId)
+                .map(listName -> listName + ":")
+                .toObservable()
+                .concatWith( getItemsOfType(PineTaskItem.class, getListItemsRef(listId)).map(item -> item.toString()) )
+                .toList()
+                .map(strList ->
+                {
+                    StringBuilder sb = new StringBuilder();
+                    for (String str : strList) sb.append(str+"\n");
+                    return sb.toString();
+                });
     }
 }
