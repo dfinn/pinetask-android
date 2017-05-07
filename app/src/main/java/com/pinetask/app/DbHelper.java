@@ -1,17 +1,15 @@
 package com.pinetask.app;
 
-import android.support.v4.util.Pair;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.pinetask.app.manage_lists.StartupMessage;
 import com.pinetask.common.Logger;
 
 import org.joda.time.DateTime;
@@ -19,23 +17,21 @@ import org.joda.time.format.ISODateTimeFormat;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Completable;
 import io.reactivex.CompletableEmitter;
 import io.reactivex.CompletableOnSubscribe;
+import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleObserver;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
-import io.reactivex.functions.Function;
 
 import static com.pinetask.app.KeyAddedOrDeletedObservable.getKeyAddedOrDeletedEventsAt;
 
@@ -59,11 +55,17 @@ public class DbHelper
     /** Name of node in the Firebase DB where all users are stored  **/
     public static String USERS_NODE_NAME = "users";
 
+    /** Name of node in the Firebase DB where startup message is stored. **/
+    public static String STARTUP_MESSAGE_NODE = "startup_message";
+
     /** Name of a node in the FireBase DB where the user's name is stored. **/
     public static String USERNAME_NODE_NAME = "userName";
 
-    /** Name of a node in the Firebaes DB under /users/$userId which stores a value indicating if the user is anonymous or not. **/
+    /** Name of a node in the Firebase DB under /users/$userId which stores a value indicating if the user is anonymous or not. **/
     public static String IS_ANONYMOUS_NODE_NAME = "is_anonymous";
+
+    /** Name of a node in the Firebase DB under /users/$userId which stores a value indicating the version of the last startup message the user read. **/
+    public static String USER_STARTUP_MESSAGE_VERSION = "startup_message_version";
 
     /** Name of the node where all list invites are stored. **/
     public static String LIST_INVITES_NODE_NAME = "list_invites";
@@ -94,22 +96,34 @@ public class DbHelper
         return FirebaseDatabase.getInstance();
     }
 
+    /** Returns a refernce to /users/$userId **/
+    public static DatabaseReference getUserRef(String userId)
+    {
+        return getDb().getReference(USERS_NODE_NAME).child(userId);
+    }
+
     /** Returns a reference to /users/$userId/lists **/
     private static DatabaseReference getUserListsRef(String userId)
     {
-        return getDb().getReference(USERS_NODE_NAME).child(userId).child(LISTS_NODE_NAME);
+        return getUserRef(userId).child(LISTS_NODE_NAME);
     }
 
     /** Returns a reference to /users/$userId/userName **/
     private static DatabaseReference getUserNameRef(String userId)
     {
-        return FirebaseDatabase.getInstance().getReference(DbHelper.USERS_NODE_NAME).child(userId).child(DbHelper.USERNAME_NODE_NAME);
+        return getUserRef(userId).child(DbHelper.USERNAME_NODE_NAME);
     }
 
     /** Returns a reference to /users/$userId/is_anonymous **/
     private static DatabaseReference getIsAnonymousReference(String userId)
     {
-        return FirebaseDatabase.getInstance().getReference(USERS_NODE_NAME).child(userId).child(IS_ANONYMOUS_NODE_NAME);
+        return getUserRef(userId).child(IS_ANONYMOUS_NODE_NAME);
+    }
+
+    /** Returns a reference to /users/$userId/startup_message_version **/
+    private static DatabaseReference getUserStartupMessageVersionRef(String userId)
+    {
+        return getUserRef(userId).child(USER_STARTUP_MESSAGE_VERSION);
     }
 
     /** Returns a reference to /list_info/$listId **/
@@ -134,6 +148,12 @@ public class DbHelper
     private static DatabaseReference getListItemsRef(String listId)
     {
         return getDb().getReference(LIST_ITEMS_NODE_NAME).child(listId);
+    }
+
+    /** Retruns a reference to /startup_message **/
+    private static DatabaseReference getStartupMessageRef()
+    {
+        return getDb().getReference(STARTUP_MESSAGE_NODE);
     }
 
     public static void purgeCompletedItems(String listId)
@@ -234,7 +254,7 @@ public class DbHelper
         UserProfileChangeRequest.Builder builder = new UserProfileChangeRequest.Builder();
         builder.setDisplayName(newUserName);
         user.updateProfile(builder.build());
-        return setValue(getUserNameRef(userId), newUserName, "change username");
+        return setValueRx(getUserNameRef(userId), newUserName, "change username");
     }
 
     /** Sets the "is anonymous user" flag for the current user.  This is a database node under /users/$userId/isAnonymous.
@@ -242,7 +262,7 @@ public class DbHelper
      **/
     public static Completable setIsAnonymous(String userId, boolean isAnonymous)
     {
-        return setValue(getIsAnonymousReference(userId), isAnonymous, "set is_anonymous");
+        return setValueRx(getIsAnonymousReference(userId), isAnonymous, "set is_anonymous");
     }
 
     public static Single<Boolean> getIsAnonymous(String userId)
@@ -326,7 +346,7 @@ public class DbHelper
     {
         logMsg("Deleting invite %s for list %s", inviteId, listId);
         final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(listId).child(inviteId);
-        return setValue(ref, null, "delete invite");
+        return setValueRx(ref, null, "delete invite");
     }
 
     /** Returns a Completable that, when subscribed to, will add the user as a collaborator to the list specified by adding the node:
@@ -335,7 +355,7 @@ public class DbHelper
     {
         logMsg("--- Creating node %s/%s/%s with payload invite_id=%s", DbHelper.LIST_COLLABORATORS_NODE_NAME, listId, userId, invitationId);
         final DatabaseReference ref = getListCollaboratorsReference(listId).child(userId).child(DbHelper.INVITE_ID_KEY);
-        return setValue(ref, invitationId, "add user as list collaborator");
+        return setValueRx(ref, invitationId, "add user as list collaborator");
     }
 
     /** Returns a Completable that when subscribed to adds the list ID to the /lists node of the current user (so it shows up in the list of lists this user has access to).
@@ -344,7 +364,7 @@ public class DbHelper
     {
         logMsg("Adding list %s to /users/%s/lists", listId, userId);
         final DatabaseReference ref = getUserListsRef(userId).child(listId);
-        return setValue(ref, accessType, "add list to user's lists");
+        return setValueRx(ref, accessType, "add list to user's lists");
     }
 
     /** Revokes access to the list specified for the userId specified.  On error, logs the error and raises a user message.
@@ -356,14 +376,21 @@ public class DbHelper
     {
         DatabaseReference userListsRef = getUserListsRef(userId).child(listId);
         DatabaseReference collaboratorsRef = getListCollaboratorsReference(listId).child(userId);
-        //return setValue(userListsRef, null, "delete from user's lists").andThen(setValue(collaboratorsRef, null, "delete collaborator entry"));
         return removeNode(userListsRef).andThen(removeNode(collaboratorsRef));
     }
 
-    /** General purpose Completable wrapper to set the value at a specified location in the database. **/
-    public static Completable setValue(final DatabaseReference ref, final Object value, final String operationDescription)
+    /** General purpose Completable wrapper to set the value at a specified location in the database. Starts async request and then Completes immediately. **/
+    public static Completable setValueRx(final DatabaseReference ref, final Object value, final String operationDescription)
     {
-        return Completable.fromAction(() ->
+        return setValueRx(ref, value, operationDescription, false);
+    }
+
+    /** General purpose Completable wrapper to set the value at a specified location in the database.
+     *  If waitForCompletion is true, onComplete is only called after setValue() completed callback occurs.
+     *  If waitForCompletion if false, onComplete is called immediately after setValue() is called. **/
+    public static Completable setValueRx(final DatabaseReference ref, final Object value, final String operationDescription, boolean waitForCompletion)
+    {
+        return Completable.create((CompletableEmitter emitter) ->
         {
             logMsg("setValue(%s) to '%s'", ref, value);
             ref.setValue(value, (DatabaseError databaseError, DatabaseReference databaseReference) ->
@@ -371,12 +398,32 @@ public class DbHelper
                 if (databaseError != null)
                 {
                     logDbOperationResult(operationDescription, databaseError, ref);
+                    emitter.onError(new DbOperationCanceledException(ref, databaseError, operationDescription));
                 }
                 else
                 {
                     logMsg("setValue(%s) completed", ref);
+                    if (waitForCompletion) emitter.onComplete();
                 }
             });
+            if (!waitForCompletion) emitter.onComplete();
+        });
+    }
+
+    /** Make async call to set the value at a specified location in the database, and return immediately. **/
+    public static void setValue(final DatabaseReference ref, final Object value, final String operationDescription)
+    {
+        logMsg("setValue(%s) to '%s'", ref, value);
+        ref.setValue(value, (DatabaseError databaseError, DatabaseReference databaseReference) ->
+        {
+            if (databaseError != null)
+            {
+                logDbOperationResult(operationDescription, databaseError, ref);
+            }
+            else
+            {
+                logMsg("setValue(%s) completed", ref);
+            }
         });
     }
 
@@ -455,9 +502,9 @@ public class DbHelper
         Map<String,String> collaboratorsMap = new HashMap<>();
         collaboratorsMap.put(ownerId, OWNER);
 
-        return setValue(listInfoRef, newList, "create list info node")
+        return setValueRx(listInfoRef, newList, "create list info node")
             .andThen(addListToUserLists(listId, ownerId, OWNER))
-                .andThen(setValue(collaboratorsRef, collaboratorsMap, "add owner as collaborator"));
+                .andThen(setValueRx(collaboratorsRef, collaboratorsMap, "add owner as collaborator"));
     }
 
     /** Returns a single that will emit the populated PineTaskList object for the list ID provided. **/
@@ -481,7 +528,7 @@ public class DbHelper
     /** Rename the specified list **/
     public static Completable renameList(String listId, String newName)
     {
-        return setValue(getListNameReference(listId), newName, "rename list");
+        return setValueRx(getListNameReference(listId), newName, "rename list");
     }
 
     private static void logMsg(String msg, Object...args)
@@ -523,10 +570,15 @@ public class DbHelper
             });
     }
 
+    public static <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription)
+    {
+        return getItem(T, ref, operationDescription, null);
+    }
+
     /** Returns a Single that emits the object at the specified database location, deserialized based on the objClass provided.
      *  If the value is null, error is emitted.
      **/
-    public static <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription)
+    public static <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription, final T defaultValue)
     {
         return Single.create(new SingleOnSubscribe<T>()
         {
@@ -539,16 +591,28 @@ public class DbHelper
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot)
                     {
-                        logMsg("getItem(%s) onDataChange", ref);
                         Object obj = dataSnapshot.getValue(T);
+                        logMsg("getItem(%s) onDataChange: %s", ref, obj);
                         if (obj instanceof UsesKeyIdentifier)
                         {
                             // Object uses the database key as an identifier, so populate it in the return object.
                             UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) obj;
                             keyIdentifier.setId(dataSnapshot.getKey());
                         }
-                        if (obj==null) emitter.onError(new DbException(ref, operationDescription, "Value is null"));  // rxJava2 does not allow emitting null values.
-                        emitter.onSuccess((T) obj);
+                        if (obj != null)
+                        {
+                            emitter.onSuccess((T) obj);
+                        }
+                        else if (defaultValue != null)
+                        {
+                            // Return value was null but default value was provided: return defaultValue
+                            emitter.onSuccess(defaultValue);
+                        }
+                        else
+                        {
+                            // Return value was null, and no default value -- error -- rxJava2 does not allow emitting null values.
+                            emitter.onError(new DbException(ref, operationDescription, "Value is null"));
+                        }
                     }
 
                     @Override
@@ -702,6 +766,12 @@ public class DbHelper
                         for (DataSnapshot ds : dataSnapshot.getChildren())
                         {
                             T item = (T) ds.getValue(T);
+                            if (item instanceof UsesKeyIdentifier)
+                            {
+                                // Object uses the database key as an identifier, so populate it in the return object.
+                                UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) item;
+                                keyIdentifier.setId(ds.getKey());
+                            }
                             emitter.onNext(item);
                         }
                         emitter.onComplete();
@@ -736,5 +806,32 @@ public class DbHelper
                     for (String str : strList) sb.append(str+"\n");
                     return sb.toString();
                 });
+    }
+
+    /** Get version number of most recent startup message the specified user has read. **/
+    public static Single<Integer> getUserStartupMessageVersion(String userId)
+    {
+        return getItem(Integer.class, getUserStartupMessageVersionRef(userId), "get startup message version", -1).doOnSuccess(v -> logMsg("getUserStartupMessageVersion: %d", v));
+    }
+
+    /** Sets the version number of the last read startup message for the user specified. **/
+    public static void setUserStartupMessageVersion(String userId, int version)
+    {
+        setValue(getUserStartupMessageVersionRef(userId), version, "set user startup message version");
+    }
+
+    /** Get startup message (text and version) **/
+    public static Single<StartupMessage> getStartupMessage()
+    {
+        Single<StartupMessage> source = getItem(StartupMessage.class, getStartupMessageRef(), "get startup message");
+        return source.doOnSuccess(s -> { getStartupMessageRef().keepSynced(false); logMsg("getStartupMessage: %s", s); });
+    }
+
+    /** Emits the startup message to be read by the user, unless the user has already read the most recent version of the message. **/
+    public static Maybe<StartupMessage> getStartupMessageIfUnread(String userId)
+    {
+        DatabaseReference refreshRef = getStartupMessageRef().child("refresh");
+        return getStartupMessage().delay(1, TimeUnit.SECONDS).toCompletable().andThen(setValueRx(refreshRef, DateTime.now().getMillis(), "startup message refresh workaround", true))
+                .andThen(getUserStartupMessageVersion(userId)).flatMapMaybe(userVersion -> getStartupMessage().filter(startupMessage -> startupMessage.version>userVersion));
     }
 }

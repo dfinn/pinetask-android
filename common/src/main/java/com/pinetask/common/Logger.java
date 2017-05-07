@@ -1,5 +1,6 @@
 package com.pinetask.common;
 
+import android.app.Application;
 import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
@@ -7,9 +8,12 @@ import java.io.PrintWriter;
 
 public class Logger
 {
+    public static void setLoggingEnabled(boolean enabled) { mLoggingEnabled = enabled; }
+    private static boolean mLoggingEnabled;
+
     public static void logMsg(Class source, String msg, Object...args)
     {
-        if (BuildConfig.DEBUG)
+        if (mLoggingEnabled)
         {
             Log.i("PineTask_" + source.getSimpleName(), String.format(msg, args));
         }
@@ -17,7 +21,7 @@ public class Logger
 
     public static void logError(Class source, String msg, Object...args)
     {
-        if (BuildConfig.DEBUG)
+        if (mLoggingEnabled)
         {
             Log.e("PineTask_" + source.getSimpleName(), String.format(msg, args));
         }
@@ -25,7 +29,7 @@ public class Logger
 
     public static void logException(Class source, Throwable ex)
     {
-        if (BuildConfig.DEBUG)
+        if (mLoggingEnabled)
         {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             PrintWriter pw = new PrintWriter(bos);

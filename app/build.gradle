@@ -33,8 +33,10 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean", "IS_DEBUG", "false"
         }
         debug {
+            buildConfigField "boolean", "IS_DEBUG", "true"
         }
     }
 }

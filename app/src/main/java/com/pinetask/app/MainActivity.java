@@ -34,6 +34,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.manage_lists.ManageListsActivity;
+import com.pinetask.app.manage_lists.StartupMessage;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 
@@ -155,6 +156,9 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
             // Show username in side navigation drawer
             observe(getUserNameObservable(mUserId), (String name) ->  mUserNameTextView.setText(name));
+
+            // Show startup message if it's a newer version than the user has previously seen.
+            showStartupMessage();
         }
 
         // Initialize navigation drawer
@@ -490,6 +494,26 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         });
     }
 
+    /** Unless this is the first app launch, query the server for the startup message and its version.  If the user hasn't seen it yet, display the message now. **/
+    private void showStartupMessage()
+    {
+        if (mPrefsManager.getIsFirstLaunch()) return;
+
+        DbHelper.getStartupMessageIfUnread(mUserId)
+                .subscribe(startupMessage ->
+                {
+                    if (mActivityActive)
+                    {
+                        StartupMessageDialogFragment dialog = StartupMessageDialogFragment.newInstance(startupMessage.text, startupMessage.version, mUserId);
+                        getSupportFragmentManager().beginTransaction().add(dialog, StartupMessageDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
+                    }
+                }, ex ->
+                {
+                    logException(ex);
+                    showUserMessage(true, getString(R.string.error_loading_startup_message));
+                });
+    }
+
     private void handleListsLoaded(List<PineTaskList> lists)
     {
         // Clear existing spinner contents.
@@ -498,9 +522,13 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         if (lists.size()==0)
         {
-            // If user has no lists, show "Add List" dialog and pass the flag so that it prompts the user to fromRef their first list.
-            AddOrRenameListDialogFragment dialog = AddOrRenameListDialogFragment.newInstanceAddMode(mUserId, true);
-            dialog.show(getSupportFragmentManager(), AddOrRenameListDialogFragment.class.getSimpleName());
+            if (mPrefsManager.getIsFirstLaunch())
+            {
+                // If this is the first app launch, show "Add List" dialog and pass the flag so that it prompts the user to create their first list.
+                AddOrRenameListDialogFragment dialog = AddOrRenameListDialogFragment.newInstanceAddMode(mUserId, true);
+                getSupportFragmentManager().beginTransaction().add(dialog, AddOrRenameListDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
+                mPrefsManager.setIsFirstLaunch(false);
+            }
         }
         else
         {

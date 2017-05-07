@@ -26,6 +26,7 @@
     <string name="signup_later">Sign up later</string>
     <string name="what_is_your_name">What is your name? Others will see this when you share lists with them, and your initials will show on chat messages and list items you claim.</string>
     <string name="finishing_account_setup">Finishing account setup...</string>
+    <string name="dont_show_again">Don\'t show again</string>
 
     <!-- Manage Lists Activity -->
     <string name="loading_lists">Loading lists...</string>
@@ -67,6 +68,7 @@
     <string name="members">Members</string>
     <string name="owner">[owner]</string>
     <string name="error_loading_lists">Error loading lists.</string>
+    <string name="error_loading_startup_message">Error loading startup message.</string>
     <string name="error_getting_username">Error looking up username.</string>
     <string name="error_getting_list_name">Error looking up list name.</string>
     <string name="error_getting_completed_items">Error getting list of completed items.</string>

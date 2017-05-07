@@ -36,4 +36,9 @@ public class PrefsManager
     private static String CURRENT_LIST_ID_KEY = "CurrentListId";
     public String getCurrentListId() { return mSharedPreferences.getString(CURRENT_LIST_ID_KEY, null); }
     public void setCurrentListId(String listId) { mSharedPreferences.edit().putString(CURRENT_LIST_ID_KEY, listId).commit(); }
+
+    /** Boolean value indicating if this is the first app launch. **/
+    private static String IS_FIRST_LAUNCH_KEY = "IsFirstLaunch";
+    public boolean getIsFirstLaunch() { return mSharedPreferences.getBoolean(IS_FIRST_LAUNCH_KEY, true); }
+    public void setIsFirstLaunch(boolean isFirstLaunch) { mSharedPreferences.edit().putBoolean(IS_FIRST_LAUNCH_KEY, isFirstLaunch).commit(); }
 }

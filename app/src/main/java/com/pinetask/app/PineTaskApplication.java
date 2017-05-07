@@ -56,6 +56,7 @@ public class PineTaskApplication extends MultiDexApplication
     public void onCreate()
     {
         super.onCreate();
+        Logger.setLoggingEnabled(BuildConfig.DEBUG);
         mApplicationInstance = this;
         mEventBus = new Bus();
         Fabric.with(this, new Crashlytics());

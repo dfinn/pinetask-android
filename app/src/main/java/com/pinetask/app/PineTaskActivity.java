@@ -20,7 +20,7 @@ import io.reactivex.disposables.Disposable;
 public abstract class PineTaskActivity extends AppCompatActivity
 {
     protected PrefsManager mPrefsManager;
-    private boolean mActivityActive;
+    protected boolean mActivityActive;
     final List<Disposable> mActiveDisposables = new ArrayList<>();
 
     @Override
