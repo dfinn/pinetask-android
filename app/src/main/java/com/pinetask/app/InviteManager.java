@@ -59,7 +59,7 @@ public class InviteManager extends LoggingBase
                 Intent intent = new AppInviteInvitation.IntentBuilder("Share List")
                         .setMessage(message)
                         .setDeepLink(Uri.parse(urlStr))
-                        .setCallToActionText("Share List")
+                        .setCallToActionText("Join List")
                         .build();
                 mMainActivity.startActivityForResult(intent, MainActivity.SEND_INVITE_REQUEST_CODE);
             }

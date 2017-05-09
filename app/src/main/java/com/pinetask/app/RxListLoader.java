@@ -44,7 +44,12 @@ public class RxListLoader extends LoggingBase
                 .flatMapSingle(DbHelper::getPineTaskListWithCollaborators)
                 .toSortedList()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onLoadCompleted, callback::onError);
+                .subscribe(this::onLoadCompleted, ex ->
+                {
+                    logError("Error loading lists");
+                    logException(getClass(), ex);
+                    callback.onError(ex);
+                } );
     }
 
     /** Return list of all PineTaskLists that have been loaded.  May be null if initial load not done yet.  List will be updated in response to add/remove/update events. **/

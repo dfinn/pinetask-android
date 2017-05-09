@@ -36,8 +36,19 @@
         android:layout_height="wrap_content"/>
 
     <TextView
+        android:id="@+id/emailTextView"
+        android:text="@string/email_info"
+        android:layout_toRightOf="@id/iconImageView"
+        android:layout_below="@id/copyrightTextView"
+        android:textColor="@color/black_87percent"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
         android:id="@+id/licenseNoticeHeaderTextView"
-        android:layout_below="@id/iconImageView"
+        android:layout_below="@id/emailTextView"
         android:text="@string/license_info_header"
         android:textColor="@color/black_87percent"
         android:textSize="16sp"

@@ -105,6 +105,7 @@
     <string name="app_name">PineTask</string>
     <string name="version">version</string>
     <string name="copyright_info">Copyright 2016 Dain Finn</string>
+    <string name="email_info">pinetaskapp@gmail.com</string>
     <string name="license_info_header">Open Source License Notices</string>
     <string name="license_info">
         PineTask makes use of several open source libraries.  Following is information about them required to be included in this app.
