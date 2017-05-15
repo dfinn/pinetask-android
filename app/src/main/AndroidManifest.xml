@@ -7,20 +7,20 @@
 
     <application
         android:allowBackup="true"
-        android:name="com.pinetask.app.PineTaskApplication"
+        android:name="com.pinetask.app.common.PineTaskApplication"
         android:icon="@drawable/launcher_icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name="com.pinetask.app.LaunchActivity">
+        <activity android:name="com.pinetask.app.launch.LaunchActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
-        <activity android:name="com.pinetask.app.MainActivity" android:launchMode="singleTask">
+        <activity android:name="com.pinetask.app.main.MainActivity" android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
             </intent-filter>
@@ -44,19 +44,19 @@
         <activity android:name="com.pinetask.app.manage_lists.ManageListsActivity">
         </activity>
 
-        <activity android:name="com.pinetask.app.TutorialActivity">
+        <activity android:name="com.pinetask.app.launch.TutorialActivity">
         </activity>
 
-        <activity android:name="com.pinetask.app.AboutActivity">
+        <activity android:name="com.pinetask.app.main.AboutActivity">
         </activity>
 
-        <activity android:name="com.pinetask.app.SettingsActivity">
+        <activity android:name="com.pinetask.app.main.SettingsActivity">
         </activity>
 
-        <activity android:name=".SignupOrAnonymousLoginActivity">
+        <activity android:name=".launch.SignupOrAnonymousLoginActivity">
         </activity>
 
-        <activity android:name=".AnonymousSetupActivity">
+        <activity android:name=".launch.AnonymousSetupActivity">
         </activity>
 
     </application>

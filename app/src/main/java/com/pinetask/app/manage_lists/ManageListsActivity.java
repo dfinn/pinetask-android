@@ -10,23 +10,13 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.pinetask.app.AddOrRenameListDialogFragment;
-import com.pinetask.app.DbHelper;
-import com.pinetask.app.DeleteListDialogFragment;
-import com.pinetask.app.PineTaskActivity;
-import com.pinetask.app.PineTaskList;
-import com.pinetask.app.PineTaskListWithCollaborators;
+import com.pinetask.app.common.PineTaskActivity;
+import com.pinetask.app.common.PineTaskList;
+import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.R;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;

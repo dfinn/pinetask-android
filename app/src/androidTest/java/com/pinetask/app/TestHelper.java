@@ -1,16 +1,14 @@
 package com.pinetask.app;
 
 import android.content.Context;
-import android.graphics.Paint;
 import android.support.test.espresso.Espresso;
 import android.support.test.espresso.IdlingResource;
-import android.support.test.espresso.ViewInteraction;
 import android.support.test.espresso.matcher.BoundedMatcher;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.common.Logger;
 
 import org.hamcrest.Description;

@@ -1,10 +1,9 @@
 package com.pinetask.app.manage_lists;
 
-import com.pinetask.app.PineTaskList;
-import com.pinetask.app.PineTaskListWithCollaborators;
+import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.R;
-import com.pinetask.app.RxListLoader;
-import com.pinetask.app.RxListLoaderCallbacks;
+import com.pinetask.app.db.RxListLoader;
+import com.pinetask.app.db.RxListLoaderCallbacks;
 import com.pinetask.common.LoggingBase;
 
 import java.util.List;

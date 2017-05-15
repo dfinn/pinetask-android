@@ -1,7 +1,6 @@
 package com.pinetask.app.manage_lists;
 
-import com.pinetask.app.PineTaskList;
-import com.pinetask.app.PineTaskListWithCollaborators;
+import com.pinetask.app.common.PineTaskListWithCollaborators;
 
 import java.util.List;
 

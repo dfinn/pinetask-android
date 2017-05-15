@@ -7,8 +7,8 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.pinetask.app.PineTaskList;
-import com.pinetask.app.PineTaskListWithCollaborators;
+import com.pinetask.app.common.PineTaskList;
+import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.R;
 import com.pinetask.common.Logger;
 
