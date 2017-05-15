@@ -110,14 +110,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         holder.mCompletedImageButton.setVisibility((item.getIsCompleted() == false) ? View.VISIBLE : View.INVISIBLE);
 
         // Set "complete" (checkbox) button to mark the item as completed. It will be claimed by the current user if not already claimed by them.
-        holder.mCompletedImageButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                mListItemsFragment.setCompletedStatus(item, true);
-            }
-        });
+        holder.mCompletedImageButton.setOnClickListener(__ -> mListItemsFragment.setCompletedStatus(item, true));
 
         // If claimed, show the initials of the person who has claimed the item.
         // TODO: show avatar of the person who has claimed the item.

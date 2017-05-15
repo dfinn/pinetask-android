@@ -30,6 +30,11 @@ import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
 import static android.support.test.runner.lifecycle.Stage.RESUMED;
+import static com.pinetask.app.TestHelper.ITEM_1;
+import static com.pinetask.app.TestHelper.ITEM_2;
+import static com.pinetask.app.TestHelper.PASSWORD;
+import static com.pinetask.app.TestHelper.TEST_EMAIL_ADDRESS;
+import static com.pinetask.app.TestHelper.USERNAME;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -42,12 +47,7 @@ import static org.junit.Assert.assertThat;
 @LargeTest
 public class OnboardingTests
 {
-    final String TEST_EMAIL_ADDRESS = "pinetaskapp@gmail.com";
-    final String USERNAME = "Fred";
-    final String PASSWORD = "Password";
-    final String LIST_NAME = "Grocery Shopping";
-    final String ITEM_1 = "Apples";
-    final String ITEM_2 = "Oranges";
+    TestHelper mTestHelper;
 
     @Rule
     public ActivityTestRule<LaunchActivity> mActivityRule = new ActivityTestRule<>(LaunchActivity.class);
@@ -55,7 +55,8 @@ public class OnboardingTests
     @Before
     public void testSetup()
     {
-        registerIdlingResource();
+        mTestHelper = new TestHelper(mActivityRule.getActivity());
+        mTestHelper.registerIdlingResource();
     }
 
     /** Log in to a fresh install of the app, choose "Sign up later" to make an anonymous account.  Create a list called "Grocery Shopping", and add "Apples" and "Oranges" to it.
@@ -64,12 +65,7 @@ public class OnboardingTests
     @Test
     public void firstLaunchCreateAnonymousAccountAndAddListItems()
     {
-        skipIntroTutorial();
-        chooseAnonymousLoginOption();
-        onView(withText(R.string.what_is_your_name)).check(matches(isDisplayed()));
-        onView(withId(R.id.nameEditText)).perform(replaceText(USERNAME));
-        onView(withId(R.id.nextButton)).perform(click());
-        firstLaunchCreateListAndAddItems();
+        mTestHelper.firstLaunchCreateAnonymousAccountAndAddListItems();
     }
 
     /** Log in to fresh install of app, choose "Sign up / Sign in", create new account with email/password, make a list called "Grocery Shopping", add "Apples" and "Oranges" to it.
@@ -79,13 +75,13 @@ public class OnboardingTests
     @Test
     public void firstLaunchSignUpWithEmailAndAddListItems()
     {
-        skipIntroTutorial();
+        mTestHelper.skipIntroTutorial();
         signUpOrLoginWithEmail();
         onView(withId(R.id.email)).check(matches(withText(TEST_EMAIL_ADDRESS)));
         onView(withId(R.id.name)).perform(replaceText(USERNAME));
         onView(withId(R.id.password)).perform(replaceText(PASSWORD));
         onView(withId(R.id.button_create)).perform(click());
-        firstLaunchCreateListAndAddItems();
+        mTestHelper.firstLaunchCreateListAndAddItems();
     }
 
     /** Goes to the Settings screen and chooses "Sign up", and creates a login account using TEST_EMAIL_ADDRESS.
@@ -96,7 +92,7 @@ public class OnboardingTests
     public void signupFromSettingsScreenWhenAnonymous()
     {
         // SignupOrAnonymousLoginActivity: choose anonymous login option
-        chooseAnonymousLoginOption();
+        mTestHelper.chooseAnonymousLoginOption();
 
         // Go to settings activity and start signup process.
         onView(withId(R.id.drawerLayout)).perform(DrawerActions.open());
@@ -118,7 +114,7 @@ public class OnboardingTests
 
         // Press back to return to main activity.  Verify that the list items added earlier still appear.
         Espresso.pressBack();
-        verifyListItemsShown(ITEM_1, ITEM_2);
+        mTestHelper.verifyListItemsShown(ITEM_1, ITEM_2);
     }
 
     /** Launches the app and verifies the the user is presented immediately with the list items created previously. **/
@@ -126,7 +122,7 @@ public class OnboardingTests
     public void verifyListItemsExist()
     {
         logMsg("Verifying list items after initial launch");
-        verifyListItemsShown(ITEM_1, ITEM_2);
+        mTestHelper.verifyListItemsShown(ITEM_1, ITEM_2);
     }
 
 
@@ -134,12 +130,12 @@ public class OnboardingTests
     @Test
     public void firstLaunchLoginWithExistingEmailAndVerifyItems()
     {
-        skipIntroTutorial();
+        mTestHelper.skipIntroTutorial();
         signUpOrLoginWithEmail();
         onView(withText("Welcome back!")).check(matches(isDisplayed()));
         onView(withId(R.id.password)).perform(replaceText(PASSWORD));
         onView(withId(R.id.button_done)).perform(click());
-        verifyListItemsShown(ITEM_1, ITEM_2);
+        mTestHelper.verifyListItemsShown(ITEM_1, ITEM_2);
     }
 
     /** After prior launch where user created anonymous account, re-launch the app and choose "Sign In / Sign Up" from the launch screen.  Sign up with email account, verify
@@ -155,7 +151,7 @@ public class OnboardingTests
         onView(withId(R.id.name)).check(matches(withText(USERNAME)));
         onView(withId(R.id.password)).perform(replaceText(PASSWORD));
         onView(withId(R.id.button_create)).perform(click());
-        verifyListItemsShown(ITEM_1, ITEM_2);
+        mTestHelper.verifyListItemsShown(ITEM_1, ITEM_2);
     }
 
     /** After previous app launch where user created anonymous account, choose "Sign up / Log in" but try to use an existing email address. Verify appropriate error is shown. **/
@@ -177,46 +173,13 @@ public class OnboardingTests
         //Thread.sleep(3000);
     }
 
-    /** Verifies the "Welcome" message shows on the first tutorial slide, and presses "Skip" **/
-    private void skipIntroTutorial()
-    {
-        onView(withText(R.string.welcome_title)).check(matches(isDisplayed()));
-        onView(withText("SKIP")).perform(click());
-    }
-
-    /** Verifies the SignupOrAnonymousLoginActivity displays correctly, and chooses the "Sign up later" option. **/
-    private void chooseAnonymousLoginOption()
-    {
-        verifySignupOrAnonymousActivity();
-        onView(withText(R.string.signup_later)).perform(click());
-    }
-
     /** Verifies the SignupOrAnonymousLoginActivity displays correctly, and chooses the "Sign up / Log In" option. **/
     private void signUpOrLoginWithEmail()
     {
-        verifySignupOrAnonymousActivity();
+        mTestHelper.verifySignupOrAnonymousActivity();
         onView(withText(R.string.login_or_signup)).perform(click());
         onView(withId(R.id.email)).perform(replaceText(TEST_EMAIL_ADDRESS));
         onView(withId(R.id.button_next)).perform(click());
-    }
-
-    /** Verifies the SignupOrAnonymousLoginActivity displays correctly **/
-    private void verifySignupOrAnonymousActivity()
-    {
-        onView(withText(R.string.signup_intro_text)).check(matches(isDisplayed()));
-        onView(withText(R.string.login_or_signup)).check(matches(isDisplayed()));
-        onView(withText(R.string.signup_later)).check(matches(isDisplayed()));
-    }
-
-    // When prompted at first launch, create a list, and add two items to it.
-    private void firstLaunchCreateListAndAddItems()
-    {
-        onView(withText(R.string.please_create_first_list)).check(matches(isDisplayed()));
-        onView(withId(R.id.listNameEditText)).perform(replaceText(LIST_NAME));
-        onView(withId(R.id.okButton)).perform(click());
-        addListItem(ITEM_1);
-        addListItem(ITEM_2);
-        verifyListItemsShown(ITEM_1, ITEM_2);
     }
 
     public Activity getActiveActivity()
@@ -235,63 +198,9 @@ public class OnboardingTests
         return currentActivity[0];
     }
 
-    private void registerIdlingResource()
-    {
-        logMsg("Registering idling resource");
-        Espresso.registerIdlingResources(new IdlingResource()
-        {
-            @Override
-            public String getName()
-            {
-                return "PineTaskApplication Idling Resource";
-            }
-
-            @Override
-            public boolean isIdleNow()
-            {
-                boolean isIdle = PineTaskApplication.getInstance().getActiveTasks()==0;
-                logMsg("isIdleNow: %b", isIdle);
-                return isIdle;
-            }
-
-            @Override
-            public void registerIdleTransitionCallback(ResourceCallback callback)
-            {
-                logMsg("Regisering idle transition callback");
-                PineTaskApplication.getInstance().setOnIdleRunnable(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        logMsg("Invoking callback.onTransitionToIdle()");
-                        callback.onTransitionToIdle();
-                    }
-                });
-            }
-        });
-    }
-
     private void logMsg(String msg, Object... args)
     {
         Logger.logMsg(getClass(), "*** [TEST] *** " + msg, args);
-    }
-
-    private void addListItem(String description)
-    {
-        onView(withId(R.id.addItemButton)).perform(click());
-        onView(withText(R.string.add_item)).check(matches(isDisplayed()));
-        onView(withId(R.id.descriptionEditText)).perform(replaceText(description));
-        onView(withId(R.id.cancelButton)).check(matches(isDisplayed()));
-        onView(withId(R.id.okButton)).perform(click());
-    }
-
-    private void verifyListItemsShown(String... descriptions)
-    {
-        for (int i=0;i<descriptions.length;i++)
-        {
-            logMsg("Verifying item '%s'", descriptions[i]);
-            onView(withRecyclerView(R.id.itemsRecyclerView).atPosition(i)).check(matches(hasDescendant(withText(descriptions[i]))));
-            logMsg("Verified item '%s'", descriptions[i]);
-        }
     }
 
     private static RecyclerViewMatcher withRecyclerView(int id)

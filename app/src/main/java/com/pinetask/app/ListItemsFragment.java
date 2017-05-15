@@ -103,7 +103,10 @@ public class ListItemsFragment extends PineTaskFragment
     /** Updates the specified item in the database. **/
     public void updateItem(PineTaskItem item)
     {
+        // Make async request to update item in Firebase DB
         mListItemsRef.child(item.getKey()).setValue(item);
+        // Update item UI state in the RecyclerView
+        mItemsListAdapter.update(item);
     }
 
     /** Deletes the specified item from the database. **/
