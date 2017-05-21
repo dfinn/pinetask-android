@@ -1,38 +1,36 @@
 package com.pinetask.app.list_members;
 
-import android.support.v7.widget.LinearLayoutManager;
-import android.view.View;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.pinetask.app.common.AddedEvent;
+import com.pinetask.app.common.AddedOrDeletedEvent;
+import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.ListDeletedEvent;
 import com.pinetask.app.common.ListSelectedEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.ChildEventListenerWrapper;
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.app.main.InviteManager;
-import com.pinetask.app.main.MainActivity;
 import com.pinetask.common.LoggingBase;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+
 import static com.pinetask.app.db.DbHelper.getListOwner;
+import static com.pinetask.app.db.DbHelper.getUserNameSingle;
 import static com.pinetask.app.db.DbHelper.singleObserver;
 
 /** Presenter for the MembersFragment. **/
 public class MembersPresenter extends LoggingBase implements MembersContract.IMembersPresenter
 {
     MembersContract.IMembersView mView;
-    FirebaseDatabase mDatabase;
-    ChildEventListenerWrapper mChildEventListener;
-    DatabaseReference mDatabaseRef;
     Bus mEventBus;
     PrefsManager mPrefsManager;
     String mCurrentDisplayedListId;
     String mCurrentUserId;
+    Disposable mSubscription;
 
     @Override
     public void attachView(MembersContract.IMembersView view, String currentUserId)
@@ -40,7 +38,6 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
         mCurrentUserId = currentUserId;
         mView = view;
         mPrefsManager = PrefsManager.getInstance(PineTaskApplication.getInstance());
-        mDatabase = FirebaseDatabase.getInstance();
         mEventBus = PineTaskApplication.getEventBus();
         mEventBus.register(this);
         requestLoadListMembers(mPrefsManager.getCurrentListId());
@@ -50,13 +47,19 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
     public void detachView()
     {
         mView = null;
-        if (mDatabaseRef != null & mChildEventListener != null) mChildEventListener.shutdown();
+        if (mSubscription != null)
+        {
+            mSubscription.dispose();
+            mSubscription=null;
+        }
         mEventBus.unregister(this);
     }
 
     /** Initiate async load of list members.   As each one is loaded, it will be added to the view. **/
     private void requestLoadListMembers(final String listId)
     {
+        logMsg("requestLoadListMembers: listId=%s (mCurrentListId=%s)", listId, mCurrentDisplayedListId);
+
         // If list ID is null, clear list display (no currently selected list - ie, user just deleted their last one)
         // If request if for the list already loaded (or being loaded), just ignore it.
         // If for any other list, clear the current display, set new list ID, and start async load.
@@ -64,7 +67,6 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
         {
             logMsg("requestLoadListMembers: list ID is null, clearing list display");
             mCurrentDisplayedListId = null;
-            if (mChildEventListener != null) mChildEventListener.shutdown();
             mView.clearListDisplay();
             mView.setListVisible(false);
             mView.setAddButtonVisible(false);
@@ -77,62 +79,89 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
         {
             logMsg("requestLoadListMembers: starting load of members in list %s", listId);
             mCurrentDisplayedListId = listId;
-            if (mChildEventListener != null) mChildEventListener.shutdown();
             mView.clearListDisplay();
             mView.setListVisible(true);
             mView.setAddButtonVisible(false);
 
-            // TODO: Get list owner, show "Add" button if current user. Attach observer for add/remove events for current list items.
-            // As observer emits items, convert them to MemberInfo objects and then pass them to mView.add() and mView.remove()
-
-
-            //getListOwner(listId).subscribe(singleObserver((String ownerId) -> initRecyclerView(listId, ownerId)));
-
-        /*
-        getUserNameSingle(userId).subscribe(singleObserver((String data) ->
+            // Dispose of old subscription if there is one
+            if (mSubscription != null)
             {
-                if (userId.equals(holder.NameTextView.getTag()))
-                {
-                    String userName = (data==null) ? "?" : data;
-                    boolean isOwner = mOwnerId.equals(userId);
-                    if (isOwner) userName += " " + mActivity.getString(R.string.owner);
-                    holder.NameTextView.setTypeface(null, isOwner ? Typeface.BOLD : Typeface.NORMAL);
-                    holder.NameTextView.setText(userName);
-                }
-            }));
-            */
+                logMsg("Existing subscription - disposing");
+                mSubscription.dispose();
+                mSubscription = null;
+            }
+
+            // Make async request to get list owner. Then, subscribe to events for list members added/deleted so they can be shown in the view.
+            getListOwnerAndSubscribeToMemberAddedOrDeletedEvents(listId);
         }
 
     }
 
-
-
-    private void initRecyclerView(String listId, String ownerId)
+    /** Make async request to look up owner of specified list ID.  Then, set up an Observable to emit added/deleted events for members of the specified list.
+     *  As MemberInfo objects are emitted, it will call mView.addListMember() or mView.removeListMember() if the view is still attached.
+     **/
+    private void getListOwnerAndSubscribeToMemberAddedOrDeletedEvents(String listId)
     {
-
-        mDatabaseRef = mDatabase.getReference(DbHelper.LIST_COLLABORATORS_NODE_NAME).child(listId);
-
-        mChildEventListener = new ChildEventListenerWrapper(mDatabaseRef, new ChildEventListenerWrapper.Callback()
+        // Get list owner, and show the "Add" button if it's the current user.
+        getListOwner(listId).subscribe(singleObserver(ownerId ->
         {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s)
+            // If list has changed, abort loading list members.
+            if (! listId.equalsIgnoreCase(mCurrentDisplayedListId))
             {
-                logMsg("onChildAdded: %s", dataSnapshot.getKey());
-                mAdapter.addUser(dataSnapshot.getKey());
+                logMsg("getListOwnerAndSubscribeToMemberAddedOrDeletedEvents: list has changed, aborting");
+                return;
             }
 
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot)
+            logMsg("requestLoadListMembers: List owner=%s, currentUser=%s", ownerId, mCurrentUserId);
+            if (mView != null)
             {
-                logMsg("onChildRemoved: %s", dataSnapshot.getKey());
-                mAdapter.removeUser(dataSnapshot.getKey());
+                mView.setAddButtonVisible(ownerId.equalsIgnoreCase(mCurrentUserId));
             }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError)
-            {
-                DbHelper.logDbOperationResult("get list members", databaseError, mDatabaseRef);
-            }
+            // Attach observer for add/remove events for current list members. As observer emits items, convert them to add/remove events for MemberInfo objects and
+            // then pass them to mView.add() and mView.remove().
+            mSubscription = subscribeToMemberAddedDeletedEvents(listId, ownerId);
+        }));
+    }
+
+    /** Attach listener to get user IDs for collaborators of the specified list, emitting added/deleted events for MemberInfo objects which are then passed to
+     *  the view (if still attached) to add or remove the member from the displayed list. **/
+    private Disposable subscribeToMemberAddedDeletedEvents(String listId, String ownerId)
+    {
+        return DbHelper.getMembersAddedOrDeletedEvents(listId)
+                .flatMapSingle(addedOrDeletedEvent -> getMemberInfoForUserId(addedOrDeletedEvent, mCurrentUserId, ownerId))
+                .subscribe(memberAddedOrDeletedevent ->
+                {
+                    // If list has changed, abort loading list members.
+                    if (! listId.equalsIgnoreCase(mCurrentDisplayedListId))
+                    {
+                        logMsg("getListOwnerAndSubscribeToMemberAddedOrDeletedEvents: list has changed, aborting");
+                        return;
+                    }
+
+                    if (mView != null)
+                    {
+                        if (memberAddedOrDeletedevent instanceof AddedEvent) mView.addListMember(memberAddedOrDeletedevent.Item);
+                        else mView.removeListMember(memberAddedOrDeletedevent.Item.UserId);
+                    }
+                }, ex ->
+                {
+                    logError("getListOwnerAndSubscribeToMemberAddedOrDeletedEvents: error getting member added/deleted events");
+                    logException(ex);
+                });
+    }
+
+    /** Look up username for the specified userId, and convert the "user ID added or deleted" event into a "MemberInfo added or deleted" event. **/
+    private Single<AddedOrDeletedEvent<MemberInfo>> getMemberInfoForUserId(AddedOrDeletedEvent<String> userAddedOrDeletedEvent, String currentUserId, String currentListOwnerId)
+    {
+        String userId = userAddedOrDeletedEvent.Item;
+        return getUserNameSingle(userId).map(userName ->
+        {
+            // The member can only be deleted if the current user is the list owner.  Owner can never be deleted.
+            boolean canBeDeleted = (currentListOwnerId.equals(currentUserId)) && (!userId.equals(currentListOwnerId));
+            MemberInfo memberInfo = new MemberInfo(userName, userId, (userId.equals(currentListOwnerId)), canBeDeleted);
+            if (userAddedOrDeletedEvent instanceof AddedEvent) return new AddedEvent<>(memberInfo);
+            else return new DeletedEvent<>(memberInfo);
         });
     }
 
@@ -148,7 +177,7 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
     public void onListSelected(ListSelectedEvent event)
     {
         logMsg("onListSelected: listId = %s", event.ListId);
-        displayListMembers(event.ListId);
+        requestLoadListMembers(event.ListId);
     }
 
     /** Called by the event bus when a list has been deleted. **/
@@ -156,11 +185,10 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
     public void onListDeleted(ListDeletedEvent event)
     {
         logMsg("ListDeletedEvent for list %s", event.ListId);
-        String currentListId = mPrefsManager.getCurrentListId();
-        if (event.ListId.equals(currentListId))
+        if (event.ListId.equals(mCurrentDisplayedListId))
         {
-            logMsg("onListDeleted: disconnecting mChildEventListener, current list %s was deleted", currentListId);
-            displayListMembers(null);
+            logMsg("onListDeleted: current list %s has been deleted, clearing list display", mCurrentDisplayedListId);
+            requestLoadListMembers(null);
         }
     }
 }

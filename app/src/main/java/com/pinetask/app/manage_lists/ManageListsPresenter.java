@@ -49,7 +49,7 @@ public class ManageListsPresenter extends LoggingBase implements ManageListsCont
     @Override
     public void onError(Throwable ex)
     {
-        logException(getClass(), ex);
+        logException(ex);
         if (mView != null) mView.onLoadError();
     }
 

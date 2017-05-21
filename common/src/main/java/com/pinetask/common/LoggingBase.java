@@ -13,9 +13,9 @@ public class LoggingBase
         Logger.logError(getClass(), msg, args);
     }
 
-    protected void logException(Class source, Throwable ex)
+    protected void logException(Throwable ex)
     {
-        Logger.logException(source, ex);
+        Logger.logException(getClass(), ex);
     }
 
 

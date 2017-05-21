@@ -45,7 +45,7 @@ public class RxListLoader extends LoggingBase
                 .subscribe(this::onLoadCompleted, ex ->
                 {
                     logError("Error loading lists");
-                    logException(getClass(), ex);
+                    logException(ex);
                     callback.onError(ex);
                 } );
     }

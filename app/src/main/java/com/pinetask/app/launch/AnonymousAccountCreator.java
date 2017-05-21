@@ -77,7 +77,7 @@ public class AnonymousAccountCreator extends LoggingBase
                 else
                 {
                     logError("anonymousOnCompleteListener: error");
-                    logException(AnonymousAccountCreator.class, task.getException());
+                    logException(task.getException());
                     emitter.onError(task.getException());
                 }
             };

@@ -48,10 +48,12 @@ public class MembersFragment extends PineTaskFragment implements MembersContract
     {
         View view = inflater.inflate(R.layout.members_fragment, container, false);
         ButterKnife.bind(this, view);
+        logMsg("onCreateView: creating membersAdapter");
         mAdapter = new MembersAdapter((MainActivity)getActivity());
         mMembersRecyclerView.setAdapter(mAdapter);
         mMembersRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         String userId = getArguments().getString(USER_ID_KEY);
+        mPresenter = new MembersPresenter();
         mPresenter.attachView(this, userId);
         return view;
     }

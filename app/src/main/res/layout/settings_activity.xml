@@ -2,7 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto">
     <data>
-        <variable name="user" type="com.pinetask.app.PineTaskUser"/>
+        <variable name="user" type="com.pinetask.app.common.PineTaskUser"/>
     </data>
 
     <RelativeLayout

@@ -68,9 +68,8 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
         MemberInfo memberInfo = mMembers.get(position);
 
         // Only list owner is allowed to delete members. List owner cannot be deleted.  If disabled, show the delete button as faded (30% alpha).
-        boolean showDelete = memberInfo.IsOwner && memberInfo.IsCurrentUser;
-        holder.DeleteImageButton.setAlpha(showDelete ? 1.0f : 0.3f);
-        holder.DeleteImageButton.setClickable(showDelete);
+        holder.DeleteImageButton.setAlpha(memberInfo.CanBeDeleted ? 1.0f : 0.3f);
+        holder.DeleteImageButton.setClickable(memberInfo.CanBeDeleted);
 
         // Set username; if owner, show [owner] and use bold font
         String userName = memberInfo.Name;

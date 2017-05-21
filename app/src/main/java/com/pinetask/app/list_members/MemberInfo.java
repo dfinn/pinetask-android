@@ -6,13 +6,13 @@ public class MemberInfo
     public String Name;
     public String UserId;
     public boolean IsOwner;
-    public boolean IsCurrentUser;
+    public boolean CanBeDeleted;
 
-    public MemberInfo(String name, String userId, boolean isOwner, boolean isCurrentUser)
+    public MemberInfo(String name, String userId, boolean isOwner, boolean canBeDeleted)
     {
         Name = name;
         UserId = userId;
         IsOwner = isOwner;
-        IsCurrentUser = isCurrentUser;
+        CanBeDeleted = canBeDeleted;
     }
 }

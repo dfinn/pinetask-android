@@ -15,7 +15,8 @@ public class Logger
     {
         if (mLoggingEnabled)
         {
-            Log.i("PineTask_" + source.getSimpleName(), String.format(msg, args));
+            String threadName = Thread.currentThread().getName();
+            Log.i("PineTask_" + source.getSimpleName(), "[" + threadName + "] " + String.format(msg, args));
         }
     }
 
@@ -23,7 +24,8 @@ public class Logger
     {
         if (mLoggingEnabled)
         {
-            Log.e("PineTask_" + source.getSimpleName(), String.format(msg, args));
+            String threadName = Thread.currentThread().getName();
+            Log.e("PineTask_" + source.getSimpleName(), "[" + threadName + "] " + String.format(msg, args));
         }
     }
 

@@ -19,7 +19,7 @@ public class PineTaskFragment extends DialogFragment
         Logger.logError(getClass(), msg, args);
     }
 
-    Bus mEventBus;
+    protected Bus mEventBus;
     protected PrefsManager mPrefsManager;
 
     @Override

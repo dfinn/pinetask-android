@@ -296,6 +296,12 @@ public class DbHelper
         return getKeyAddedOrDeletedEventsAt(getUserListsRef(userId), "get list added/deleted events");
     }
 
+    /** Returns an Observable that will emit AddedEvent or DeletedEvent for member IDs of the list specified. **/
+    public static Observable<AddedOrDeletedEvent<String>> getMembersAddedOrDeletedEvents(String listId)
+    {
+        return getKeyAddedOrDeletedEventsAt(getListCollaboratorsReference(listId), "get list members added/deleted events");
+    }
+
     /** Returns a Single that, when subscribed to, will look up the name of the specified user in the database. **/
     public static Single<String> getListName(final String listId)
     {
