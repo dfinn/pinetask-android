@@ -42,7 +42,8 @@ public class KeyAddedOrDeletedObservable extends LoggingBase
                 public void onChildAdded(DataSnapshot dataSnapshot, String s)
                 {
                     logMsg("onChildAdded(%s): %s", mDbRef, dataSnapshot.getKey());
-                    emitter.onNext(new AddedEvent<>(dataSnapshot.getKey()));
+                    if (! emitter.isDisposed()) emitter.onNext(new AddedEvent<>(dataSnapshot.getKey()));
+                    else logError("onChildAdded -- observable has been disposed, won't call onNext");
                 }
 
                 @Override
@@ -53,7 +54,8 @@ public class KeyAddedOrDeletedObservable extends LoggingBase
                 @Override
                 public void onChildRemoved(DataSnapshot dataSnapshot)
                 {
-                    emitter.onNext(new DeletedEvent<>(dataSnapshot.getKey()));
+                    if (! emitter.isDisposed()) emitter.onNext(new DeletedEvent<>(dataSnapshot.getKey()));
+                    else logError("onChildRemoved -- observable has been disposed, won't call onNext");
                 }
 
                 @Override
@@ -64,7 +66,14 @@ public class KeyAddedOrDeletedObservable extends LoggingBase
                 @Override
                 public void onCancelled(DatabaseError databaseError)
                 {
-                    emitter.onError(new DbOperationCanceledException(mDbRef, databaseError, mOperationDescription));
+                    if (!emitter.isDisposed())
+                    {
+                        emitter.onError(new DbOperationCanceledException(mDbRef, databaseError, mOperationDescription));
+                    }
+                    else
+                    {
+                        logError("onCancelled: observable has been disposed, won't invoke onError (ref=%s, error=%s)", mDbRef, databaseError);
+                    }
                 }
             });
         })

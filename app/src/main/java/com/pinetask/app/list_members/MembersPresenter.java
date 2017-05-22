@@ -1,7 +1,5 @@
 package com.pinetask.app.list_members;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.AddedOrDeletedEvent;
 import com.pinetask.app.common.DeletedEvent;
@@ -9,7 +7,6 @@ import com.pinetask.app.common.ListDeletedEvent;
 import com.pinetask.app.common.ListSelectedEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PrefsManager;
-import com.pinetask.app.db.ChildEventListenerWrapper;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.LoggingBase;
 import com.squareup.otto.Bus;
@@ -25,12 +22,12 @@ import static com.pinetask.app.db.DbHelper.singleObserver;
 /** Presenter for the MembersFragment. **/
 public class MembersPresenter extends LoggingBase implements MembersContract.IMembersPresenter
 {
-    MembersContract.IMembersView mView;
-    Bus mEventBus;
-    PrefsManager mPrefsManager;
-    String mCurrentDisplayedListId;
-    String mCurrentUserId;
-    Disposable mSubscription;
+    private MembersContract.IMembersView mView;
+    private Bus mEventBus;
+    private PrefsManager mPrefsManager;
+    private String mCurrentDisplayedListId;
+    private String mCurrentUserId;
+    private Disposable mSubscription;
 
     @Override
     public void attachView(MembersContract.IMembersView view, String currentUserId)
@@ -60,29 +57,13 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
     {
         logMsg("requestLoadListMembers: listId=%s (mCurrentListId=%s)", listId, mCurrentDisplayedListId);
 
-        // If list ID is null, clear list display (no currently selected list - ie, user just deleted their last one)
-        // If request if for the list already loaded (or being loaded), just ignore it.
-        // If for any other list, clear the current display, set new list ID, and start async load.
-        if (listId == null)
+        if ((listId==null && mCurrentDisplayedListId==null) || (listId!=null && listId.equals(mCurrentDisplayedListId)))
         {
-            logMsg("requestLoadListMembers: list ID is null, clearing list display");
-            mCurrentDisplayedListId = null;
-            mView.clearListDisplay();
-            mView.setListVisible(false);
-            mView.setAddButtonVisible(false);
-        }
-        else if (listId.equals(mCurrentDisplayedListId))
-        {
+            // If request if for the list already loaded (or being loaded), just ignore it.
             logMsg("requestLoadListMembers: ignoring request, already displaying list %s", mCurrentDisplayedListId);
         }
         else
         {
-            logMsg("requestLoadListMembers: starting load of members in list %s", listId);
-            mCurrentDisplayedListId = listId;
-            mView.clearListDisplay();
-            mView.setListVisible(true);
-            mView.setAddButtonVisible(false);
-
             // Dispose of old subscription if there is one
             if (mSubscription != null)
             {
@@ -91,10 +72,26 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
                 mSubscription = null;
             }
 
-            // Make async request to get list owner. Then, subscribe to events for list members added/deleted so they can be shown in the view.
-            getListOwnerAndSubscribeToMemberAddedOrDeletedEvents(listId);
-        }
+            // Set the new list ID to display (could be null if no list), clear list display, hide "Add Member" button.
+            mCurrentDisplayedListId = listId;
+            mView.clearListDisplay();
+            mView.setAddButtonVisible(false);
 
+            // If list ID is null, clear list display but don't load a new one (no currently selected list - ie, user just deleted their last one)
+            if (listId == null)
+            {
+                logMsg("requestLoadListMembers: list ID is null, clearing list display");
+                mView.setListVisible(false);
+            }
+            else
+            {
+                // Loading a new list: show the members list, then make async request to get list owner.  If current user is owner, "Add Member" button will show.
+                // Then, get events for members added/deleted to display in the view.
+                logMsg("requestLoadListMembers: starting load of members in list %s", listId);
+                mView.setListVisible(true);
+                getListOwnerAndSubscribeToMemberAddedOrDeletedEvents(listId);
+            }
+        }
     }
 
     /** Make async request to look up owner of specified list ID.  Then, set up an Observable to emit added/deleted events for members of the specified list.

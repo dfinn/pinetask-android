@@ -410,15 +410,15 @@ public class DbHelper
                 if (databaseError != null)
                 {
                     logDbOperationResult(operationDescription, databaseError, ref);
-                    emitter.onError(new DbOperationCanceledException(ref, databaseError, operationDescription));
+                    if (!emitter.isDisposed()) emitter.onError(new DbOperationCanceledException(ref, databaseError, operationDescription));
                 }
                 else
                 {
                     logMsg("setValue(%s) completed", ref);
-                    if (waitForCompletion) emitter.onComplete();
+                    if (waitForCompletion && !emitter.isDisposed()) emitter.onComplete();
                 }
             });
-            if (!waitForCompletion) emitter.onComplete();
+            if (!waitForCompletion && !emitter.isDisposed()) emitter.onComplete();
         });
     }
 

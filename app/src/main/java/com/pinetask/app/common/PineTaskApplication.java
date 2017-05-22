@@ -9,6 +9,7 @@ import com.pinetask.common.Logger;
 import com.squareup.otto.Bus;
 
 import io.fabric.sdk.android.Fabric;
+import io.reactivex.plugins.RxJavaPlugins;
 
 public class PineTaskApplication extends MultiDexApplication
 {
@@ -61,6 +62,14 @@ public class PineTaskApplication extends MultiDexApplication
         mEventBus = new Bus();
         Fabric.with(this, new Crashlytics());
         FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+
+        // Set handler for uncaught exceptions thrown from RxJava2. New behavior in 2.x will throw exception if an onError event is deemed undeliverable
+        // because the observable has been disposed.  Read more here: https://github.com/ReactiveX/RxJava/wiki/What's-different-in-2.0#error-handling
+        RxJavaPlugins.setErrorHandler(ex ->
+        {
+            logError("RxJava global uncaught exception occured:");
+            logException(ex);
+        });
     }
 
     /** Helper method to raise a info/error message that will be displayed to the user. **/
@@ -85,5 +94,10 @@ public class PineTaskApplication extends MultiDexApplication
     protected void logError(String msg, Object...args)
     {
         Logger.logError(getClass(), msg, args);
+    }
+
+    protected void logException(Throwable ex)
+    {
+        Logger.logException(getClass(), ex);
     }
 }
