@@ -120,6 +120,7 @@ public class ListItemsFragment extends PineTaskFragment
     {
         logMsg("Deleting item: %s", item.getItemDescription());
         mListItemsRef.child(item.getKey()).removeValue((DatabaseError databaseError, DatabaseReference databaseReference) -> logMsg("onComplete: Item '%s' deleted", item.getItemDescription()));
+        mItemsListAdapter.remove(item.getKey());
     }
 
     /** Deletes all completed items in the current list. **/

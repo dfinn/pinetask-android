@@ -83,7 +83,7 @@ public class TestHelper
             @Override
             public void registerIdleTransitionCallback(ResourceCallback callback)
             {
-                logMsg("Regisering idle transition callback");
+                logMsg("Registering idle transition callback");
                 PineTaskApplication.getInstance().setOnIdleRunnable(new Runnable() {
                     @Override
                     public void run()
@@ -225,6 +225,7 @@ public class TestHelper
     public void completeListItem(int pos)
     {
         verifyCompletedState(pos, false);
+        delay(500, "wait before clicking complete button");
         onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(pos, R.id.completedImageButton)).perform(click());
         delay(500, "wait for list item completion update");
         verifyCompletedState(pos, true);
