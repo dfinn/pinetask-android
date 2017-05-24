@@ -192,6 +192,7 @@ public class TestHelper
         onView(withRecyclerView(R.id.itemsRecyclerView).atPosition(pos)).check(matches(hasDescendant(withText(itemDescription))));
         onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(pos, R.id.optionsImageButton)).perform(click());
         onView(withText("Delete")).inRoot(isPlatformPopup()).perform(click());
+        delay(500, "wait for UI update after deleting item");
         onView(withText(itemDescription)).check(doesNotExist());
     }
 
@@ -267,6 +268,43 @@ public class TestHelper
         openActionBarOverflowOrOptionsMenu(getInstrumentation().getTargetContext());
         onView(withText("Purge Completed Items")).perform(click());
         onView(withId(R.id.okButton)).perform(click());
+    }
+
+    /** Open the side drawer, choose Settings, change user name, press back to save the name change. **/
+    public void openSettingsActivityAndChangeName()
+    {
+        logMsg("openSettingsActivityAndChangeName");
+        onView(withId(R.id.drawerLayout)).perform(DrawerActions.open());
+        onView(withId(R.id.settingsTextView)).perform(click());
+        onView(withId(R.id.nameEditText)).check(matches(withText(USERNAME)));
+        onView(withText(R.string.account_setup_not_yet_completed)).check(matches(isDisplayed()));
+        onView(withId(R.id.signUpOrLoginButton)).check(matches(isDisplayed()));
+        onView(withId(R.id.nameEditText)).perform(replaceText(USERNAME +"_NewName"));
+        Espresso.pressBack();
+        delay(500, "temporary workaround to wait for navigation drawer to close");
+    }
+
+    /** Open the side drawer, open Help activity, verify some text, press back to exit. **/
+    public void openAndCloseHelpActivity()
+    {
+        logMsg("openSettingsActivityAndChangeName");
+        onView(withId(R.id.drawerLayout)).perform(DrawerActions.open());
+        onView(withId(R.id.helpTextView)).perform(click());
+        onView(withId(R.id.skip)).check(matches(isDisplayed()));
+        onView(withId(R.id.next)).check(matches(isDisplayed()));
+        Espresso.pressBack();
+        delay(500, "temporary workaround to wait for navigation drawer to close");
+    }
+
+    /** Open the side drawer, open the About activity, verify some text, press back to exit. **/
+    public void openAndCloseAboutActivity()
+    {
+        logMsg("openAndCloseAboutActivity");
+        onView(withId(R.id.drawerLayout)).perform(DrawerActions.open());
+        onView(withId(R.id.aboutTextView)).perform(click());
+        onView(withId(R.id.copyrightTextView)).check(matches(withText(R.string.copyright_info)));
+        Espresso.pressBack();
+        delay(500, "temporary workaround to wait for navigation drawer to close");
     }
 
     public void sendChatMessage()
@@ -372,8 +410,7 @@ public class TestHelper
         }
     }
 
-
-    private void logMsg(String msg, Object... args)
+    public void logMsg(String msg, Object... args)
     {
         Logger.logMsg(getClass(), "*** [TEST] *** " + msg, args);
     }

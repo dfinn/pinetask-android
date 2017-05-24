@@ -9,6 +9,7 @@ import android.support.test.uiautomator.UiObjectNotFoundException;
 
 import com.pinetask.app.launch.LaunchActivity;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,6 +46,12 @@ public class QuickTest
         mTestHelper.registerIdlingResource();
     }
 
+    @After
+    public void testFinish()
+    {
+        mTestHelper.logMsg("Test has finished");
+    }
+
     @Test
     public void runQuickTest() throws UiObjectNotFoundException, RemoteException
     {
@@ -71,6 +78,9 @@ public class QuickTest
         mTestHelper.deleteListItem(0, ITEM_1);
         mTestHelper.completeListItem(0);
         mTestHelper.purgeCompletedItems();
+        mTestHelper.openSettingsActivityAndChangeName();
+        mTestHelper.openAndCloseHelpActivity();
+        mTestHelper.openAndCloseAboutActivity();
         mTestHelper.openManageListsActivity();
         mTestHelper.deleteList(0, LIST_NAME_1);
         Espresso.pressBack();
