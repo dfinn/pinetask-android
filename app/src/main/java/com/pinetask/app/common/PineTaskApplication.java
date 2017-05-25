@@ -8,13 +8,18 @@ import com.pinetask.app.BuildConfig;
 import com.pinetask.common.Logger;
 import com.squareup.otto.Bus;
 
+import javax.inject.Inject;
+
 import io.fabric.sdk.android.Fabric;
 import io.reactivex.plugins.RxJavaPlugins;
 
 public class PineTaskApplication extends MultiDexApplication
 {
-    static Bus mEventBus;
-    public static Bus getEventBus() { return mEventBus; }
+    /** Dagger2 component for injection of application-wide dependencies **/
+    AppComponent mAppComponent;
+    public AppComponent getAppComponent() { return mAppComponent; }
+
+    @Inject Bus mEventBus;
 
     static PineTaskApplication mApplicationInstance;
     public static PineTaskApplication getInstance() { return mApplicationInstance; }
@@ -57,10 +62,21 @@ public class PineTaskApplication extends MultiDexApplication
     public void onCreate()
     {
         super.onCreate();
+
+        // Only enable logging in debug builds
         Logger.setLoggingEnabled(BuildConfig.DEBUG);
+
+        // Store reference to app instance
         mApplicationInstance = this;
-        mEventBus = new Bus();
+
+        // Initialize Crashlytics
         Fabric.with(this, new Crashlytics());
+
+        // Instantiate Dagger2 dependency injection component, and inject dependencies.
+        logMsg("Creating AppModule");
+        mAppComponent = DaggerAppComponent.builder().appModule(new AppModule(this)).build();
+
+        // Enable Firebase offline sync
         FirebaseDatabase.getInstance().setPersistenceEnabled(true);
 
         // Set handler for uncaught exceptions thrown from RxJava2. New behavior in 2.x will throw exception if an onError event is deemed undeliverable
@@ -73,15 +89,15 @@ public class PineTaskApplication extends MultiDexApplication
     }
 
     /** Helper method to raise a info/error message that will be displayed to the user. **/
-    public static void raiseUserMsg(boolean isError, String msg, Object... args)
+    public void raiseUserMsg(boolean isError, String msg, Object... args)
     {
         mEventBus.post(new UserMessage(isError, msg, args));
     }
 
     /** Helper method to raise a info/error message that will be displayed to the user. **/
-    public static void raiseUserMsg(boolean isError, int stringResId, Object... args)
+    public void raiseUserMsg(boolean isError, int stringResId, Object... args)
     {
-        String str = mApplicationInstance.getString(stringResId);
+        String str = getString(stringResId);
         String formatted = String.format(str, args);
         mEventBus.post(new UserMessage(isError, formatted));
     }

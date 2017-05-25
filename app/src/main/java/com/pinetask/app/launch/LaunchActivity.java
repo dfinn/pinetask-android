@@ -49,7 +49,7 @@ public class LaunchActivity extends PineTaskActivity
         {
             // Check if signed in user is anonymous, or has completed account setup. If anonymous, launch activity asking if they want to complete account setup now.
             FirebaseUser user = auth.getCurrentUser();
-            DbHelper.getIsAnonymous(user.getUid()).subscribe(singleObserver((Boolean isAnonymous) ->
+            mDbHelper.getIsAnonymous(user.getUid()).subscribe(singleObserver((Boolean isAnonymous) ->
             {
                 if (isAnonymous)
                 {

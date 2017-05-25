@@ -5,10 +5,14 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
 import com.pinetask.app.db.DbCallback;
+import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.Logger;
+import com.squareup.otto.Bus;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import io.reactivex.CompletableObserver;
 import io.reactivex.Observable;
@@ -19,15 +23,19 @@ import io.reactivex.disposables.Disposable;
 /** Activity base class to provide utility methods like logging helpers. **/
 public abstract class PineTaskActivity extends AppCompatActivity
 {
-    protected PrefsManager mPrefsManager;
     protected boolean mActivityActive;
     final List<Disposable> mActiveDisposables = new ArrayList<>();
+
+    @Inject protected PrefsManager mPrefsManager;
+    @Inject protected PineTaskApplication mPineTaskApplication;
+    @Inject protected DbHelper mDbHelper;
+    @Inject protected Bus mBus;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        mPrefsManager = PrefsManager.getInstance(this);
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
     }
 
     @Override
@@ -88,7 +96,7 @@ public abstract class PineTaskActivity extends AppCompatActivity
             public void onError(Throwable ex)
             {
                 Logger.logException(getClass(), ex);
-                PineTaskApplication.raiseUserMsg(true, ex.getMessage());
+                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
             }
 
             @Override
@@ -134,7 +142,7 @@ public abstract class PineTaskActivity extends AppCompatActivity
                 PineTaskApplication.getInstance().endActiveTask();
                 logError("Error in operation '%s'", operationDescription);
                 logException(ex);
-                PineTaskApplication.raiseUserMsg(true, ex.getMessage());
+                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
             }
         };
     }
@@ -164,7 +172,7 @@ public abstract class PineTaskActivity extends AppCompatActivity
             {
                 PineTaskApplication.getInstance().endActiveTask();
                 logException(ex);
-                PineTaskApplication.raiseUserMsg(true, ex.getMessage());
+                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
             }
         };
     }

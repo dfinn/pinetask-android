@@ -4,8 +4,11 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 
+import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.common.Logger;
 import com.squareup.otto.Bus;
+
+import javax.inject.Inject;
 
 /** Base class for fragments, providing utility helper methods. **/
 public class PineTaskFragment extends DialogFragment
@@ -19,20 +22,17 @@ public class PineTaskFragment extends DialogFragment
         Logger.logError(getClass(), msg, args);
     }
 
-    protected Bus mEventBus;
-    protected PrefsManager mPrefsManager;
+    @Inject protected Bus mEventBus;
+    @Inject protected FirebaseDatabase mDatabase;
+    @Inject protected PrefsManager mPrefsManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         logMsg("onCreate");
-
-        PineTaskApplication application = (PineTaskApplication) getActivity().getApplication();
-        mEventBus = application.getEventBus();
-        logMsg("Registering event bus");
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
         mEventBus.register(this);
-        mPrefsManager = PrefsManager.getInstance(application);
     }
 
     @Override

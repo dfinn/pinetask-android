@@ -18,6 +18,7 @@ import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.R;
 import com.pinetask.app.manage_lists.StartupMessage;
 import com.pinetask.common.Logger;
+import com.squareup.otto.Bus;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
@@ -25,6 +26,9 @@ import org.joda.time.format.ISODateTimeFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import io.reactivex.Completable;
 import io.reactivex.CompletableEmitter;
@@ -41,16 +45,17 @@ import io.reactivex.disposables.Disposable;
 
 import static com.pinetask.app.db.KeyAddedOrDeletedObservable.getKeyAddedOrDeletedEventsAt;
 
+@Singleton
 public class DbHelper
 {
     /** Name of node in the Firebase DB where list info is stored **/
     public static String LIST_INFO_NODE_NAME = "list_info";
 
     /** Name of node in the Firebase DB where list collaborators are stored **/
-    public static String LIST_COLLABORATORS_NODE_NAME = "list_collaborators";
+    final String LIST_COLLABORATORS_NODE_NAME = "list_collaborators";
 
     /** Key name under /list_collaborators/<listid>/<userid> that stores the ID of the invite from which the user got access to the list. **/
-    public static String INVITE_ID_KEY = "invite_id";
+    final String INVITE_ID_KEY = "invite_id";
 
     /** Name of node in the Firebase DB where all list items are stored **/
     public static String LIST_ITEMS_NODE_NAME = "list_items";
@@ -62,107 +67,115 @@ public class DbHelper
     public static String USERS_NODE_NAME = "users";
 
     /** Name of node in the Firebase DB where startup message is stored. **/
-    public static String STARTUP_MESSAGE_NODE = "startup_message";
+    final String STARTUP_MESSAGE_NODE = "startup_message";
 
     /** Name of a node in the FireBase DB where the user's name is stored. **/
-    public static String USERNAME_NODE_NAME = "userName";
+    final String USERNAME_NODE_NAME = "userName";
 
     /** Name of a node in the Firebase DB under /users/$userId which stores a value indicating if the user is anonymous or not. **/
-    public static String IS_ANONYMOUS_NODE_NAME = "is_anonymous";
+    final String IS_ANONYMOUS_NODE_NAME = "is_anonymous";
 
     /** Name of a node in the Firebase DB under /users/$userId which stores a value indicating the version of the last startup message the user read. **/
-    public static String USER_STARTUP_MESSAGE_VERSION = "startup_message_version";
+    final String USER_STARTUP_MESSAGE_VERSION = "startup_message_version";
 
     /** Name of the node where all list invites are stored. **/
-    public static String LIST_INVITES_NODE_NAME = "list_invites";
+    final String LIST_INVITES_NODE_NAME = "list_invites";
 
     /** Name of node in the Firebase DB where lists accessible to a certain user are stored (/users/<userid>/lists) **/
     public static String LISTS_NODE_NAME = "lists";
 
     /** Value for a list entry indicating the user is the owner of the list. **/
-    public static String OWNER = "owner";
+    final String OWNER = "owner";
 
     /** Value for a list entry indicating the user has write access to it. **/
     public static String WRITE = "write";
 
     /** Key name under /list_info/<listid>/ where the list name is stored. **/
-    public static String LIST_NAME_KEY = "name";
+    final String LIST_NAME_KEY = "name";
 
     /** Key name under /list_info/<listid>/ where the user ID of the list owner is stored. **/
-    public static String OWNER_ID_KEY = "ownerId";
+    final String OWNER_ID_KEY = "ownerId";
 
     /** Key name under /list_invites/<listid>/<inviteid>/ that stores the timestamp when the invite was created. **/
-    public static String INVITE_CREATED_AT_KEY = "created_at";
+    final String INVITE_CREATED_AT_KEY = "created_at";
 
     /** Key name under /list_items/<listid>/<itemid> which specifies if the item has been marked completed or not. **/
-    public static String IS_COMPLETED_KEY_NAME = "isCompleted";
+    final String IS_COMPLETED_KEY_NAME = "isCompleted";
 
-    public static FirebaseDatabase getDb()
+    private PineTaskApplication mPineTaskApplication;
+    private Bus mEventBus;
+    private FirebaseDatabase mDb;
+
+    @Inject
+    public DbHelper(PineTaskApplication appContext, Bus eventBus, FirebaseDatabase db)
     {
-        return FirebaseDatabase.getInstance();
+        logMsg("Creating DbHelper");
+        mPineTaskApplication = appContext;
+        mEventBus = eventBus;
+        mDb = db;
     }
 
     /** Returns a refernce to /users/$userId **/
-    public static DatabaseReference getUserRef(String userId)
+    public DatabaseReference getUserRef(String userId)
     {
-        return getDb().getReference(USERS_NODE_NAME).child(userId);
+        return mDb.getReference(USERS_NODE_NAME).child(userId);
     }
 
     /** Returns a reference to /users/$userId/lists **/
-    private static DatabaseReference getUserListsRef(String userId)
+    private DatabaseReference getUserListsRef(String userId)
     {
         return getUserRef(userId).child(LISTS_NODE_NAME);
     }
 
     /** Returns a reference to /users/$userId/userName **/
-    private static DatabaseReference getUserNameRef(String userId)
+    private DatabaseReference getUserNameRef(String userId)
     {
-        return getUserRef(userId).child(DbHelper.USERNAME_NODE_NAME);
+        return getUserRef(userId).child(USERNAME_NODE_NAME);
     }
 
     /** Returns a reference to /users/$userId/is_anonymous **/
-    private static DatabaseReference getIsAnonymousReference(String userId)
+    private DatabaseReference getIsAnonymousReference(String userId)
     {
         return getUserRef(userId).child(IS_ANONYMOUS_NODE_NAME);
     }
 
     /** Returns a reference to /users/$userId/startup_message_version **/
-    private static DatabaseReference getUserStartupMessageVersionRef(String userId)
+    private DatabaseReference getUserStartupMessageVersionRef(String userId)
     {
         return getUserRef(userId).child(USER_STARTUP_MESSAGE_VERSION);
     }
 
     /** Returns a reference to /list_info/$listId **/
-    private static DatabaseReference getListInfoReference(String listId)
+    private DatabaseReference getListInfoReference(String listId)
     {
-        return getDb().getReference(DbHelper.LIST_INFO_NODE_NAME).child(listId);
+        return mDb.getReference(LIST_INFO_NODE_NAME).child(listId);
     }
 
     /** Returns a reference to /list_info/$listId/name **/
-    private static DatabaseReference getListNameReference(String listId)
+    private DatabaseReference getListNameReference(String listId)
     {
-        return getListInfoReference(listId).child(DbHelper.LIST_NAME_KEY);
+        return getListInfoReference(listId).child(LIST_NAME_KEY);
     }
 
     /** Returns a reference to /list_collaborators/$listId **/
-    private static DatabaseReference getListCollaboratorsReference(String listId)
+    private DatabaseReference getListCollaboratorsReference(String listId)
     {
-        return getDb().getReference(LIST_COLLABORATORS_NODE_NAME).child(listId);
+        return mDb.getReference(LIST_COLLABORATORS_NODE_NAME).child(listId);
     }
 
     /** Returns a reference to /list_items/$listId **/
-    private static DatabaseReference getListItemsRef(String listId)
+    private DatabaseReference getListItemsRef(String listId)
     {
-        return getDb().getReference(LIST_ITEMS_NODE_NAME).child(listId);
+        return mDb.getReference(LIST_ITEMS_NODE_NAME).child(listId);
     }
 
     /** Retruns a reference to /startup_message **/
-    private static DatabaseReference getStartupMessageRef()
+    private DatabaseReference getStartupMessageRef()
     {
-        return getDb().getReference(STARTUP_MESSAGE_NODE);
+        return mDb.getReference(STARTUP_MESSAGE_NODE);
     }
 
-    public static void purgeCompletedItems(String listId)
+    public void purgeCompletedItems(String listId)
     {
         logMsg("Purging completed items from list %s", listId);
         final DatabaseReference listItemsRef = FirebaseDatabase.getInstance().getReference(LIST_ITEMS_NODE_NAME).child(listId);
@@ -183,12 +196,12 @@ public class DbHelper
             public void onCancelled(DatabaseError databaseError)
             {
                 logError("purgeCompletedItems::onCancelled: %s", databaseError.getMessage());
-                PineTaskApplication.raiseUserMsg(true, R.string.error_getting_completed_items);
+                mPineTaskApplication.raiseUserMsg(true, R.string.error_getting_completed_items);
             }
         });
     }
 
-    private static void deleteListItem(DatabaseReference listItemsRef, final String itemId)
+    private void deleteListItem(DatabaseReference listItemsRef, final String itemId)
     {
         listItemsRef.child(itemId).removeValue((DatabaseError databaseError, DatabaseReference databaseReference) ->
                 logDbOperationResult("Deleting list item " + itemId, databaseError, databaseReference));
@@ -201,29 +214,29 @@ public class DbHelper
      *  /chat_messages/$listId
      *  /list_info/$listId
      **/
-    public static Completable deleteList(final String listId)
+    public Completable deleteList(final String listId)
     {
         logMsg("deleteList: Deleting list %s", listId);
 
         Map<String,Object> updates = new HashMap<>();
-        updates.put("/" + DbHelper.LIST_INVITES_NODE_NAME + "/" + listId, null);
-        updates.put("/" + DbHelper.LIST_COLLABORATORS_NODE_NAME + "/" + listId, null);
-        updates.put("/" + DbHelper.LIST_ITEMS_NODE_NAME + "/" + listId, null);
-        updates.put("/" + DbHelper.CHAT_MESSAGES_NODE_NAME + "/" + listId, null);
-        updates.put("/" + DbHelper.LIST_INFO_NODE_NAME + "/" + listId, null);
+        updates.put("/" + LIST_INVITES_NODE_NAME + "/" + listId, null);
+        updates.put("/" + LIST_COLLABORATORS_NODE_NAME + "/" + listId, null);
+        updates.put("/" + LIST_ITEMS_NODE_NAME + "/" + listId, null);
+        updates.put("/" + CHAT_MESSAGES_NODE_NAME + "/" + listId, null);
+        updates.put("/" + LIST_INFO_NODE_NAME + "/" + listId, null);
 
         return getListCollaborators(listId)
                 .flatMapCompletable(userId -> revokeAccessToList(listId, userId))
-                .andThen(updateChildren(getDb().getReference(), updates, "remove nodes related to list"));
+                .andThen(updateChildren(mDb.getReference(), updates, "remove nodes related to list"));
     }
 
     /** Returns an Observable that emits all user IDs who are collaborators of the specified list, and then completes. **/
-    public static Observable<String> getListCollaborators(String listId)
+    public Observable<String> getListCollaborators(String listId)
     {
         return getKeysAt(getListCollaboratorsReference(listId), "get userIds of list collaborators");
     }
 
-    public static void logDbOperationResult(String description, DatabaseError databaseError, DatabaseReference databaseReference)
+    public void logDbOperationResult(String description, DatabaseError databaseError, DatabaseReference databaseReference)
     {
         if (databaseError==null)
         {
@@ -232,29 +245,29 @@ public class DbHelper
         else
         {
             logDbError(description, databaseError, databaseReference);
-            PineTaskApplication.raiseUserMsg(true, R.string.error_in_operation_x_msg_x, description, databaseError);
+            mPineTaskApplication.raiseUserMsg(true, R.string.error_in_operation_x_msg_x, description, databaseError);
         }
     }
 
-    public static void logDbError(String description, DatabaseError databaseError, DatabaseReference databaseReference)
+    public void logDbError(String description, DatabaseError databaseError, DatabaseReference databaseReference)
     {
         logError("Error in operation '%s' for node %s (error=%s)", description, databaseReference.toString(), databaseError);
     }
 
     /** Looks up the username for the userId specified. **/
-    public static Single<String> getUserNameSingle(final String userId)
+    public Single<String> getUserNameSingle(final String userId)
     {
         return getItem(String.class, getUserNameRef(userId), "get user name");
     }
 
     /** Sets up event listener to query the username for the userId specified.  Must be disposed of when not needed any longer to detach the listener. **/
-    public static Observable<String> getUserNameObservable(final String userId)
+    public Observable<String> getUserNameObservable(final String userId)
     {
         return ObservableStringQuery.fromRef(getUserNameRef(userId), "get user name");
     }
 
     /** Updates the username for the user specified. **/
-    public static Completable setUserName(String userId, String newUserName)
+    public Completable setUserName(String userId, String newUserName)
     {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         UserProfileChangeRequest.Builder builder = new UserProfileChangeRequest.Builder();
@@ -266,52 +279,52 @@ public class DbHelper
     /** Sets the "is anonymous user" flag for the current user.  This is a database node under /users/$userId/isAnonymous.
      *  Note: this is only necessary as a workaround since FirebaseAuth.getCurrentUser().isAnonymous() doesn't seem to work correctly.
      **/
-    public static Completable setIsAnonymous(String userId, boolean isAnonymous)
+    public Completable setIsAnonymous(String userId, boolean isAnonymous)
     {
         return setValueRx(getIsAnonymousReference(userId), isAnonymous, "set is_anonymous");
     }
 
-    public static Single<Boolean> getIsAnonymous(String userId)
+    public Single<Boolean> getIsAnonymous(String userId)
     {
         return getItem(Boolean.class, getIsAnonymousReference(userId), "get is_anonymous");
     }
 
     /** Initiate async request to get the user ID of the owner of the list specified. When query returns, invoke the callback provided.
         If any error occurs, logs the error and raises a user message. **/
-    public static Single<String> getListOwner(String listId)
+    public Single<String> getListOwner(String listId)
     {
-        final DatabaseReference ref = getListInfoReference(listId).child(DbHelper.OWNER_ID_KEY);
+        final DatabaseReference ref = getListInfoReference(listId).child(OWNER_ID_KEY);
         return getItem(String.class, ref, "get list owner");
     }
 
     /** Returns an Observable that will emit IDs for all lists that the user has access to, and then completes. **/
-    public static Observable<String> getListIdsForUser(String userId)
+    public Observable<String> getListIdsForUser(String userId)
     {
         return getKeysAt(getUserListsRef(userId), "get user lists");
     }
 
     /** Returns an Observable that will emit notifications of list added / list deleted events for lists that the specified user has access to. **/
-    public static Observable<AddedOrDeletedEvent<String>> getListAddedOrDeletedEvents(String userId)
+    public Observable<AddedOrDeletedEvent<String>> getListAddedOrDeletedEvents(String userId)
     {
         return getKeyAddedOrDeletedEventsAt(getUserListsRef(userId), "get list added/deleted events");
     }
 
     /** Returns an Observable that will emit AddedEvent or DeletedEvent for member IDs of the list specified. **/
-    public static Observable<AddedOrDeletedEvent<String>> getMembersAddedOrDeletedEvents(String listId)
+    public Observable<AddedOrDeletedEvent<String>> getMembersAddedOrDeletedEvents(String listId)
     {
         return getKeyAddedOrDeletedEventsAt(getListCollaboratorsReference(listId), "get list members added/deleted events");
     }
 
     /** Returns a Single that, when subscribed to, will look up the name of the specified user in the database. **/
-    public static Single<String> getListName(final String listId)
+    public Single<String> getListName(final String listId)
     {
         return getItem(String.class, getListNameReference(listId), "get list name");
     }
 
     /** Creates the database node for a list invite that has been sent (/list_invites/<listid>/<invite_id>) with the "created_at" value set to the current time. **/
-    public static void createInvite(final String listId, final String inviteId)
+    public void createInvite(final String listId, final String inviteId)
     {
-        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(DbHelper.LIST_INVITES_NODE_NAME).child(listId).child(inviteId).child(INVITE_CREATED_AT_KEY);
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(listId).child(inviteId).child(INVITE_CREATED_AT_KEY);
         String timestamp = DateTime.now().toString(ISODateTimeFormat.basicDateTime());
         logMsg("Creating invite for list %s with timestamp %s", listId, timestamp);
         ref.setValue(timestamp, (DatabaseError databaseError, DatabaseReference databaseReference) -> logDbOperationResult("fromRef invite", databaseError, ref));
@@ -319,7 +332,7 @@ public class DbHelper
 
     /** Returns a Completable that, when subscribed to, checks if the invite for the specified list exists.  If it does, invokes onComplete().
      *  If it doesn't exists, or if an error occurs when checking, calls onError(). **/
-    public static Completable verifyInviteExists(final String listId, final String inviteId)
+    public Completable verifyInviteExists(final String listId, final String inviteId)
     {
         return Completable.create((final CompletableEmitter emitter) ->
             {
@@ -354,7 +367,7 @@ public class DbHelper
     }
 
     /** Returns a Completable that, when subscribed to, will delete the invite specified. **/
-    public static Completable deleteInvite(final String listId, final String inviteId)
+    public Completable deleteInvite(final String listId, final String inviteId)
     {
         logMsg("Deleting invite %s for list %s", inviteId, listId);
         final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(listId).child(inviteId);
@@ -363,16 +376,16 @@ public class DbHelper
 
     /** Returns a Completable that, when subscribed to, will add the user as a collaborator to the list specified by adding the node:
      *   /list_collaborators/<listid>/<userid>/invite_id with the ID of the invite from which access was given. **/
-    public static Completable addUserAsCollaboratorToList(final String listId, final String invitationId, final String userId)
+    public Completable addUserAsCollaboratorToList(final String listId, final String invitationId, final String userId)
     {
-        logMsg("--- Creating node %s/%s/%s with payload invite_id=%s", DbHelper.LIST_COLLABORATORS_NODE_NAME, listId, userId, invitationId);
-        final DatabaseReference ref = getListCollaboratorsReference(listId).child(userId).child(DbHelper.INVITE_ID_KEY);
+        logMsg("--- Creating node %s/%s/%s with payload invite_id=%s", LIST_COLLABORATORS_NODE_NAME, listId, userId, invitationId);
+        final DatabaseReference ref = getListCollaboratorsReference(listId).child(userId).child(INVITE_ID_KEY);
         return setValueRx(ref, invitationId, "add user as list collaborator");
     }
 
     /** Returns a Completable that when subscribed to adds the list ID to the /lists node of the current user (so it shows up in the list of lists this user has access to).
      *  The accessType value can be either OWNER or WRITE. **/
-    public static Completable addListToUserLists(final String listId, final String userId, String accessType)
+    public Completable addListToUserLists(final String listId, final String userId, String accessType)
     {
         logMsg("Adding list %s to /users/%s/lists", listId, userId);
         final DatabaseReference ref = getUserListsRef(userId).child(listId);
@@ -384,7 +397,7 @@ public class DbHelper
      *    /users/<userid>/lists/<listid>
      *    /list_collaborators/<listid>/<userid>
      **/
-    public static Completable revokeAccessToList(final String listId, final String userId)
+    public Completable revokeAccessToList(final String listId, final String userId)
     {
         DatabaseReference userListsRef = getUserListsRef(userId).child(listId);
         DatabaseReference collaboratorsRef = getListCollaboratorsReference(listId).child(userId);
@@ -392,7 +405,7 @@ public class DbHelper
     }
 
     /** General purpose Completable wrapper to set the value at a specified location in the database. Starts async request and then Completes immediately. **/
-    public static Completable setValueRx(final DatabaseReference ref, final Object value, final String operationDescription)
+    public Completable setValueRx(final DatabaseReference ref, final Object value, final String operationDescription)
     {
         return setValueRx(ref, value, operationDescription, false);
     }
@@ -400,7 +413,7 @@ public class DbHelper
     /** General purpose Completable wrapper to set the value at a specified location in the database.
      *  If waitForCompletion is true, onComplete is only called after setValue() completed callback occurs.
      *  If waitForCompletion if false, onComplete is called immediately after setValue() is called. **/
-    public static Completable setValueRx(final DatabaseReference ref, final Object value, final String operationDescription, boolean waitForCompletion)
+    public Completable setValueRx(final DatabaseReference ref, final Object value, final String operationDescription, boolean waitForCompletion)
     {
         return Completable.create((CompletableEmitter emitter) ->
         {
@@ -423,7 +436,7 @@ public class DbHelper
     }
 
     /** Make async call to set the value at a specified location in the database, and return immediately. **/
-    public static void setValue(final DatabaseReference ref, final Object value, final String operationDescription)
+    public void setValue(final DatabaseReference ref, final Object value, final String operationDescription)
     {
         logMsg("setValue(%s) to '%s'", ref, value);
         ref.setValue(value, (DatabaseError databaseError, DatabaseReference databaseReference) ->
@@ -441,7 +454,7 @@ public class DbHelper
 
     /** Observer for a single result that will just pass the result to a callback when available.
      *  If an error occurs, logs the exception and raises a user message. **/
-    public static <T> SingleObserver<T> singleObserver(final DbCallback<T> callback)
+    public <T> SingleObserver<T> singleObserver(final DbCallback<T> callback)
     {
         return new SingleObserver<T>()
         {
@@ -460,13 +473,13 @@ public class DbHelper
             public void onError(Throwable ex)
             {
                 Logger.logException(getClass(), ex);
-                PineTaskApplication.raiseUserMsg(true, ex.getMessage());
+                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
             }
         };
     }
 
     /** Observer that will just pass the result to a callback when available. If an error occurs, logs the exception and raises a user message. **/
-    public static <T> Observer<T> genericObserver(final DbCallback<T> callback)
+    public <T> Observer<T> genericObserver(final DbCallback<T> callback)
     {
         return new Observer<T>()
         {
@@ -485,7 +498,7 @@ public class DbHelper
             public void onError(Throwable ex)
             {
                 Logger.logException(getClass(), ex);
-                PineTaskApplication.raiseUserMsg(true, ex.getMessage());
+                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
             }
 
             @Override
@@ -502,7 +515,7 @@ public class DbHelper
      *    /users/<userId>/lists/<listid> = "owner"
      *    /list_collaborators/<listid>/<userid> = "owner"
      **/
-    public static Completable createList(final String ownerId, String listName)
+    public Completable createList(final String ownerId, String listName)
     {
         Logger.logMsg(DbHelper.class, "Adding new list '%s' with owner %s", listName, ownerId);
         PineTaskList newList = new PineTaskList(null, listName, ownerId);
@@ -520,41 +533,41 @@ public class DbHelper
     }
 
     /** Returns a single that will emit the populated PineTaskList object for the list ID provided. **/
-    public static Single<PineTaskList> getPineTaskList(String listId)
+    public Single<PineTaskList> getPineTaskList(String listId)
     {
         return getItem(PineTaskList.class, getListInfoReference(listId), "get list info");
     }
 
     /** Looks up all collaborators for the list specified, and returns a new populated PineTaskListWithCollaborators object. **/
-    public static Single<PineTaskListWithCollaborators> getPineTaskListWithCollaborators(PineTaskList list)
+    public Single<PineTaskListWithCollaborators> getPineTaskListWithCollaborators(PineTaskList list)
     {
         return getListCollaborators(list.getId()).toList().map(collaboratorIds -> new PineTaskListWithCollaborators(list, collaboratorIds));
     }
 
     /** Returns an Observable that will emit any changes to the PineTaskList with the ID provided.  Caller must dispose Observable when no longer needed. **/
-    public static Observable<PineTaskList> subscribeListInfo(String listId)
+    public Observable<PineTaskList> subscribeListInfo(String listId)
     {
         return subscribeItem(PineTaskList.class, getListInfoReference(listId), "subscribe to list info");
     }
 
     /** Rename the specified list **/
-    public static Completable renameList(String listId, String newName)
+    public Completable renameList(String listId, String newName)
     {
         return setValueRx(getListNameReference(listId), newName, "rename list");
     }
 
-    private static void logMsg(String msg, Object...args)
+    private void logMsg(String msg, Object...args)
     {
         Logger.logMsg(DbHelper.class, msg, args);
     }
 
-    private static void logError(String msg, Object...args)
+    private void logError(String msg, Object...args)
     {
         Logger.logError(DbHelper.class, msg, args);
     }
 
     /** Returns an Observable that emits the list of keys at the database reference specified, and then completes. **/
-    public static Observable<String> getKeysAt(DatabaseReference ref, String operationDescription)
+    public Observable<String> getKeysAt(DatabaseReference ref, String operationDescription)
     {
         return Observable.create((ObservableEmitter<String> emitter) ->
             {
@@ -582,7 +595,7 @@ public class DbHelper
             });
     }
 
-    public static <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription)
+    public <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription)
     {
         return getItem(T, ref, operationDescription, null);
     }
@@ -590,7 +603,7 @@ public class DbHelper
     /** Returns a Single that emits the object at the specified database location, deserialized based on the objClass provided.
      *  If the value is null, error is emitted.
      **/
-    public static <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription, final T defaultValue)
+    public <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription, final T defaultValue)
     {
         return Single.create(new SingleOnSubscribe<T>()
         {
@@ -641,7 +654,7 @@ public class DbHelper
     /** Returns an Observable that emits the object at the specified database location, deserialized based on the type provided.
      *  Continues to emit items via onNext() whenever data at dbRef changes.  When the Observable is disposed, the ValueEventListener is disconnected.
      **/
-    public static <T> Observable<T> subscribeItem(final Class T, final DatabaseReference ref, final String operationDescription)
+    public <T> Observable<T> subscribeItem(final Class T, final DatabaseReference ref, final String operationDescription)
     {
         ObjectWrapper<ValueEventListener> eventListenerWrapper = new ObjectWrapper<>();
         ObjectWrapper<Boolean> dataReturnedWrapper = new ObjectWrapper<>(false);
@@ -696,7 +709,7 @@ public class DbHelper
         });
     }
 
-    public static class ObjectWrapper<T>
+    public class ObjectWrapper<T>
     {
         public T Item;
         public ObjectWrapper() { }
@@ -704,7 +717,7 @@ public class DbHelper
     }
 
     /** Returns a Completable that will perform updateChildren() on the database reference provided, using the values in the updates map. **/
-    public static Completable updateChildren(DatabaseReference ref, Map updates, String operationDescription)
+    public Completable updateChildren(DatabaseReference ref, Map updates, String operationDescription)
     {
         return Completable.create((CompletableEmitter emitter) ->
         {
@@ -716,7 +729,7 @@ public class DbHelper
         });
     }
 
-    public static Completable removeNode(DatabaseReference dbRef)
+    public Completable removeNode(DatabaseReference dbRef)
     {
         String operationDescription = "Remove node " + dbRef;
         return Completable.create(emitter ->
@@ -739,11 +752,11 @@ public class DbHelper
     }
 
     /** Emits a value indicating whether currently connected to the Firebase server. **/
-    public static Single<Boolean> isConnected()
+    public Single<Boolean> isConnected()
     {
         return Single.create(emitter ->
         {
-            DatabaseReference connectedRef = getDb().getReference(".info/connected");
+            DatabaseReference connectedRef = mDb.getReference(".info/connected");
             connectedRef.addListenerForSingleValueEvent(new ValueEventListener()
             {
                 @Override
@@ -763,7 +776,7 @@ public class DbHelper
     }
 
     /** Enumerate items at the specified database reference, and return each one deserialized as an item of the class specified. **/
-    public static <T> Observable<T> getItemsOfType(Class T, DatabaseReference dbRef)
+    public <T> Observable<T> getItemsOfType(Class T, DatabaseReference dbRef)
     {
         return Observable.create(new ObservableOnSubscribe<T>()
         {
@@ -805,7 +818,7 @@ public class DbHelper
      *  [X] Oranges
      *  [ ] Bread
      **/
-    public static Single<String> getListAsString(String listId)
+    public Single<String> getListAsString(String listId)
     {
         return getListName(listId)
                 .map(listName -> listName + ":")
@@ -821,29 +834,45 @@ public class DbHelper
     }
 
     /** Get version number of most recent startup message the specified user has read. **/
-    public static Single<Integer> getUserStartupMessageVersion(String userId)
+    public Single<Integer> getUserStartupMessageVersion(String userId)
     {
         return getItem(Integer.class, getUserStartupMessageVersionRef(userId), "get startup message version", -1).doOnSuccess(v -> logMsg("getUserStartupMessageVersion: %d", v));
     }
 
     /** Sets the version number of the last read startup message for the user specified. **/
-    public static void setUserStartupMessageVersion(String userId, int version)
+    public void setUserStartupMessageVersion(String userId, int version)
     {
         setValue(getUserStartupMessageVersionRef(userId), version, "set user startup message version");
     }
 
     /** Get startup message (text and version) **/
-    public static Single<StartupMessage> getStartupMessage()
+    public Single<StartupMessage> getStartupMessage()
     {
         Single<StartupMessage> source = getItem(StartupMessage.class, getStartupMessageRef(), "get startup message");
         return source.doOnSuccess(s -> { getStartupMessageRef().keepSynced(false); logMsg("getStartupMessage: %s", s); });
     }
 
     /** Emits the startup message to be read by the user, unless the user has already read the most recent version of the message. **/
-    public static Maybe<StartupMessage> getStartupMessageIfUnread(String userId)
+    public Maybe<StartupMessage> getStartupMessageIfUnread(String userId)
     {
         DatabaseReference refreshRef = getStartupMessageRef().child("refresh");
         return getStartupMessage().delay(1, TimeUnit.SECONDS).toCompletable().andThen(setValueRx(refreshRef, DateTime.now().getMillis(), "startup message refresh workaround", true))
                 .andThen(getUserStartupMessageVersion(userId)).flatMapMaybe(userVersion -> getStartupMessage().filter(startupMessage -> startupMessage.version>userVersion));
+    }
+
+    /** Accepts an invitation that was received to grant the current user access to the shared list by doing the following:
+     *  - Makes sure the invite exists (hasn't already been used)
+     *  - Adds the current user as a collaborator for the specified list so the user will have access to it.
+     *  - Deletes the invitation so it can't be used again.
+     *  - Adds the list ID to the current user's list of accessible lists.
+     *  - Looks up the list's name and returns it
+     **/
+    public Single<String> acceptInvite(String listId, String userId, String invitationId)
+    {
+        return verifyInviteExists(listId, invitationId)
+                .andThen(addUserAsCollaboratorToList(listId, invitationId, userId))
+                .andThen(deleteInvite(listId, invitationId))
+                .andThen(addListToUserLists(listId, userId, DbHelper.WRITE))
+                .andThen(getListName(listId));
     }
 }

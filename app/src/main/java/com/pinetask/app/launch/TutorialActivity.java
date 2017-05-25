@@ -10,10 +10,15 @@ import android.support.v4.content.ContextCompat;
 
 import com.github.paolorotolo.appintro.AppIntro;
 import com.pinetask.app.R;
+import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PrefsManager;
+
+import javax.inject.Inject;
 
 public class TutorialActivity extends AppIntro
 {
+    @Inject PrefsManager mPrefsManager;
+
     public static void launch(Context context)
     {
         Intent i = new Intent(context, TutorialActivity.class);
@@ -24,9 +29,9 @@ public class TutorialActivity extends AppIntro
     protected void onCreate(@Nullable Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        PrefsManager prefsManager = PrefsManager.getInstance(this);
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
 
-        if (! prefsManager.getTutorialCompleted())
+        if (! mPrefsManager.getTutorialCompleted())
         {
             // Tutorial is showing because it's the first launch: show the "Welcome to PineTask" slide.
             addSlide(TutorialImageAndTextFragment.newInstance(R.raw.welcome_to_pinetask, getString(R.string.welcome_title), getString(R.string.welcome_description)));

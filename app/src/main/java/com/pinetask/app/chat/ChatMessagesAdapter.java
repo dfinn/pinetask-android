@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.pinetask.app.R;
+import com.pinetask.app.common.PineTaskApplication;
+import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.Logger;
 
 import org.joda.time.DateTime;
@@ -16,14 +18,14 @@ import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.pinetask.app.db.DbHelper.getUserNameSingle;
-import static com.pinetask.app.db.DbHelper.singleObserver;
+import javax.inject.Inject;
 
 /** Adapter for RecyclerView that shows a list of chat messages. **/
 public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapter.ChatMessageViewHolder>
 {
     List<ChatMessage> mChatMessages = new ArrayList<>();
-    Context mContext;
+    @Inject PineTaskApplication mAppContext;
+    @Inject DbHelper mDbHelper;
 
     public static class ChatMessageViewHolder extends RecyclerView.ViewHolder
     {
@@ -36,9 +38,9 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         }
     }
 
-    public ChatMessagesAdapter(Context context)
+    public ChatMessagesAdapter()
     {
-        mContext = context;
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
     }
 
     public void addMessage(ChatMessage chatMessage)
@@ -73,7 +75,7 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         // Start async request to populate sender name
         if (chatMessage.getSenderId()!=null)
         {
-            getUserNameSingle(chatMessage.getSenderId()).subscribe(singleObserver((String userName)
+            mDbHelper.getUserNameSingle(chatMessage.getSenderId()).subscribe(mDbHelper.singleObserver((String userName)
                     -> holder.NameAndTimestampTextView.setText((userName != null ? userName : "?") + "\n" + timeAbbrevStr)));
         }
         else
@@ -99,15 +101,15 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         Duration duration = new Duration(timestamp, DateTime.now());
         if (duration.getStandardHours() > 72)
         {
-            return duration.getStandardDays() +  mContext.getString(R.string.days_abbreviation);
+            return duration.getStandardDays() +  mAppContext.getString(R.string.days_abbreviation);
         }
         else if (duration.getStandardHours() >= 1)
         {
-            return duration.getStandardHours() + mContext.getString(R.string.hours_abbreviation);
+            return duration.getStandardHours() + mAppContext.getString(R.string.hours_abbreviation);
         }
         else
         {
-            return duration.getStandardMinutes() + mContext.getString(R.string.minutes_abbreviation);
+            return duration.getStandardMinutes() + mAppContext.getString(R.string.minutes_abbreviation);
         }
     }
 

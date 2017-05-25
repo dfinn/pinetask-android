@@ -12,17 +12,19 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.pinetask.app.R;
+import com.pinetask.app.common.PineTaskApplication;
+import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.Logger;
 
 import java.util.List;
 
-import static com.pinetask.app.db.DbHelper.getUserNameSingle;
-import static com.pinetask.app.db.DbHelper.singleObserver;
+import javax.inject.Inject;
 
 public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemViewHolder>
 {
     List<PineTaskItem> mItems;
     ListItemsFragment mListItemsFragment;
+    @Inject DbHelper mDbHelper;
 
     // IDs for pop-up menu items
     public static int MENU_ITEM_DELETE = 0;
@@ -33,6 +35,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
     {
         mListItemsFragment = listItemsFragment;
         mItems = items;
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
     }
 
     @Override
@@ -131,7 +134,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
     /** Initiate async query to find out the name of the user with the specified username.  When query returns, populates the "claimed by" textview in the holder provided. **/
     private void populateClaimedBy(final ItemViewHolder holder, final String claimedBy)
     {
-        getUserNameSingle(claimedBy).subscribe(singleObserver((String data) -> holder.mClaimedByTextView.setText((data != null && data.length()>0) ? data.substring(0, 1) : "?")));
+        mDbHelper.getUserNameSingle(claimedBy).subscribe(mDbHelper.singleObserver((String data) -> holder.mClaimedByTextView.setText((data != null && data.length()>0) ? data.substring(0, 1) : "?")));
     }
 
     @Override

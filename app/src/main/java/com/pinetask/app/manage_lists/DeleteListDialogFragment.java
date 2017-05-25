@@ -61,7 +61,7 @@ public class DeleteListDialogFragment extends PineTaskDialogFragment
         super.onStart();
 
         // Make sure network connection is online. If not, show error message.
-        DbHelper.isConnected().observeOn(AndroidSchedulers.mainThread()).subscribe(isConnected -> {
+        mDbHelper.isConnected().observeOn(AndroidSchedulers.mainThread()).subscribe(isConnected -> {
             if (isConnected) showDeletePrompt();
             else showError(R.string.no_network_connection_try_again_later);
         }, ex -> {
@@ -82,7 +82,7 @@ public class DeleteListDialogFragment extends PineTaskDialogFragment
         final String listId = getArguments().getString(LIST_ID_KEY);
         final String listName = getArguments().getString(LIST_NAME_KEY);
         logMsg("Deleting list '%s' (%s)", listName, listId);
-        DbHelper.deleteList(listId).subscribe(activityObserver("delete list", () -> logMsg("Delete completed")));
+        mDbHelper.deleteList(listId).subscribe(activityObserver("delete list", () -> logMsg("Delete completed")));
         dismiss();
     }
 

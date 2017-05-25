@@ -8,26 +8,27 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.pinetask.app.common.PineTaskApplication;
+import com.pinetask.app.common.PineTaskException;
 import com.pinetask.app.main.MainActivity;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.R;
 import com.pinetask.common.Logger;
 
-import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
-
-import static com.pinetask.app.db.DbHelper.getUserNameSingle;
-import static com.pinetask.app.db.DbHelper.singleObserver;
 
 /** Adapter for the RecyclerView that displays members of a list. **/
 public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberViewHolder>
 {
     List<MemberInfo> mMembers = new ArrayList<>();
     MainActivity mActivity;
+    @Inject PrefsManager mPrefsManager;
 
     class MemberViewHolder extends RecyclerView.ViewHolder
     {
@@ -42,7 +43,7 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
             {
                 MemberInfo memberInfo = mMembers.get(getAdapterPosition());
                 String userId = memberInfo.UserId;
-                String listId = PrefsManager.getInstance(mActivity).getCurrentListId();
+                String listId = mPrefsManager.getCurrentListId();
                 RevokeListAccessDialogFragment dialog = RevokeListAccessDialogFragment.newInstance(listId, userId);
                 mActivity.getSupportFragmentManager().beginTransaction().add(dialog, RevokeListAccessDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
             });
@@ -52,6 +53,7 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
     public MembersAdapter(MainActivity activity)
     {
         mActivity = activity;
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
     }
 
     @Override

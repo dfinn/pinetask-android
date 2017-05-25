@@ -19,10 +19,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.reactivex.Single;
 
-import static com.pinetask.app.db.DbHelper.getListName;
-import static com.pinetask.app.db.DbHelper.getUserNameSingle;
-import static com.pinetask.app.db.DbHelper.singleObserver;
-
 /** Dialog which prompts the user to confirm deleting a member from a list.  If they choose yes, initiates delete request. **/
 public class RevokeListAccessDialogFragment extends PineTaskDialogFragment
 {
@@ -55,14 +51,14 @@ public class RevokeListAccessDialogFragment extends PineTaskDialogFragment
         final String userId = getArguments().getString(USER_ID_KEY);
 
         // Look up list name and username, and then populate dialog text.
-        Single.zip(getListName(listId), getUserNameSingle(userId), new StringPairer()).subscribe(singleObserver((StringPair data) ->
+        Single.zip(mDbHelper.getListName(listId), mDbHelper.getUserNameSingle(userId), new StringPairer()).subscribe(mDbHelper.singleObserver((StringPair data) ->
                     {
                         mTitleTextView.setText(String.format(getString(R.string.really_revoke_access_to_list_x_for_user_y), data.String1, data.String2));
                     }));
 
         mOkButton.setOnClickListener((View __) ->
         {
-            DbHelper.revokeAccessToList(listId, userId).subscribe(activityObserver("revoke access to list " + listId));
+            mDbHelper.revokeAccessToList(listId, userId).subscribe(activityObserver("revoke access to list " + listId));
             dismiss();
         });
 

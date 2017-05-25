@@ -66,7 +66,7 @@ public class StartupMessageDialogFragment extends PineTaskDialogFragment
             String userId = getArguments().getString(USER_ID_KEY);
             int version = getArguments().getInt(VERSION_KEY);
             logMsg("Updating user %s last read startup message to version %d", userId, version);
-            DbHelper.setUserStartupMessageVersion(userId, version);
+            mDbHelper.setUserStartupMessageVersion(userId, version);
         }
         dismiss();
     }

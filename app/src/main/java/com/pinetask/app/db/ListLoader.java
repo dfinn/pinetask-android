@@ -11,12 +11,15 @@ import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.LoggingBase;
+import com.squareup.otto.Bus;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 /** Helper class to retrieve all lists owned by a specified user.  As each list is loaded, a user-provided callback is invoked.
  *  The user must call shutdown() when they no longer wish to receive callbacks about new lists being added. **/
@@ -37,7 +40,6 @@ public class ListLoader extends LoggingBase
         void onListAdded(PineTaskList list);
     }
 
-    private FirebaseDatabase mDatabase;
     private DatabaseReference mListsRef;
     private String mUserId;
     private ListLoadCallback mCallback;
@@ -60,9 +62,12 @@ public class ListLoader extends LoggingBase
      *  add each one to this list as its info is populated.  Then when the expected number of lists have been populated, the caller is provided this list. **/
     private List<PineTaskList> mLists;
 
+    @Inject Bus mBus;
+    @Inject FirebaseDatabase mDatabase;
+
     public ListLoader(String userId, ListLoadCallback callback)
     {
-        mDatabase = FirebaseDatabase.getInstance();
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
         mUserId = userId;
         mCallback = callback;
         mListsRef = mDatabase.getReference(DbHelper.USERS_NODE_NAME).child(mUserId).child(DbHelper.LISTS_NODE_NAME);
@@ -177,7 +182,7 @@ public class ListLoader extends LoggingBase
                 {
                     logMsg("onChildRemoved: %s -- calling onListDeleted callback and posting ListDeletedEvent", listId);
                     mCallback.onListDeleted(dataSnapshot.getKey());
-                    PineTaskApplication.getEventBus().post(new ListDeletedEvent(listId));
+                    mBus.post(new ListDeletedEvent(listId));
                 }
                 else
                 {

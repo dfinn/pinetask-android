@@ -43,34 +43,20 @@ public class PurgeCompletedItemsDialogFragment extends PineTaskDialogFragment
         ButterKnife.bind(this, view);
         final String listId = getArguments().getString(LIST_ID_KEY);
 
-        DbHelper.getListName(listId).subscribe(DbHelper.singleObserver(new DbCallback<String>()
-        {
-            @Override
-            public void onResult(String listName)
-            {
-                mTitleTextView.setText(String.format(getString(R.string.really_purge_completed_items_in_list_x), listName));
-            }
-        }));
+        mDbHelper.getListName(listId).subscribe(mDbHelper.singleObserver(listName ->
+                mTitleTextView.setText(String.format(getString(R.string.really_purge_completed_items_in_list_x), listName))));
 
         mOkButton.setText(R.string.delete);
-        mOkButton.setOnClickListener(new View.OnClickListener()
+        mOkButton.setOnClickListener(__ ->
         {
-            @Override
-            public void onClick(View view)
-            {
-                DbHelper.purgeCompletedItems(listId);
-                dismiss();
-            }
+            mDbHelper.purgeCompletedItems(listId);
+            dismiss();
         });
 
-        mCancelButton.setOnClickListener(new View.OnClickListener()
+        mCancelButton.setOnClickListener(__ ->
         {
-            @Override
-            public void onClick(View view)
-            {
-                logMsg("Purge completed items cancelled");
-                dismiss();
-            }
+            logMsg("Purge completed items cancelled");
+            dismiss();
         });
 
         // Prevent showing blank title area at the top of dialog (only affects older API versions)

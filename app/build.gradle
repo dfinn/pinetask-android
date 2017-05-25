@@ -98,6 +98,10 @@ dependencies {
     // Retrolambda for lambda support
     retrolambdaConfig 'net.orfjackal.retrolambda:retrolambda:2.5.1'
 
+    // Dagger2 for dependency injection
+    compile 'com.google.dagger:dagger:2.10'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.10'
+
     // Module dependencies
     compile project(':auth')
     compile project(':common')

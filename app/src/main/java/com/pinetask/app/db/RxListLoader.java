@@ -3,6 +3,7 @@ package com.pinetask.app.db;
 import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.AddedOrDeletedEvent;
 import com.pinetask.app.common.DeletedEvent;
+import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.common.LoggingBase;
@@ -11,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -30,16 +33,18 @@ public class RxListLoader extends LoggingBase
     Disposable mAddedOrDeletedSubscription;
     List<Disposable> mListInfoSubscriptions = new ArrayList<>();
     List<PineTaskListWithCollaborators> mLists;
+    @Inject DbHelper mDbHelper;
 
     public RxListLoader(String userId, RxListLoaderCallbacks callback)
     {
         mUserId = userId;
         mCallback = callback;
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
 
         // Load complete set of user's lists
-        DbHelper.getListIdsForUser(userId)
-                .flatMapSingle(DbHelper::getPineTaskList)
-                .flatMapSingle(DbHelper::getPineTaskListWithCollaborators)
+        mDbHelper.getListIdsForUser(userId)
+                .flatMapSingle(mDbHelper::getPineTaskList)
+                .flatMapSingle(mDbHelper::getPineTaskListWithCollaborators)
                 .toSortedList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onLoadCompleted, ex ->
@@ -68,13 +73,13 @@ public class RxListLoader extends LoggingBase
         }
 
         // Build stream that will emit both list added / list deleted events.
-        ConnectableObservable<AddedOrDeletedEvent<String>> connection = DbHelper.getListAddedOrDeletedEvents(mUserId).observeOn(AndroidSchedulers.mainThread()).publish();
+        ConnectableObservable<AddedOrDeletedEvent<String>> connection = mDbHelper.getListAddedOrDeletedEvents(mUserId).observeOn(AndroidSchedulers.mainThread()).publish();
 
         // Subscribe to stream filtered to only AddedEvents.
         connection.filter(event -> event instanceof AddedEvent)
                 .map(event -> event.Item)
-                .flatMapSingle(DbHelper::getPineTaskList)
-                .flatMapSingle(DbHelper::getPineTaskListWithCollaborators)
+                .flatMapSingle(mDbHelper::getPineTaskList)
+                .flatMapSingle(mDbHelper::getPineTaskListWithCollaborators)
                 .subscribe(this::onListAdded, mCallback::onError);
 
         // Subscribe to stream filtered to only DeletedEvents.
@@ -148,8 +153,8 @@ public class RxListLoader extends LoggingBase
     private void subscribeToListInfoChanges(String listId)
     {
         logMsg("subscribeToListInfoChanges for list %s", listId);
-        Disposable disposable = DbHelper.subscribeListInfo(listId)
-                .flatMapSingle(DbHelper::getPineTaskListWithCollaborators)
+        Disposable disposable = mDbHelper.subscribeListInfo(listId)
+                .flatMapSingle(mDbHelper::getPineTaskListWithCollaborators)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onListUpdated, mCallback::onError);
         mListInfoSubscriptions.add(disposable);

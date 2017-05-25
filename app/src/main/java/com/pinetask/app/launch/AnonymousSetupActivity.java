@@ -13,9 +13,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-import static com.pinetask.app.db.DbHelper.setIsAnonymous;
-import static com.pinetask.app.db.DbHelper.setUserName;
-
 /** Prompts user for their name, and then creates an anonymous Firebase account. **/
 public class AnonymousSetupActivity extends PineTaskActivity
 {
@@ -37,7 +34,7 @@ public class AnonymousSetupActivity extends PineTaskActivity
 
         /** Start async process to setup anonymous account. When done, set username for the new FirebaseUser, and set the is_anonymous flag to true. **/
         AnonymousAccountCreator.createAnonymousAccount()
-            .flatMapCompletable((FirebaseUser user) -> setUserName(user.getUid(), name).andThen(setIsAnonymous(user.getUid(), true)))
+            .flatMapCompletable((FirebaseUser user) -> mDbHelper.setUserName(user.getUid(), name).andThen(mDbHelper.setIsAnonymous(user.getUid(), true)))
             .subscribe(activityObserver("create anonymous user", () -> setResultAndFinish(RESULT_OK)));
     }
 

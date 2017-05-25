@@ -56,16 +56,14 @@ import com.squareup.otto.Subscribe;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-import static com.pinetask.app.db.DbHelper.getUserNameObservable;
-import static com.pinetask.app.db.DbHelper.getUserNameSingle;
-
 public class MainActivity extends PineTaskActivity implements ViewPager.OnPageChangeListener
 {
-    FirebaseDatabase mDatabase;
     GoogleApiClient mGoogleApiClient;
     ListLoader mListLoader;
     String mUserId;
@@ -113,11 +111,12 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         setContentView(R.layout.main_activity);
         ButterKnife.bind(this);
 
+        // Inject dependencies
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
+
         // Register event bus
-        PineTaskApplication application = (PineTaskApplication) getApplication();
-        Bus bus = application.getEventBus();
         logMsg("Registering event bus");
-        bus.register(this);
+        mBus.register(this);
 
         // Create an auto-managed GoogleApiClient with access to App Invites.
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -127,7 +126,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         // Create database connection
         logMsg("onCreate: creating database connection");
-        mDatabase = FirebaseDatabase.getInstance();
 
         // Get current user's ID
         FirebaseAuth auth = FirebaseAuth.getInstance();
@@ -146,7 +144,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             Crashlytics.setUserIdentifier(mUserId);
 
             // Check for and process any list invites that have been received.
-            mInviteManager = new InviteManager(MainActivity.this, mGoogleApiClient, mDatabase, mUserId);
+            mInviteManager = new InviteManager(MainActivity.this, mGoogleApiClient, mUserId);
             mInviteManager.checkForInvites();
 
             // Set the Toolbar as the app bar for the activity.  Hide the default display of title text, since we show a custom spinner in the Toolbar.
@@ -163,7 +161,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             initListsSpinner();
 
             // Show username in side navigation drawer
-            observe(getUserNameObservable(mUserId), (String name) ->  mUserNameTextView.setText(name));
+            observe(mDbHelper.getUserNameObservable(mUserId), (String name) ->  mUserNameTextView.setText(name));
 
             // Show startup message if it's a newer version than the user has previously seen.
             showStartupMessage();
@@ -253,9 +251,8 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         // Unregister event bus
         PineTaskApplication application = (PineTaskApplication)getApplication();
-        Bus bus = application.getEventBus();
         logMsg("UnRegistering event bus");
-        bus.unregister(this);
+        mBus.unregister(this);
     }
 
     @Override
@@ -330,7 +327,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             case R.id.exportList:
                 if (currentListId != null)
                 {
-                    DbHelper.getListAsString(currentListId)
+                    mDbHelper.getListAsString(currentListId)
                             .subscribe(strList ->
                             {
                                 Intent sendIntent = new Intent();
@@ -518,7 +515,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     {
         if (mPrefsManager.getIsFirstLaunch()) return;
 
-        DbHelper.getStartupMessageIfUnread(mUserId)
+        mDbHelper.getStartupMessageIfUnread(mUserId)
                 .subscribe(startupMessage ->
                 {
                     if (mActivityActive)
@@ -731,9 +728,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         }
 
         // Notify eventbus of selected list (ListItemsFragment will display the new list)
-        PineTaskApplication application = (PineTaskApplication) getApplication();
-        Bus bus = application.getEventBus();
-        bus.post(new ListSelectedEvent(newListId));
+        mBus.post(new ListSelectedEvent(newListId));
     }
 
     /** Called by the event bus when a UserMessage has been posted. **/
@@ -772,7 +767,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         if (mActiveMenuItem != R.id.chatMenuItem)
         {
             final String msg = chatMessage.getMessage();
-            getUserNameSingle(chatMessage.getSenderId()).subscribe(singleObserver((String name) -> Snackbar.make(getWindow().getDecorView(), name + ": " + msg, Snackbar.LENGTH_LONG).show()));
+            mDbHelper.getUserNameSingle(chatMessage.getSenderId()).subscribe(singleObserver((String name) -> Snackbar.make(getWindow().getDecorView(), name + ": " + msg, Snackbar.LENGTH_LONG).show()));
             mNumUnreadChatMessages++;
             updateUnreadChatMessageCount();
         }

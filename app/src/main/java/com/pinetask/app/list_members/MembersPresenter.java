@@ -12,30 +12,29 @@ import com.pinetask.common.LoggingBase;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 
+import javax.inject.Inject;
+
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
-
-import static com.pinetask.app.db.DbHelper.getListOwner;
-import static com.pinetask.app.db.DbHelper.getUserNameSingle;
-import static com.pinetask.app.db.DbHelper.singleObserver;
 
 /** Presenter for the MembersFragment. **/
 public class MembersPresenter extends LoggingBase implements MembersContract.IMembersPresenter
 {
     private MembersContract.IMembersView mView;
-    private Bus mEventBus;
-    private PrefsManager mPrefsManager;
     private String mCurrentDisplayedListId;
     private String mCurrentUserId;
     private Disposable mSubscription;
+
+    @Inject PrefsManager mPrefsManager;
+    @Inject Bus mEventBus;
+    @Inject DbHelper mDbHelper;
 
     @Override
     public void attachView(MembersContract.IMembersView view, String currentUserId)
     {
         mCurrentUserId = currentUserId;
         mView = view;
-        mPrefsManager = PrefsManager.getInstance(PineTaskApplication.getInstance());
-        mEventBus = PineTaskApplication.getEventBus();
+        PineTaskApplication.getInstance().getAppComponent().inject(this);
         mEventBus.register(this);
         requestLoadListMembers(mPrefsManager.getCurrentListId());
     }
@@ -100,7 +99,7 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
     private void getListOwnerAndSubscribeToMemberAddedOrDeletedEvents(String listId)
     {
         // Get list owner, and show the "Add" button if it's the current user.
-        getListOwner(listId).subscribe(singleObserver(ownerId ->
+        mDbHelper.getListOwner(listId).subscribe(mDbHelper.singleObserver(ownerId ->
         {
             // If list has changed, abort loading list members.
             if (! listId.equalsIgnoreCase(mCurrentDisplayedListId))
@@ -125,7 +124,7 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
      *  the view (if still attached) to add or remove the member from the displayed list. **/
     private Disposable subscribeToMemberAddedDeletedEvents(String listId, String ownerId)
     {
-        return DbHelper.getMembersAddedOrDeletedEvents(listId)
+        return mDbHelper.getMembersAddedOrDeletedEvents(listId)
                 .flatMapSingle(addedOrDeletedEvent -> getMemberInfoForUserId(addedOrDeletedEvent, mCurrentUserId, ownerId))
                 .subscribe(memberAddedOrDeletedevent ->
                 {
@@ -152,7 +151,7 @@ public class MembersPresenter extends LoggingBase implements MembersContract.IMe
     private Single<AddedOrDeletedEvent<MemberInfo>> getMemberInfoForUserId(AddedOrDeletedEvent<String> userAddedOrDeletedEvent, String currentUserId, String currentListOwnerId)
     {
         String userId = userAddedOrDeletedEvent.Item;
-        return getUserNameSingle(userId).map(userName ->
+        return mDbHelper.getUserNameSingle(userId).map(userName ->
         {
             // The member can only be deleted if the current user is the list owner.  Owner can never be deleted.
             boolean canBeDeleted = (currentListOwnerId.equals(currentUserId)) && (!userId.equals(currentListOwnerId));

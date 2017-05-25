@@ -86,7 +86,7 @@ public class AddOrRenameListDialogFragment extends PineTaskDialogFragment
         super.onStart();
 
         // Make sure network connection is online. If not, show error message.
-        DbHelper.isConnected().observeOn(AndroidSchedulers.mainThread()).subscribe(isConnected -> {
+        mDbHelper.isConnected().observeOn(AndroidSchedulers.mainThread()).subscribe(isConnected -> {
             if (isConnected) showCreateOrRenamePrompt();
             else showError(R.string.no_network_connection_try_again_later);
         }, ex -> {
@@ -111,12 +111,12 @@ public class AddOrRenameListDialogFragment extends PineTaskDialogFragment
         {
             // Renaming an existing list.
             logMsg("Renaming list '%s' to '%s", oldName, newName);
-            DbHelper.renameList(listId, newName).subscribe(activityObserver("rename list", () -> logMsg("Rename list completed")));
+            mDbHelper.renameList(listId, newName).subscribe(activityObserver("rename list", () -> logMsg("Rename list completed")));
         }
         else
         {
             // Add new list
-            DbHelper.createList(userId, newName).subscribe(activityObserver("create list", () -> logMsg("Create list completed")));
+            mDbHelper.createList(userId, newName).subscribe(activityObserver("create list", () -> logMsg("Create list completed")));
         }
         dismiss();
     }

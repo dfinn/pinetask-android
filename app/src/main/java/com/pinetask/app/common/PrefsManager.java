@@ -1,28 +1,23 @@
 package com.pinetask.app.common;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import static android.content.Context.MODE_PRIVATE;
 
 /** Helper class for items stored in shared preferences. **/
+@Singleton
 public class PrefsManager
 {
-    private static String PREFS_NAME = "PineTaskPrefs";
-    private static PrefsManager mInstance;
+    private final String PREFS_NAME = "PineTaskPrefs";
     private SharedPreferences mSharedPreferences;
 
-    /** Return the singleton instance of PrefsManager for getting/setting application settings. **/
-    public static synchronized PrefsManager getInstance(Context context)
-    {
-        if (mInstance == null)
-        {
-            mInstance = new PrefsManager(context);
-        }
-        return mInstance;
-    }
-
-    public PrefsManager(Context context)
+    @Inject
+    public PrefsManager(PineTaskApplication context)
     {
         mSharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
     }

@@ -27,6 +27,8 @@ import com.pinetask.app.db.StatefulChildListener;
 import com.pinetask.app.db.DbHelper;
 import com.squareup.otto.Subscribe;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -34,7 +36,6 @@ import butterknife.OnClick;
 /** Fragment for the "chat" tab: shows chat messages for the currently selected list. **/
 public class ChatFragment extends PineTaskFragment
 {
-    FirebaseDatabase mDatabase;
     DatabaseReference mChatMessagesRef;
     ChatMessagesAdapter mChatMessagesAdapter;
     StatefulChildListener mChatMessagesListener;
@@ -65,9 +66,8 @@ public class ChatFragment extends PineTaskFragment
         ButterKnife.bind(this, view);
 
         // Initialize RecyclerView that will show chat messages.
-        mDatabase = FirebaseDatabase.getInstance();
         mUserId = getArguments().getString(USER_ID_KEY);
-        mChatMessagesAdapter = new ChatMessagesAdapter(getActivity());
+        mChatMessagesAdapter = new ChatMessagesAdapter();
         mChatRecyclerView.setAdapter(mChatMessagesAdapter);
         mChatRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 

@@ -18,9 +18,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-import static com.pinetask.app.db.DbHelper.setIsAnonymous;
-import static com.pinetask.app.db.DbHelper.setUserName;
-
 /** Offers the user two choices:
  *  - Try PineTask without logging in: perform anonymous Firebase authentication process to make a temp account.
  *  - Sign in / sign up: launch Firebase-UI auth process to log in with existing or new account.
@@ -94,7 +91,7 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
                 FirebaseAuth auth = FirebaseAuth.getInstance();
                 FirebaseUser user = auth.getCurrentUser();
                 logMsg("createNewUser: FirebaseUser is: uid=%s, name=%s, email=%s, photoUri=%s", user.getUid(), user.getDisplayName(), user.getEmail(), user.getPhotoUrl());
-                setUserName(user.getUid(), user.getDisplayName()).andThen(setIsAnonymous(user.getUid(), false)).subscribe(activityObserver("setup new user", ()->
+                mDbHelper.setUserName(user.getUid(), user.getDisplayName()).andThen(mDbHelper.setIsAnonymous(user.getUid(), false)).subscribe(activityObserver("setup new user", ()->
                 {
                     MainActivity.launch(SignupOrAnonymousLoginActivity.this);
                     finish();

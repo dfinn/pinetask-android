@@ -62,7 +62,7 @@ public class SettingsActivity extends PineTaskActivity
 
         // Lookup username in database and perform UI binding
         String userId = getIntent().getStringExtra(USER_ID_KEY);
-        DbHelper.getUserNameSingle(userId).subscribe(DbHelper.singleObserver((String userName) -> {
+        mDbHelper.getUserNameSingle(userId).subscribe(mDbHelper.singleObserver((String userName) -> {
             mUser = new PineTaskUser(userId, userName);
             mBinding.setUser(mUser);
             mNameEditText.setEnabled(true);
@@ -70,7 +70,7 @@ public class SettingsActivity extends PineTaskActivity
 
         // If user has not yet signed up for an account, show the layout with explanation text and a "Sign up / Login" button.
         mAnonymousLayout.setVisibility(View.GONE);
-        DbHelper.getIsAnonymous(userId).subscribe(DbHelper.singleObserver((Boolean isAnonymous) ->
+        mDbHelper.getIsAnonymous(userId).subscribe(mDbHelper.singleObserver((Boolean isAnonymous) ->
         {
             if (isAnonymous) mAnonymousLayout.setVisibility(View.VISIBLE);
         }));
@@ -94,7 +94,7 @@ public class SettingsActivity extends PineTaskActivity
             {
                 logMsg("onActivityResult: Firebase auth returned successfully.  Removing 'anonymous' account flag.");
                 String userId = getIntent().getStringExtra(USER_ID_KEY);
-                DbHelper.setIsAnonymous(userId, false).subscribe(activityObserver("remove anonymous status"));
+                mDbHelper.setIsAnonymous(userId, false).subscribe(activityObserver("remove anonymous status"));
             }
             else
             {
@@ -110,7 +110,7 @@ public class SettingsActivity extends PineTaskActivity
         if (mUser != null)
         {
             logMsg("Saving changes (username=%s)", mUser.getUserName());
-            DbHelper.setUserName(mUser.getUserId(), mUser.getUserName()).subscribe(activityObserver("change username"));
+            mDbHelper.setUserName(mUser.getUserId(), mUser.getUserName()).subscribe(activityObserver("change username"));
         }
     }
 
