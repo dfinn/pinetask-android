@@ -1,5 +1,6 @@
 package com.pinetask.app.common;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -86,5 +87,15 @@ public class PineTaskFragment extends DialogFragment
     {
         super.onStart();
         logMsg("onStart");
+    }
+
+    public void showUserMessage(boolean finishActivity, String message, Object... args)
+    {
+        Activity activity = getActivity();
+        if (activity != null && activity instanceof PineTaskActivity)
+        {
+            PineTaskActivity pineTaskActivity = (PineTaskActivity) activity;
+            pineTaskActivity.showUserMessage(finishActivity, message, args);
+        }
     }
 }

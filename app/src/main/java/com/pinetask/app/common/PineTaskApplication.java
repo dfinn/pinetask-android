@@ -19,6 +19,12 @@ public class PineTaskApplication extends MultiDexApplication
     AppComponent mAppComponent;
     public AppComponent getAppComponent() { return mAppComponent; }
 
+    /** Dagger2 component for injection of user-scoped dependencies (Main Activity, etc) **/
+    UserComponent mUserComponent;
+    public void createUserComponent(String userId) { mAppComponent.userComponent(new UserModule(userId)); }
+    public UserComponent getUserComponent() { return mUserComponent; }
+    public void releaseUserComponent() { mUserComponent = null; }
+
     @Inject Bus mEventBus;
 
     static PineTaskApplication mApplicationInstance;
@@ -86,20 +92,6 @@ public class PineTaskApplication extends MultiDexApplication
             logError("RxJava global uncaught exception occured:");
             logException(ex);
         });
-    }
-
-    /** Helper method to raise a info/error message that will be displayed to the user. **/
-    public void raiseUserMsg(boolean isError, String msg, Object... args)
-    {
-        mEventBus.post(new UserMessage(isError, msg, args));
-    }
-
-    /** Helper method to raise a info/error message that will be displayed to the user. **/
-    public void raiseUserMsg(boolean isError, int stringResId, Object... args)
-    {
-        String str = getString(stringResId);
-        String formatted = String.format(str, args);
-        mEventBus.post(new UserMessage(isError, formatted));
     }
 
     protected void logMsg(String msg, Object...args)

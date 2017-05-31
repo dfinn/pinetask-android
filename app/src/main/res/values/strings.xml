@@ -71,7 +71,7 @@
     <string name="error_loading_startup_message">Error loading startup message.</string>
     <string name="error_getting_username">Error looking up username.</string>
     <string name="error_getting_list_name">Error looking up list name.</string>
-    <string name="error_getting_completed_items">Error getting list of completed items.</string>
+    <string name="error_purging_completed_items">Error purging completed items.</string>
     <string name="error_sending_invite">Error sending invite.</string>
     <string name="error_no_current_list">Error: no current list.</string>
     <string name="error_exporting_list_x">Error exporting list: %1$s</string>

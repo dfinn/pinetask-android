@@ -25,14 +25,18 @@
             android:theme="@style/PineTaskToolbarStyle"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
-            <Spinner
-                android:id="@+id/listSpinner"
+            <TextView
+                android:id="@+id/listNameTextView"
+                style="@style/Widget.AppCompat.Spinner.Underlined"
                 android:layout_width="250dp"
+                android:textSize="20dp"
+                android:paddingBottom="12dp"
                 android:visibility="visible"
-                android:spinnerMode="dialog"
-                android:backgroundTint="@color/white"
-                android:foregroundTint="@color/white"
-                android:layout_height="@dimen/icon_size"/>
+                android:textColor="@color/white"
+                android:ellipsize="end"
+                android:lines="1"
+                android:text="Grocery Shopping"
+                android:layout_height="wrap_content"/>
 
         </android.support.v7.widget.Toolbar>
 

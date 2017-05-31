@@ -75,8 +75,14 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         // Start async request to populate sender name
         if (chatMessage.getSenderId()!=null)
         {
-            mDbHelper.getUserNameSingle(chatMessage.getSenderId()).subscribe(mDbHelper.singleObserver((String userName)
-                    -> holder.NameAndTimestampTextView.setText((userName != null ? userName : "?") + "\n" + timeAbbrevStr)));
+            mDbHelper.getUserNameSingle(chatMessage.getSenderId()).subscribe(userName ->
+            {
+                holder.NameAndTimestampTextView.setText((userName != null ? userName : "?") + "\n" + timeAbbrevStr);
+            }, ex ->
+            {
+                Logger.logMsg(getClass(), "Error getting username");
+                Logger.logException(getClass(), ex);
+            });
         }
         else
         {

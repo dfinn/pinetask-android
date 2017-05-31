@@ -69,42 +69,6 @@ public abstract class PineTaskActivity extends AppCompatActivity
         logMsg("onDestroy returning");
     }
 
-    /** Helper method to subscribe to the Observable provided, and invoke the action specified when onNext() is called.
-     *  If onError() is called, the exception is logged and the message is displayed to the user.
-     *  When subscribed to, store the Disposable in the mActiveDisposables list.  All of these disposables will be disposed when the activity is destroyed. **/
-    protected <T> void observe(Observable<T> observable, DbCallback<T> action)
-    {
-        observable.subscribe(new Observer<T>()
-        {
-            @Override
-            public void onSubscribe(Disposable d)
-            {
-                synchronized (mActiveDisposables)
-                {
-                    mActiveDisposables.add(d);
-                    logMsg("observe(Observable): Added disposable to list, size now %d", mActiveDisposables.size());
-                }
-            }
-
-            @Override
-            public void onNext(T o)
-            {
-                action.onResult(o);
-            }
-
-            @Override
-            public void onError(Throwable ex)
-            {
-                Logger.logException(getClass(), ex);
-                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
-            }
-
-            @Override
-            public void onComplete()
-            {
-            }
-        });
-    }
 
     protected CompletableObserver activityObserver(String operationDescription)
     {
@@ -142,7 +106,7 @@ public abstract class PineTaskActivity extends AppCompatActivity
                 PineTaskApplication.getInstance().endActiveTask();
                 logError("Error in operation '%s'", operationDescription);
                 logException(ex);
-                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
+                showUserMessage(false, ex.getMessage());
             }
         };
     }
@@ -172,7 +136,7 @@ public abstract class PineTaskActivity extends AppCompatActivity
             {
                 PineTaskApplication.getInstance().endActiveTask();
                 logException(ex);
-                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
+                showUserMessage(false, ex.getMessage());
             }
         };
     }
@@ -198,17 +162,13 @@ public abstract class PineTaskActivity extends AppCompatActivity
         Logger.logError(getClass(), msg, args);
     }
 
-    /** Shows the message specified to the user.  If isError is true, the text will be bold and red.
-     *  When the message is shown, it hides the items list and chat layout.
-     *  An "OK" button shows below the text, and when clicked, it hides the error layout and shows the items list and chat layout again.
-     **/
-    public void showUserMessage(boolean isError, String message, Object... args)
+    public void showUserMessage(boolean finishActivity, String message, Object... args)
     {
         if (mActivityActive)
         {
             String text = String.format(message, args);
             logMsg("Showing user message: %s", text.replace("%", "%%"));
-            ErrorDialogFragment dialog = ErrorDialogFragment.newInstance(text);
+            ErrorDialogFragment dialog = ErrorDialogFragment.newInstance(text, finishActivity);
             getSupportFragmentManager().beginTransaction().add(dialog, ErrorDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
         }
     }

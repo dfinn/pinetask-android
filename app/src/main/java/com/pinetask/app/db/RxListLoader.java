@@ -35,19 +35,26 @@ public class RxListLoader extends LoggingBase
     List<PineTaskListWithCollaborators> mLists;
     @Inject DbHelper mDbHelper;
 
+    /** Load all PineTaskLists that the user has access to, and then invoke callback::onListsLoaded().
+     * Then, subscribe to rename/add/delete events - caller must then invoke shutdown() when no longer needed. **/
     public RxListLoader(String userId, RxListLoaderCallbacks callback)
     {
         mUserId = userId;
-        mCallback = callback;
         PineTaskApplication.getInstance().getAppComponent().inject(this);
+        mCallback = callback;
 
-        // Load complete set of user's lists
         mDbHelper.getListIdsForUser(userId)
                 .flatMapSingle(mDbHelper::getPineTaskList)
                 .flatMapSingle(mDbHelper::getPineTaskListWithCollaborators)
                 .toSortedList()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onLoadCompleted, ex ->
+                .subscribe(lists ->
+                {
+                    logMsg("Finished load of %d lists", lists.size());
+                    mLists = lists;
+                    mCallback.onListsLoaded(lists);
+                    subscribeToChanges(lists);
+                }, ex ->
                 {
                     logError("Error loading lists");
                     logException(ex);
@@ -61,12 +68,10 @@ public class RxListLoader extends LoggingBase
         return mLists;
     }
 
-    private void onLoadCompleted(List<PineTaskListWithCollaborators> lists)
+    /** Set up subscription to list renamed/added/deleted events.  Caller is responsible to call shutdown() when subscription no longer needed. **/
+    private void subscribeToChanges(List<PineTaskListWithCollaborators> lists)
     {
-        logMsg("Finished load of %d lists", lists.size());
-        mLists = lists;
-        mCallback.onListsLoaded(lists);
-
+        /** Subscribe to changes when a list is renamed. **/
         for (PineTaskListWithCollaborators list : lists)
         {
             subscribeToListInfoChanges(list.getKey());

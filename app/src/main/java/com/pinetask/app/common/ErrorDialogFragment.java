@@ -19,15 +19,17 @@ import butterknife.OnClick;
 public class ErrorDialogFragment extends PineTaskDialogFragment
 {
     public static String MESSAGE_KEY = "Message";
+    public static String FINISH_ACTIVITY_KEY = "FinishActivity";
 
     @BindView(R.id.titleTextView) TextView mTitleTextView;
     @BindView(R.id.okButton) Button mOkButton;
     @BindView(R.id.cancelButton) Button mCancelButton;
 
-    public static ErrorDialogFragment newInstance(String message)
+    public static ErrorDialogFragment newInstance(String message, boolean finishActivity)
     {
         Bundle args = new Bundle();
         args.putString(MESSAGE_KEY, message);
+        args.putBoolean(FINISH_ACTIVITY_KEY, finishActivity);
         ErrorDialogFragment dialog = new ErrorDialogFragment();
         dialog.setArguments(args);
         return dialog;
@@ -53,5 +55,6 @@ public class ErrorDialogFragment extends PineTaskDialogFragment
     public void okButtonOnClick(View view)
     {
         dismiss();
+        if (getArguments().getBoolean(FINISH_ACTIVITY_KEY, false)) getActivity().finish();
     }
 }

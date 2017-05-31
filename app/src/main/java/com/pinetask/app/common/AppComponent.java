@@ -19,6 +19,9 @@ import dagger.Component;
 @Component(modules={AppModule.class})
 public interface AppComponent
 {
+    /** UserComponent/Module are scoped to exist only while a user is logged in (MainActivity, etc) **/
+    UserComponent userComponent(UserModule userModule);
+
     void inject(PineTaskActivity target);
     void inject(PineTaskFragment target);
     void inject(PineTaskDialogFragment target);

@@ -10,7 +10,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PrefsManager;
-import com.pinetask.app.common.UserMessage;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.LoggingBase;
 import com.squareup.otto.Bus;
@@ -19,6 +18,7 @@ import javax.inject.Inject;
 
 import io.reactivex.SingleObserver;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 /** Manages the process of sending or accepting invitations to shared lists. **/
 public class InviteManager extends LoggingBase
@@ -48,34 +48,23 @@ public class InviteManager extends LoggingBase
     }
 
     /** Starts an activity from which the user can select contacts to send an invite.  The invite will be for the list with the ID specified. **/
-    public void sendInvite(final String listId)
+    public void sendInvite(final String listId, Consumer<Throwable> onError)
     {
-        mDbHelper.getListName(listId).subscribe(new SingleObserver<String>()
+        mDbHelper.getListName(listId).subscribe(listName ->
         {
-            @Override
-            public void onSubscribe(Disposable d)
-            {
-            }
-
-            @Override
-            public void onSuccess(String listName)
-            {
-                String urlStr = PINETASK_URL_LIST_BASE + "/" + listId;
-                logMsg("Starting invite intent with URL '%s'", urlStr);
-                String message = String.format("I'd like to share my list '%s' with you using PineTask.", listName);
-                Intent intent = new AppInviteInvitation.IntentBuilder("Share List")
-                        .setMessage(message)
-                        .setDeepLink(Uri.parse(urlStr))
-                        .setCallToActionText("Join List")
-                        .build();
-                mMainActivity.startActivityForResult(intent, MainActivity.SEND_INVITE_REQUEST_CODE);
-            }
-
-            @Override
-            public void onError(Throwable ex)
-            {
-                showUserMessage(true, getString(R.string.error_getting_list_name));
-            }
+            String urlStr = PINETASK_URL_LIST_BASE + "/" + listId;
+            logMsg("Starting invite intent with URL '%s'", urlStr);
+            String message = String.format("I'd like to share my list '%s' with you using PineTask.", listName);
+            Intent intent = new AppInviteInvitation.IntentBuilder("Share List")
+                    .setMessage(message)
+                    .setDeepLink(Uri.parse(urlStr))
+                    .setCallToActionText("Join List")
+                    .build();
+            mMainActivity.startActivityForResult(intent, MainActivity.SEND_INVITE_REQUEST_CODE);
+        }, ex ->
+        {
+            onError()
+            showUserMessage(true, getString(R.string.error_getting_list_name));
         });
     }
 
@@ -139,11 +128,6 @@ public class InviteManager extends LoggingBase
             mAcceptedInviteListId = null;
             showUserMessage(true, ex.getMessage());
         });
-    }
-
-    private void showUserMessage(boolean isError, String msg, Object... args)
-    {
-        mBus.post(new UserMessage(isError, msg, args));
     }
 
     private String getString(int id)

@@ -24,6 +24,7 @@ import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +43,7 @@ import io.reactivex.SingleEmitter;
 import io.reactivex.SingleObserver;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 import static com.pinetask.app.db.KeyAddedOrDeletedObservable.getKeyAddedOrDeletedEventsAt;
 
@@ -175,32 +177,6 @@ public class DbHelper
         return mDb.getReference(STARTUP_MESSAGE_NODE);
     }
 
-    public void purgeCompletedItems(String listId)
-    {
-        logMsg("Purging completed items from list %s", listId);
-        final DatabaseReference listItemsRef = FirebaseDatabase.getInstance().getReference(LIST_ITEMS_NODE_NAME).child(listId);
-        Query query = listItemsRef.orderByChild(IS_COMPLETED_KEY_NAME).equalTo(true);
-        query.addListenerForSingleValueEvent(new ValueEventListener()
-        {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot)
-            {
-                logMsg("purgeCompletedItems::onDataChange: dataSnapshot has %d children", dataSnapshot.getChildrenCount());
-                for (DataSnapshot ds : dataSnapshot.getChildren())
-                {
-                    deleteListItem(listItemsRef, ds.getKey());
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError)
-            {
-                logError("purgeCompletedItems::onCancelled: %s", databaseError.getMessage());
-                mPineTaskApplication.raiseUserMsg(true, R.string.error_getting_completed_items);
-            }
-        });
-    }
-
     private void deleteListItem(DatabaseReference listItemsRef, final String itemId)
     {
         listItemsRef.child(itemId).removeValue((DatabaseError databaseError, DatabaseReference databaseReference) ->
@@ -236,7 +212,7 @@ public class DbHelper
         return getKeysAt(getListCollaboratorsReference(listId), "get userIds of list collaborators");
     }
 
-    public void logDbOperationResult(String description, DatabaseError databaseError, DatabaseReference databaseReference)
+    public void logDbOperationResult(String description, DatabaseError databaseError, Query databaseReference)
     {
         if (databaseError==null)
         {
@@ -245,11 +221,10 @@ public class DbHelper
         else
         {
             logDbError(description, databaseError, databaseReference);
-            mPineTaskApplication.raiseUserMsg(true, R.string.error_in_operation_x_msg_x, description, databaseError);
         }
     }
 
-    public void logDbError(String description, DatabaseError databaseError, DatabaseReference databaseReference)
+    public void logDbError(String description, DatabaseError databaseError, Query databaseReference)
     {
         logError("Error in operation '%s' for node %s (error=%s)", description, databaseReference.toString(), databaseError);
     }
@@ -303,6 +278,14 @@ public class DbHelper
         return getKeysAt(getUserListsRef(userId), "get user lists");
     }
 
+    /** Emits true if the user has access to the list specifed, of false if the user doesn't have access or the list doesn't exist. **/
+    public Single<Boolean> canAccessList(String userId, String listId)
+    {
+        DatabaseReference ref = getUserListsRef(userId).child(listId);
+        logMsg("canAccessList: checking if user %s can access list %s", userId, listId);
+        return doesKeyExist(ref);
+    }
+
     /** Returns an Observable that will emit notifications of list added / list deleted events for lists that the specified user has access to. **/
     public Observable<AddedOrDeletedEvent<String>> getListAddedOrDeletedEvents(String userId)
     {
@@ -327,7 +310,7 @@ public class DbHelper
         final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(listId).child(inviteId).child(INVITE_CREATED_AT_KEY);
         String timestamp = DateTime.now().toString(ISODateTimeFormat.basicDateTime());
         logMsg("Creating invite for list %s with timestamp %s", listId, timestamp);
-        ref.setValue(timestamp, (DatabaseError databaseError, DatabaseReference databaseReference) -> logDbOperationResult("fromRef invite", databaseError, ref));
+        ref.setValue(timestamp, (dbErr, errRef) -> logDbOperationResult("create invite", dbErr, errRef));
     }
 
     /** Returns a Completable that, when subscribed to, checks if the invite for the specified list exists.  If it does, invokes onComplete().
@@ -452,62 +435,6 @@ public class DbHelper
         });
     }
 
-    /** Observer for a single result that will just pass the result to a callback when available.
-     *  If an error occurs, logs the exception and raises a user message. **/
-    public <T> SingleObserver<T> singleObserver(final DbCallback<T> callback)
-    {
-        return new SingleObserver<T>()
-        {
-            @Override
-            public void onSubscribe(Disposable d)
-            {
-            }
-
-            @Override
-            public void onSuccess(T t)
-            {
-                callback.onResult(t);
-            }
-
-            @Override
-            public void onError(Throwable ex)
-            {
-                Logger.logException(getClass(), ex);
-                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
-            }
-        };
-    }
-
-    /** Observer that will just pass the result to a callback when available. If an error occurs, logs the exception and raises a user message. **/
-    public <T> Observer<T> genericObserver(final DbCallback<T> callback)
-    {
-        return new Observer<T>()
-        {
-            @Override
-            public void onSubscribe(Disposable d)
-            {
-            }
-
-            @Override
-            public void onNext(T t)
-            {
-                callback.onResult(t);
-            }
-
-            @Override
-            public void onError(Throwable ex)
-            {
-                Logger.logException(getClass(), ex);
-                mPineTaskApplication.raiseUserMsg(true, ex.getMessage());
-            }
-
-            @Override
-            public void onComplete()
-            {
-            }
-        };
-    }
-
     /** Add a new list.  The following nodes are created:
      *    /list_info/<listid>
      *    /list_info/<listid>/name
@@ -567,7 +494,7 @@ public class DbHelper
     }
 
     /** Returns an Observable that emits the list of keys at the database reference specified, and then completes. **/
-    public Observable<String> getKeysAt(DatabaseReference ref, String operationDescription)
+    public Observable<String> getKeysAt(Query ref, String operationDescription)
     {
         return Observable.create((ObservableEmitter<String> emitter) ->
             {
@@ -598,6 +525,33 @@ public class DbHelper
     public <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription)
     {
         return getItem(T, ref, operationDescription, null);
+    }
+
+    /** Emits true if the specified database node exists, false otherwise. **/
+    public Single<Boolean> doesKeyExist(DatabaseReference ref)
+    {
+        return Single.create(new SingleOnSubscribe<Boolean>()
+        {
+            @Override
+            public void subscribe(SingleEmitter<Boolean> emitter) throws Exception
+            {
+                ref.addListenerForSingleValueEvent(new ValueEventListener()
+                {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot)
+                    {
+                        if (dataSnapshot.getValue()!=null) emitter.onSuccess(true);
+                        else emitter.onSuccess(false);
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError)
+                    {
+                        emitter.onError(new DbOperationCanceledException(ref, databaseError, "check if node exists: " + ref));
+                    }
+                });
+            }
+        });
     }
 
     /** Returns a Single that emits the object at the specified database location, deserialized based on the objClass provided.
@@ -874,5 +828,14 @@ public class DbHelper
                 .andThen(deleteInvite(listId, invitationId))
                 .andThen(addListToUserLists(listId, userId, DbHelper.WRITE))
                 .andThen(getListName(listId));
+    }
+
+    /** Delete all completed items in the list with the ID specified. **/
+    public Completable purgeCompletedItems(String listId)
+    {
+        logMsg("Purging completed items from list %s", listId);
+        DatabaseReference listItemsRef = FirebaseDatabase.getInstance().getReference(LIST_ITEMS_NODE_NAME).child(listId);
+        Query query = listItemsRef.orderByChild(IS_COMPLETED_KEY_NAME).equalTo(true);
+        return getKeysAt(query, "get list items to purge").flatMapCompletable(itemId -> removeNode(listItemsRef.child(itemId)));
     }
 }

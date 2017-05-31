@@ -70,7 +70,7 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
         else
         {
             logMsg("User has already completed anonymous setup on prior launch: going to MainActivity");
-            MainActivity.launch(this);
+            MainActivity.launch(this, user.getUid());
             finish();
         }
     }
@@ -78,6 +78,9 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         super.onActivityResult(requestCode, resultCode, data);
+
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser user = auth.getCurrentUser();
 
         if (requestCode == FIREBASE_UI_AUTH_REQUEST_CODE)
         {
@@ -88,12 +91,10 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
                 mSignUpOrLoginButton.setVisibility(View.GONE);
                 mSignUpLaterButton.setVisibility(View.GONE);
                 mIntroMessageTextView.setText(R.string.finishing_account_setup);
-                FirebaseAuth auth = FirebaseAuth.getInstance();
-                FirebaseUser user = auth.getCurrentUser();
                 logMsg("createNewUser: FirebaseUser is: uid=%s, name=%s, email=%s, photoUri=%s", user.getUid(), user.getDisplayName(), user.getEmail(), user.getPhotoUrl());
                 mDbHelper.setUserName(user.getUid(), user.getDisplayName()).andThen(mDbHelper.setIsAnonymous(user.getUid(), false)).subscribe(activityObserver("setup new user", ()->
                 {
-                    MainActivity.launch(SignupOrAnonymousLoginActivity.this);
+                    MainActivity.launch(SignupOrAnonymousLoginActivity.this, user.getUid());
                     finish();
                 }));
             }
@@ -109,7 +110,7 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
             if (resultCode == RESULT_OK)
             {
                 logMsg("onActivityResult: ANONYMOUS_AUTH_REQUEST_CODE returned ok");
-                MainActivity.launch(SignupOrAnonymousLoginActivity.this);
+                MainActivity.launch(SignupOrAnonymousLoginActivity.this, user.getUid());
                 finish();
             }
             else

@@ -59,7 +59,7 @@ public class LaunchActivity extends PineTaskActivity
                 else
                 {
                     logMsg("onCreate: FirebaseAuth reports user %s is already signed in, launching MainActivity", user.getUid());
-                    MainActivity.launch(this);
+                    MainActivity.launch(this, user.getUid());
                     finish();
                 }
             }));

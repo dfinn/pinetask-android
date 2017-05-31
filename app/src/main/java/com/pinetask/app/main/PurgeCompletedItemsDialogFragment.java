@@ -10,9 +10,10 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.pinetask.app.R;
+import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskDialogFragment;
-import com.pinetask.app.db.DbCallback;
-import com.pinetask.app.db.DbHelper;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -21,15 +22,20 @@ import butterknife.ButterKnife;
 public class PurgeCompletedItemsDialogFragment extends PineTaskDialogFragment
 {
     public static String LIST_ID_KEY = "ListId";
+    public static String LIST_NAME_KEY = "ListName";
 
     @BindView(R.id.titleTextView) TextView mTitleTextView;
     @BindView(R.id.okButton) Button mOkButton;
     @BindView(R.id.cancelButton) Button mCancelButton;
 
-    public static PurgeCompletedItemsDialogFragment newInstance(String listId)
+    @Inject
+    MainActivityContract.IMainActivityPresenter mPresenter;
+
+    public static PurgeCompletedItemsDialogFragment newInstance(String listId, String listName)
     {
         Bundle args = new Bundle();
         args.putString(LIST_ID_KEY, listId);
+        args.putString(LIST_NAME_KEY, listName);
         PurgeCompletedItemsDialogFragment dialog = new PurgeCompletedItemsDialogFragment();
         dialog.setArguments(args);
         return dialog;
@@ -41,15 +47,14 @@ public class PurgeCompletedItemsDialogFragment extends PineTaskDialogFragment
     {
         View view = inflater.inflate(R.layout.purge_completed_items_dialog, container, false);
         ButterKnife.bind(this, view);
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
         final String listId = getArguments().getString(LIST_ID_KEY);
-
-        mDbHelper.getListName(listId).subscribe(mDbHelper.singleObserver(listName ->
-                mTitleTextView.setText(String.format(getString(R.string.really_purge_completed_items_in_list_x), listName))));
-
+        mTitleTextView.setText(String.format(getString(R.string.really_purge_completed_items_in_list_x), getArguments().getString(LIST_NAME_KEY)));
         mOkButton.setText(R.string.delete);
+
         mOkButton.setOnClickListener(__ ->
         {
-            mDbHelper.purgeCompletedItems(listId);
+            mPresenter.purgeCompletedItems(listId);
             dismiss();
         });
 

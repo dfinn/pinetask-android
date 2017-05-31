@@ -20,53 +20,43 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.crashlytics.android.Crashlytics;
 import com.google.android.gms.appinvite.AppInvite;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.R;
+import com.pinetask.app.common.ErrorDialogFragment;
+import com.pinetask.app.common.UserComponent;
+import com.pinetask.app.common.UserModule;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
 import com.pinetask.app.launch.TutorialActivity;
 import com.pinetask.app.chat.ChatFragment;
 import com.pinetask.app.chat.ChatMessage;
-import com.pinetask.app.common.ListSelectedEvent;
 import com.pinetask.app.common.PineTaskActivity;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
-import com.pinetask.app.common.UserMessage;
-import com.pinetask.app.db.DbHelper;
 import com.pinetask.app.db.ListLoader;
 import com.pinetask.app.list_items.ListItemsFragment;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.manage_lists.AddOrRenameListDialogFragment;
 import com.pinetask.app.manage_lists.ManageListsActivity;
-import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends PineTaskActivity implements ViewPager.OnPageChangeListener
+public class MainActivity extends PineTaskActivity implements ViewPager.OnPageChangeListener, MainActivityContract.IMainActivityView
 {
     GoogleApiClient mGoogleApiClient;
     ListLoader mListLoader;
-    String mUserId;
     ActionBarDrawerToggle mDrawerToggle;
 
     /** Identifies the active menu item from the bottom navigation drawer. **/
@@ -76,7 +66,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     int mNumUnreadChatMessages=0;
 
     @BindView(R.id.toolbar) Toolbar mToolBar;
-    @BindView(R.id.listSpinner) Spinner mListSpinner;
+    @BindView(R.id.listNameTextView) TextView mListNameTextView;
     @BindView(R.id.viewPager) ViewPager mViewPager;
     @BindView(R.id.bottomNavigationView) BottomNavigationView mBottomNavigationView;
     @BindView(R.id.noListsFoundTextView) TextView mNoListsFoundTextView;
@@ -84,9 +74,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     @BindView(R.id.leftDrawerLayout) LinearLayout mLeftDrawerLayout;
     @BindView(R.id.userNameTextView) TextView mUserNameTextView;
     @BindView(R.id.settingsTextView) TextView mSettingsTextView;
-
-    /** Adapter for the spinner that displays names of lists the user has access to. **/
-    ArrayAdapter<PineTaskList> mListAdapter;
 
     /** InviteManager is in charge of sending invites to share a list, and processing invites received to grant access to someone else's list. **/
     InviteManager mInviteManager;
@@ -98,8 +85,13 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     /** Activity request code for launching the Manage Lists Activity. **/
     public static int MANAGE_LISTS_REQUEST_CODE = 1;
 
-    public static void launch(Context context)
+    @Inject @Named("user_id") String mUserId;
+    @Inject MainActivityContract.IMainActivityPresenter mPresenter;
+
+    /** Launch the main activity, and create the Dagger components in the UserScope. **/
+    public static void launch(Context context, String userId)
     {
+        PineTaskApplication.getInstance().createUserComponent(userId);
         Intent i = new Intent(context, MainActivity.class);
         context.startActivity(i);
     }
@@ -111,8 +103,8 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         setContentView(R.layout.main_activity);
         ButterKnife.bind(this);
 
-        // Inject dependencies
-        PineTaskApplication.getInstance().getAppComponent().inject(this);
+        // Inject UserScope dependencies
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
 
         // Register event bus
         logMsg("Registering event bus");
@@ -124,51 +116,28 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 .enableAutoManage(this, (@NonNull ConnectionResult connectionResult) -> logMsg("onConnectionFailed"))
                 .build();
 
-        // Create database connection
-        logMsg("onCreate: creating database connection");
+        // Check for and process any list invites that have been received.
+        mInviteManager = new InviteManager(MainActivity.this, mGoogleApiClient, mUserId);
+        mInviteManager.checkForInvites();
 
-        // Get current user's ID
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        FirebaseUser user = auth.getCurrentUser();
-        mUserId = user.getUid();
-        if (mUserId == null)
-        {
-            String msg = getString(R.string.user_not_signed_in);
-            logMsg(msg);
-            Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-            finish();
-        }
-        else
-        {
-            // Set user information for Crashlytics
-            Crashlytics.setUserIdentifier(mUserId);
+        // Set the Toolbar as the app bar for the activity.  Hide the default display of title text, since we show a custom spinner in the Toolbar.
+        setSupportActionBar(mToolBar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
-            // Check for and process any list invites that have been received.
-            mInviteManager = new InviteManager(MainActivity.this, mGoogleApiClient, mUserId);
-            mInviteManager.checkForInvites();
+        // Initialize the ViewPager which hosts the "list items" and "chat messages" tabs.
+        initViewPager();
 
-            // Set the Toolbar as the app bar for the activity.  Hide the default display of title text, since we show a custom spinner in the Toolbar.
-            setSupportActionBar(mToolBar);
-            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        // Initialize the bottom navigation menu with choices for "List Items", "Chat", and "Members"
+        initBottomNavigationMenu();
 
-            // Initialize the ViewPager which hosts the "list items" and "chat messages" tabs.
-            initViewPager();
-
-            // Initialize the bottom navigation menu with choices for "List Items", "Chat", and "Members"
-            initBottomNavigationMenu();
-
-            // Populate spinner for choosing the list.  When done, it will start loading items in the currently selected list (or the 1st one if none was previously chosen).
-            initListsSpinner();
-
-            // Show username in side navigation drawer
-            observe(mDbHelper.getUserNameObservable(mUserId), (String name) ->  mUserNameTextView.setText(name));
-
-            // Show startup message if it's a newer version than the user has previously seen.
-            showStartupMessage();
-        }
+        // Show startup message if it's a newer version than the user has previously seen.
+        showStartupMessage();
 
         // Initialize navigation drawer
         initNavigationDrawer();
+
+        // Attach presenter
+        mPresenter.attach(this);
     }
 
     private void initNavigationDrawer()
@@ -224,7 +193,8 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     }
 
     @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
+    protected void onPostCreate(Bundle savedInstanceState)
+    {
         super.onPostCreate(savedInstanceState);
         // Sync the toggle state after onRestoreInstanceState has occurred.
         mDrawerToggle.syncState();
@@ -253,6 +223,15 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         PineTaskApplication application = (PineTaskApplication)getApplication();
         logMsg("UnRegistering event bus");
         mBus.unregister(this);
+
+        // If finishing, destroy the Dagger components in the UserScope.
+        if (isFinishing())
+        {
+            logMsg("onDestroy - finishing activity and releasing UserScope");
+            PineTaskApplication.getInstance().releaseUserComponent();
+        }
+
+        mPresenter.detach(isFinishing());
     }
 
     @Override
@@ -278,7 +257,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             else if (resultCode != RESULT_CANCELED)
             {
                 logError("onActivityResult: error sending invitation");
-                showUserMessage(true, getString(R.string.error_sending_invite));
+                showError(getString(R.string.error_sending_invite));
             }
         }
         else if (requestCode == MANAGE_LISTS_REQUEST_CODE)
@@ -287,7 +266,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             {
                 PineTaskList list = (PineTaskList)data.getSerializableExtra(ManageListsActivity.LIST_KEY);
                 logMsg("Switching to list %s selected by user on Manage Lists activity", list.getKey());
-                displayListItems(list, false);
+                mPresenter.onListSelected(list);
             }
         }
     }
@@ -296,7 +275,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.main_menu, menu);
-
         return true;
     }
 
@@ -314,15 +292,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         switch (item.getItemId())
         {
             case R.id.purgeCompletedItems:
-                if (currentListId != null)
-                {
-                    PurgeCompletedItemsDialogFragment dialog = PurgeCompletedItemsDialogFragment.newInstance(currentListId);
-                    getSupportFragmentManager().beginTransaction().add(dialog, PurgeCompletedItemsDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
-                }
-                else
-                {
-                    showUserMessage(true, getString(R.string.error_no_current_list));
-                }
+                mPresenter.onPurgeCompletedItemsSelected();
                 return true;
             case R.id.exportList:
                 if (currentListId != null)
@@ -338,12 +308,12 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                             }, ex ->
                             {
                                 logException(ex);
-                                showUserMessage(true, getString(R.string.error_exporting_list_x), ex.getMessage());
+                                showError(getString(R.string.error_exporting_list_x), ex.getMessage());
                             });
                 }
                 else
                 {
-                    showUserMessage(true, getString(R.string.error_no_current_list));
+                    showError(getString(R.string.error_no_current_list));
                 }
                 return true;
             default:
@@ -476,40 +446,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         }
     }
 
-    /** Initialize spinner that displays all lists.  Create a ListLoader that will populate the spinner with the user's lists.  It will automatically refresh if any lists are added/deleted. **/
-    private void initListsSpinner()
-    {
-        mListAdapter = new ArrayAdapter<>(this, R.layout.list_spinner, new ArrayList<PineTaskList>());
-        mListSpinner.setAdapter(mListAdapter);
-        mListAdapter.setDropDownViewResource(R.layout.lists_spinner_dropdown_item);
-
-        mListLoader = new ListLoader(mUserId, new ListLoader.ListLoadCallback(){
-            @Override
-            public void onListsLoaded(List<PineTaskList> lists)
-            {
-                handleListsLoaded(lists);
-            }
-
-            @Override
-            public void onLoadError()
-            {
-                showUserMessage(true, getString(R.string.error_loading_lists));
-            }
-
-            @Override
-            public void onListDeleted(String listId)
-            {
-                handleListDeleted(listId);
-            }
-
-            @Override
-            public void onListAdded(PineTaskList list)
-            {
-                handleListAdded(list);
-            }
-        });
-    }
-
     /** Unless this is the first app launch, query the server for the startup message and its version.  If the user hasn't seen it yet, display the message now. **/
     private void showStartupMessage()
     {
@@ -526,237 +462,45 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 }, ex ->
                 {
                     logException(ex);
-                    showUserMessage(true, getString(R.string.error_loading_startup_message));
+                    showError(getString(R.string.error_loading_startup_message));
                 });
     }
 
-    private void handleListsLoaded(List<PineTaskList> lists)
+    @Override
+    public void showAddListDialog()
     {
-        // Clear existing spinner contents.
-        logMsg("initListsSpinner: loaded %d lists", lists.size());
-        mListAdapter.clear();
-
-        if (lists.size()==0)
-        {
-            if (mPrefsManager.getIsFirstLaunch())
-            {
-                // If this is the first app launch, show "Add List" dialog and pass the flag so that it prompts the user to create their first list.
-                AddOrRenameListDialogFragment dialog = AddOrRenameListDialogFragment.newInstanceAddMode(mUserId, true);
-                getSupportFragmentManager().beginTransaction().add(dialog, AddOrRenameListDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
-                mPrefsManager.setIsFirstLaunch(false);
-            }
-        }
-        else
-        {
-            // If the user was previously viewing a list, make sure it still exists.
-            String previousListId = mPrefsManager.getCurrentListId();
-            if ((previousListId != null) && (doesListIdExist(previousListId, lists)==false))
-            {
-                logMsg("Previous list %s no longer exists", previousListId);
-                previousListId = null;
-            }
-
-            // Determine list to display:
-            // - If an invite has just been accepted, switch to the list which was just added.
-            // - If not, check SharedPreferences to find the ID of the list the user was previously viewing and use it.
-            // - If none, then use the first list.
-            String listIdToDisplay=null;
-            if ((listIdToDisplay = mInviteManager.getAcceptedInviteListId()) != null)
-            {
-                logMsg("Will display list %s which was just added from invite", listIdToDisplay);
-                mInviteManager.setAcceptedInviteListId(null);
-            }
-            else if ((listIdToDisplay = previousListId) != null)
-            {
-                logMsg("Will display previously displayed list %s", listIdToDisplay);
-            }
-            else
-            {
-                listIdToDisplay = lists.get(0).getKey();
-                logMsg("User has no current list, using first owned list %s", listIdToDisplay);
-            }
-
-            // Add all lists to the spinner, setting the spinner selection to the list to be displayed.
-            PineTaskList listToDisplay = null;
-            for (int i=0;i<lists.size();i++)
-            {
-                PineTaskList l = lists.get(i);
-                mListAdapter.add(l);
-                if (l.getKey().equals(listIdToDisplay))
-                {
-                    mListSpinner.setSelection(i);
-                    if (l.getKey().equals(listIdToDisplay)) listToDisplay = l;
-                }
-            }
-
-            displayListItems(listToDisplay, true);
-        }
-
-        // Initialize callback for handling user selecting an item from the spinner (note: must be done after all items are already added to the spinner to prevent extra callback)
-        initListSpinnerCallback();
-
-        updateSpinnerAndTabVisibility();
+        AddOrRenameListDialogFragment dialog = AddOrRenameListDialogFragment.newInstanceAddMode(mUserId, true);
+        getSupportFragmentManager().beginTransaction().add(dialog, AddOrRenameListDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
     }
 
-    /** Configure callback that runs when user selects a list from the lists spinner. **/
-    private void initListSpinnerCallback()
+    @Override
+    public void showListChooser(List<PineTaskList> lists)
     {
-        logMsg("initListSpinnerCallback: setting onItemSelectedListener");
-        mListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
-        {
-            @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l)
-            {
-                // Switch to the list the user selected in the spinner.
-                PineTaskList selectedList = mListAdapter.getItem(i);
-                logMsg("User selected list '%s' [%s]", selectedList.getName(), selectedList.getKey());
-                displayListItems(selectedList, false);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> adapterView)
-            {
-            }
-        });
+        // TODO: show list chooser dialog
     }
 
-    private void handleListDeleted(String listId)
+    @Override
+    public void showNoListsFoundMessage()
     {
-        // Remove the list from the spinner mListAdapter
-        for (int i=0;i<mListAdapter.getCount();i++)
-        {
-            PineTaskList list = mListAdapter.getItem(i);
-            if (list.getKey().equals(listId))
-            {
-                logMsg("Removing list %s from spinner mListAdapter", listId);
-                mListAdapter.remove(list);
-                mListAdapter.notifyDataSetChanged();
-                break;
-            }
-        }
-
-        // If the current list has just been deleted, display the first available list (or no list if there aren't any)
-        String currentListId = mPrefsManager.getCurrentListId();
-        if (listId.equals(currentListId))
-        {
-            logMsg("Current list has been deleted");
-
-            if (mListAdapter.getCount()>0)
-            {
-                mListSpinner.setSelection(0);
-                PineTaskList firstList = mListAdapter.getItem(0);
-                logMsg("Changing to display first available list %s (%s)", firstList.getKey(), firstList.getName());
-                showUserMessage(false, getString(R.string.current_list_deleted_will_display_x), firstList.getName());
-                displayListItems(firstList, false);
-            }
-            else
-            {
-                showUserMessage(false, getString(R.string.current_list_deleted));
-                displayListItems(null, false);
-            }
-        }
-
-        updateSpinnerAndTabVisibility();
+        mNoListsFoundTextView.setVisibility(View.VISIBLE);
     }
 
-    private void handleListAdded(PineTaskList list)
+    @Override
+    public void hideNoListsFoundMessage()
     {
-        // Add the list to the spinner mListAdapter.  Remove it first if it already exists (after a rename operation, list with the same key will already exist so must be removed first).
-        logMsg("Adding list %s to spinner", list.getKey());
-        mListAdapter.remove(list);
-        mListAdapter.add(list);
-        mListAdapter.sort(PineTaskList.NAME_COMPARATOR);
-
-        if (list.getKey().equals(mInviteManager.getAcceptedInviteListId()))
-        {
-            // If a list invite was just accepted for this new list being added, automatically switch to it.
-            logMsg("handleListAdded: Will display list %s which was just added from invite", list.getKey());
-            mInviteManager.setAcceptedInviteListId(null);
-            displayListItems(list, false);
-        }
-        else if (mListAdapter.getCount()==1)
-        {
-            // If there were no lists and we just added the first one, switch to it.
-            logMsg("First list %s has been added, switching to it", list.getKey());
-            mListSpinner.setSelection(0);
-        }
-        else
-        {
-            // Update selected spinner position to keep the previously active list, since the new item might have been inserted above it.
-            String currentListId = mPrefsManager.getCurrentListId();
-            int selectedPos = findSpinnerPositionForList(currentListId);
-            logMsg("Resetting spinner selected position to %d for current list %s", selectedPos, currentListId);
-            mListSpinner.setSelection(selectedPos);
-        }
-
-        updateSpinnerAndTabVisibility();
+        mNoListsFoundTextView.setVisibility(View.GONE);
     }
 
-    /** Searches the list of lists for one with the ID specified and returns value indicating if found or not. **/
-    private boolean doesListIdExist(String listId, List<PineTaskList> lists)
+    @Override
+    public void showBottomMenuBar()
     {
-        for (PineTaskList l : lists)
-        {
-            if (l.getKey().equals(listId)) return true;
-        }
-        return false;
+        mBottomNavigationView.setVisibility(View.VISIBLE);
     }
 
-    /** Set current list and store to prefs.  Then notify eventbus that new list has been selected. **/
-    private void displayListItems(PineTaskList list, boolean isInitialDisplay)
+    @Override
+    public void hideBottomMenuBar()
     {
-        String currentListId = mPrefsManager.getCurrentListId();
-        String newListId = (list==null) ? null : list.getKey();
-        boolean isCurrentlyDisplayedList = (currentListId==null) ? (newListId==null) : (currentListId.equals(newListId));
-        if (!isInitialDisplay && isCurrentlyDisplayedList)
-        {
-            logMsg("displayItems: already displaying list %s, returning", newListId);
-            return;
-        }
-
-        logMsg("displayListItems: Loading items in list %s", list==null ? null : list.getKey());
-
-        // Set current list, and store it to shared prefs will be opened by default next time the app is run.
-        mPrefsManager.setCurrentListId(newListId);
-
-        // Set spinner selection to match displayed list, if not already.
-        if (list != null)
-        {
-            int pos = mListAdapter.getPosition(list);
-            logMsg("displayListItems: setting spinner to position %d to match displayed list", pos);
-            mListSpinner.setSelection(pos);
-        }
-
-        // Notify eventbus of selected list (ListItemsFragment will display the new list)
-        mBus.post(new ListSelectedEvent(newListId));
-    }
-
-    /** Called by the event bus when a UserMessage has been posted. **/
-    @Subscribe
-    public void userMessageRaised(UserMessage message)
-    {
-        showUserMessage(message.IsError, message.Message);
-    }
-
-    /** If the user has no lists, hide the list selection spinner and the bottom navigation menu. Otherwise, show them.
-     *  If the user has no lists, show a message asking them to fromRef one. **/
-    private void updateSpinnerAndTabVisibility()
-    {
-        int visibility = (mListAdapter.getCount()==0) ? View.GONE : View.VISIBLE;
-        mListSpinner.setVisibility(visibility);
-        mBottomNavigationView.setVisibility(visibility);
-        mNoListsFoundTextView.setVisibility((mListAdapter != null && mListAdapter.getCount()==0) ? View.VISIBLE : View.GONE);
-    }
-
-    /** Returns the position of the specified list in the Lists spinner, or -1 if not found. **/
-    private int findSpinnerPositionForList(String listId)
-    {
-        for (int i=0;i<mListAdapter.getCount();i++)
-        {
-            PineTaskList l = mListAdapter.getItem(i);
-            if (l.getKey().equals(listId)) return i;
-        }
-        return -1;
+        mBottomNavigationView.setVisibility(View.GONE);
     }
 
     /** Called by the event bus when a chat message is received.  If the chat tab is not currently active, look up username of the message sender.
@@ -771,6 +515,12 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             mNumUnreadChatMessages++;
             updateUnreadChatMessageCount();
         }
+    }
+
+    @OnClick(R.id.listNameTextView)
+    public void onListNameClicked(View view)
+    {
+        mPresenter.onListSelectorClicked();
     }
 
     private void updateUnreadChatMessageCount()
@@ -812,6 +562,43 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     @Override
     public void onPageScrollStateChanged(int state)
     {
+    }
+
+    @Override
+    public void showUserName(String userName)
+    {
+        mUserNameTextView.setText(userName);
+    }
+
+    @Override
+    public void showStartupMessage(String text, int versionNumber)
+    {
+
+    }
+
+    @Override
+    public void showError(String message, Object... args)
+    {
+        showUserMessage(false, message, args);
+    }
+
+    @Override
+    public void showErrorAndExit(String message, Object... args)
+    {
+        showUserMessage(true, message, args);
+    }
+
+    @Override
+    public void showCurrentListName(String listName)
+    {
+        mListNameTextView.setText(listName);
+    }
+
+    @Override
+    public void showPurgeCompletedItemsDialog(String listId, String listName)
+    {
+        PurgeCompletedItemsDialogFragment dialog = PurgeCompletedItemsDialogFragment.newInstance(listId, listName);
+        getSupportFragmentManager().beginTransaction().add(dialog, PurgeCompletedItemsDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
     }
 }
 
