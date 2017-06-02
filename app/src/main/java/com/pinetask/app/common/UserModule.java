@@ -1,7 +1,10 @@
 package com.pinetask.app.common;
 
 import com.crashlytics.android.Crashlytics;
+import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.list_members.MembersPresenter;
+import com.pinetask.app.list_members.MembersPresenterImpl;
 import com.pinetask.app.main.MainActivityContract;
 import com.pinetask.app.main.MainActivityPresenter;
 import com.pinetask.common.Logger;
@@ -34,10 +37,22 @@ public class UserModule
         return mUserId;
     }
 
-    /** Provides the MainActivityPresenter **/
     @Provides
-    public MainActivityContract.IMainActivityPresenter providesMainActivityPresenter(DbHelper dbHelper, @Named("user_id") String userId, PrefsManager prefsManager)
+    public ActiveListManager providesActiveListManager(PrefsManager prefsManager, DbHelper dbHelper, @Named("user_id") String userId)
     {
-        return new MainActivityPresenter(dbHelper, userId, prefsManager);
+        return new ActiveListManager(prefsManager, dbHelper, userId);
+    }
+
+    @Provides
+    public MainActivityContract.IMainActivityPresenter providesMainActivityPresenter(DbHelper dbHelper, @Named("user_id") String userId, PrefsManager prefsManager,
+                                                                                     PineTaskApplication pineTaskApplication, ActiveListManager activeListManager)
+    {
+        return new MainActivityPresenter(dbHelper, userId, prefsManager, pineTaskApplication, activeListManager);
+    }
+
+    @Provides
+    public MembersPresenter providesMembersPresenter(DbHelper dbHelper, PineTaskApplication pineTaskApplication, ActiveListManager activeListManager, @Named("user_id") String userId)
+    {
+        return new MembersPresenterImpl(dbHelper, pineTaskApplication, activeListManager, userId);
     }
 }

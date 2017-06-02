@@ -10,9 +10,13 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.pinetask.app.R;
+import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskFragment;
+import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.main.InviteManager;
 import com.pinetask.app.main.MainActivity;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -23,21 +27,17 @@ import butterknife.OnClick;
  *  - Other list members have a 'Delete' button next to them, to revoke their access to the list.
  *  - Pressing the floating action button will begin the process to add a new list member (sending an invite)
  **/
-public class MembersFragment extends PineTaskFragment implements MembersContract.IMembersView
+public class MembersFragment extends PineTaskFragment implements MembersView
 {
-    MembersPresenter mPresenter;
-    MembersAdapter mAdapter;
-
-    public static String USER_ID_KEY = "UserId";
-
+    @Inject MembersPresenter mPresenter;
     @BindView(R.id.membersRecyclerView) RecyclerView mMembersRecyclerView;
     @BindView(R.id.addMemberButton) FloatingActionButton mAddMemberButton;
+    MembersAdapter mAdapter;
 
-    public static MembersFragment newInstance(String userId)
+    public static MembersFragment newInstance()
     {
         MembersFragment membersFragment = new MembersFragment();
         Bundle args = new Bundle();
-        args.putString(USER_ID_KEY, userId);
         membersFragment.setArguments(args);
         return membersFragment;
     }
@@ -48,13 +48,12 @@ public class MembersFragment extends PineTaskFragment implements MembersContract
     {
         View view = inflater.inflate(R.layout.members_fragment, container, false);
         ButterKnife.bind(this, view);
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
         logMsg("onCreateView: creating membersAdapter");
         mAdapter = new MembersAdapter((MainActivity)getActivity());
         mMembersRecyclerView.setAdapter(mAdapter);
         mMembersRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        String userId = getArguments().getString(USER_ID_KEY);
-        mPresenter = new MembersPresenter();
-        mPresenter.attachView(this, userId);
+        mPresenter.attachView(this);
         return view;
     }
 
@@ -96,17 +95,23 @@ public class MembersFragment extends PineTaskFragment implements MembersContract
     }
 
     @OnClick(R.id.addMemberButton)
-    public void addMemberButtonOnClick(View view)
+    public void addMemberButtonOnClick(View __)
     {
         mPresenter.onAddMemberButtonClicked();
     }
 
     @Override
-    public void launchInviteProcess(String listId)
+    public void launchInviteProcess(PineTaskList pineTaskList)
     {
         MainActivity mainActivity = (MainActivity) getActivity();
         InviteManager inviteManager = mainActivity.getInviteManager();
-        inviteManager.sendInvite(listId);
+        inviteManager.sendInvite(pineTaskList);
+    }
+
+    @Override
+    public void showError(String message, Object... args)
+    {
+        showUserMessage(false, message, args);
     }
 
 }

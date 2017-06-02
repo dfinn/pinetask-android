@@ -1,14 +1,11 @@
 package com.pinetask.app.common;
 
 import com.pinetask.app.chat.ChatMessagesAdapter;
-import com.pinetask.app.db.ListLoader;
 import com.pinetask.app.db.RxListLoader;
 import com.pinetask.app.launch.TutorialActivity;
 import com.pinetask.app.list_items.ListItemAdapter;
 import com.pinetask.app.list_members.MembersAdapter;
-import com.pinetask.app.list_members.MembersPresenter;
 import com.pinetask.app.main.InviteManager;
-import com.pinetask.app.main.MainActivity;
 
 import javax.inject.Singleton;
 
@@ -28,9 +25,6 @@ public interface AppComponent
     void inject(ChatMessagesAdapter target);
     void inject(ListItemAdapter target);
     void inject(TutorialActivity target);
-    void inject(ListLoader target);
     void inject(RxListLoader target);
     void inject(InviteManager target);
-    void inject(MembersAdapter target);
-    void inject(MembersPresenter target);
 }

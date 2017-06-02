@@ -43,4 +43,10 @@ public class Logger
         }
     }
 
+    public static void logErrorAndException(Class source, Throwable ex, String msg, Object... args)
+    {
+        logError(source, msg, args);
+        logException(source, ex);
+    }
+
 }

@@ -28,6 +28,11 @@ public class PineTaskDialogFragment extends DialogFragment
         Logger.logMsg(getClass(), msg, args);
     }
 
+    protected void logException(Throwable ex)
+    {
+        Logger.logException(getClass(), ex);
+    }
+
     protected CompletableObserver activityObserver(String operationDescription, Runnable completeAction)
     {
         PineTaskActivity activity = (PineTaskActivity) getActivity();

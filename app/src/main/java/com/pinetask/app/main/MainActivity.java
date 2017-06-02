@@ -27,9 +27,7 @@ import com.google.android.gms.appinvite.AppInvite;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.pinetask.app.R;
-import com.pinetask.app.common.ErrorDialogFragment;
-import com.pinetask.app.common.UserComponent;
-import com.pinetask.app.common.UserModule;
+import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
 import com.pinetask.app.launch.TutorialActivity;
 import com.pinetask.app.chat.ChatFragment;
@@ -37,7 +35,6 @@ import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.PineTaskActivity;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
-import com.pinetask.app.db.ListLoader;
 import com.pinetask.app.list_items.ListItemsFragment;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.manage_lists.AddOrRenameListDialogFragment;
@@ -56,7 +53,6 @@ import butterknife.OnClick;
 public class MainActivity extends PineTaskActivity implements ViewPager.OnPageChangeListener, MainActivityContract.IMainActivityView
 {
     GoogleApiClient mGoogleApiClient;
-    ListLoader mListLoader;
     ActionBarDrawerToggle mDrawerToggle;
 
     /** Identifies the active menu item from the bottom navigation drawer. **/
@@ -87,6 +83,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
     @Inject @Named("user_id") String mUserId;
     @Inject MainActivityContract.IMainActivityPresenter mPresenter;
+    @Inject ActiveListManager mActiveListManager;
 
     /** Launch the main activity, and create the Dagger components in the UserScope. **/
     public static void launch(Context context, String userId)
@@ -118,7 +115,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         // Check for and process any list invites that have been received.
         mInviteManager = new InviteManager(MainActivity.this, mGoogleApiClient, mUserId);
-        mInviteManager.checkForInvites();
+        checkForInvites();
 
         // Set the Toolbar as the app bar for the activity.  Hide the default display of title text, since we show a custom spinner in the Toolbar.
         setSupportActionBar(mToolBar);
@@ -138,6 +135,20 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         // Attach presenter
         mPresenter.attach(this);
+    }
+
+    private void checkForInvites()
+    {
+        logMsg("Checking for pending invites");
+        mInviteManager.checkForInvites().subscribe(listName ->
+        {
+            showUserMessage(false, getString(R.string.access_granted_to_list_x), listName);
+        }, ex ->
+        {
+            logError("Error accepting list invite");
+            logException(ex);
+            showError(getString(R.string.error_accepting_invite_see_log_for_details));
+        });
     }
 
     private void initNavigationDrawer()
@@ -214,13 +225,10 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         logMsg("onDestroy: shutting down event listeners");
 
-        if (mListLoader != null) mListLoader.shutdown();
-
         mGoogleApiClient.stopAutoManage(this);
         mGoogleApiClient.disconnect();
 
         // Unregister event bus
-        PineTaskApplication application = (PineTaskApplication)getApplication();
         logMsg("UnRegistering event bus");
         mBus.unregister(this);
 
@@ -228,7 +236,8 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         if (isFinishing())
         {
             logMsg("onDestroy - finishing activity and releasing UserScope");
-            PineTaskApplication.getInstance().releaseUserComponent();
+            mActiveListManager.shutdown();
+            PineTaskApplication.getInstance().destroyUserComponent();
         }
 
         mPresenter.detach(isFinishing());
@@ -239,7 +248,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     {
         super.onNewIntent(intent);
         logMsg("onNewIntent: %s", intent.toString());
-        mInviteManager.checkForInvites();
+        checkForInvites();
     }
 
     @Override
@@ -384,7 +393,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 }
                 else if (position==2)
                 {
-                    MembersFragment membersFragment = MembersFragment.newInstance(mUserId);
+                    MembersFragment membersFragment = MembersFragment.newInstance();
                     return membersFragment;
                 }
                 else

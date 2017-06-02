@@ -10,6 +10,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskActivity;
@@ -62,18 +63,27 @@ public class SettingsActivity extends PineTaskActivity
 
         // Lookup username in database and perform UI binding
         String userId = getIntent().getStringExtra(USER_ID_KEY);
-        mDbHelper.getUserNameSingle(userId).subscribe(mDbHelper.singleObserver((String userName) -> {
+        mDbHelper.getUserNameSingle(userId).subscribe(userName ->
+        {
             mUser = new PineTaskUser(userId, userName);
             mBinding.setUser(mUser);
             mNameEditText.setEnabled(true);
-        }));
+        }, ex ->
+        {
+            logException(ex);
+            Toast.makeText(this, R.string.error_getting_username, Toast.LENGTH_LONG).show();
+        });
 
         // If user has not yet signed up for an account, show the layout with explanation text and a "Sign up / Login" button.
         mAnonymousLayout.setVisibility(View.GONE);
-        mDbHelper.getIsAnonymous(userId).subscribe(mDbHelper.singleObserver((Boolean isAnonymous) ->
+        mDbHelper.getIsAnonymous(userId).subscribe(isAnonymous ->
         {
             if (isAnonymous) mAnonymousLayout.setVisibility(View.VISIBLE);
-        }));
+        }, ex ->
+        {
+            logException(ex);
+            Toast.makeText(this, R.string.error_getting_anonymous_status, Toast.LENGTH_LONG).show();
+        });
     }
 
     @OnClick(R.id.signUpOrLoginButton)

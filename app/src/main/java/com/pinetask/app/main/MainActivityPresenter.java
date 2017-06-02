@@ -1,13 +1,18 @@
 package com.pinetask.app.main;
 
 import com.pinetask.app.R;
+import com.pinetask.app.active_list_manager.ActiveListEvent;
+import com.pinetask.app.active_list_manager.ActiveListManager;
+import com.pinetask.app.active_list_manager.ListLoadErrorEvent;
+import com.pinetask.app.active_list_manager.ListLoadedEvent;
+import com.pinetask.app.active_list_manager.NoListsAvailableEvent;
 import com.pinetask.app.common.BasePresenter;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
 
-import io.reactivex.Maybe;
+import io.reactivex.disposables.Disposable;
 
 public class MainActivityPresenter extends BasePresenter implements MainActivityContract.IMainActivityPresenter
 {
@@ -15,44 +20,64 @@ public class MainActivityPresenter extends BasePresenter implements MainActivity
     DbHelper mDbHelper;
     String mUserId;
     String mUserName;
-    PrefsManager mPrefsManager;
-    PineTaskList mCurrentList;
     PineTaskApplication mApplication;
+    PrefsManager mPrefsManager;
+    ActiveListManager mActiveListManager;
+    Disposable mActiveListManagerSubscription;
+    Disposable mUserNameSubscription;
 
-    public MainActivityPresenter(DbHelper dbHelper, String userId, PrefsManager prefsManager, PineTaskApplication application)
+    public MainActivityPresenter(DbHelper dbHelper, String userId, PrefsManager prefsManager, PineTaskApplication application, ActiveListManager activeListManager)
     {
         logMsg("Creating MainActivityPresenter");
         mDbHelper = dbHelper;
         mUserId = userId;
         mPrefsManager = prefsManager;
         mApplication = application;
+        mActiveListManager = activeListManager;
+
+        // Subscribe to ActiveListManager to be notified of events when the active list is changed.
+        mActiveListManagerSubscription = mActiveListManager.subscribe(activeListEvent -> {}, ex -> logAndShowError(ex, mApplication.getString(R.string.error_processing_list_event)));
 
         // Subscribe to user name, so it can be displayed in the side navigation drawer.
-        observe(mDbHelper.getUserNameObservable(mUserId), this::showUserName);
+        mUserNameSubscription = mDbHelper.getUserNameObservable(mUserId).subscribe(this::showUserName, ex -> logAndShowError(ex, mApplication.getString(R.string.error_getting_username)));
+    }
 
-        // Determine the user's current list: previously used list if still available, otherwise their first list, otherwise none. If first launch, show "Add List" dialog.
-        // Then notify the view so it can display the list name on the list selector button.
-        getListToUse().subscribe(this::onListSelected, ex -> logAndShowError(ex, "Error getting list to use"), this::onNoListsAvailable);
+    /** Process events that have been emitted from the ActiveListManager. **/
+    private void handleActiveListEvent(ActiveListEvent activeListEvent)
+    {
+        logMsg("handleActiveListEvent: %s", activeListEvent.getClass().getSimpleName());
+
+        if (activeListEvent instanceof ListLoadedEvent)
+        {
+            // A new list is active: refresh the name displayed on the list selector button.
+            ListLoadedEvent listLoadedEvent = (ListLoadedEvent) activeListEvent;
+            PineTaskList newList = listLoadedEvent.ActiveList;
+            if (mView != null) mView.showCurrentListName(newList.getName());
+        }
+        else if (activeListEvent instanceof ListLoadErrorEvent)
+        {
+            // Error occurred when loading list: log and show error.
+            ListLoadErrorEvent listLoadErrorEvent = (ListLoadErrorEvent) activeListEvent;
+            logAndShowError(listLoadErrorEvent.Error, mApplication.getString(R.string.error_loading_lists));
+        }
+        else if (activeListEvent instanceof NoListsAvailableEvent)
+        {
+            // The user's last list has been deleted - update list name selector button to indicate this.
+            onNoListsAvailable();
+        }
     }
 
     @Override
     public void attach(MainActivityContract.IMainActivityView view)
     {
         mView = view;
+        PineTaskList activeList = mActiveListManager.getActiveList();
 
         if (mUserName != null) mView.showUserName(mUserName);
-        if (mCurrentList != null) mView.showCurrentListName(mCurrentList.getName());
-
-        // Create presenters for ListItemsFragment, ChatFragment, and MembersFragment. Then, tell the view to initialize the ViewPager.
-        // TODO
-
-        // Subscribe to list deleted events: if the current list gets deleted, try switching to the first available list if there is one.
-        // TODO
+        if (activeList != null) mView.showCurrentListName(activeList.getName());
 
         // Check for new startup message the user hasn't seen yet, and display them to the user.
         // TODO
-
-
 
     }
 
@@ -60,10 +85,15 @@ public class MainActivityPresenter extends BasePresenter implements MainActivity
     public void detach(boolean isFinishing)
     {
         mView = null;
-        if (isFinishing) shutdown();
+        if (isFinishing)
+        {
+            logMsg("detach: isFinishing=true, shutting down subscriptions");
+            if (mActiveListManagerSubscription != null) mActiveListManagerSubscription.dispose();
+            if (mUserNameSubscription != null) mUserNameSubscription.dispose();
+        }
     }
 
-    /** Load info for all lists that the user has access to, and display them in selector dialog for use to switch lists. **/
+    /** Load info for all lists that the user has access to, and display them in selector dialog for user to switch lists. **/
     @Override
     public void onListSelectorClicked()
     {
@@ -75,16 +105,6 @@ public class MainActivityPresenter extends BasePresenter implements MainActivity
         {
             logAndShowError(ex, "Error loading lists");
         });
-    }
-
-    /** Set current list ID in shared prefs.   Look up the name of the list with the ID specified, and display it on the list selector button.  **/
-    @Override
-    public void onListSelected(PineTaskList list)
-    {
-        logMsg("onListSelected: setting current list to %s (%s)", list.getKey(), list.getName());
-        mCurrentList = list;
-        mPrefsManager.setCurrentListId(list.getKey());
-        if (mView != null) mView.showCurrentListName(list.getName());
     }
 
     @Override
@@ -99,48 +119,18 @@ public class MainActivityPresenter extends BasePresenter implements MainActivity
         if (mView != null) mView.showUserName(userName);
     }
 
-    /** Look up the ID of the user's previously selected list. If it still exists, emit it.
-     *  Otherwise, if the user has at least one list, emit the first list ID.
-     *  Otherwise, emit empty.
-     **/
-    Maybe<PineTaskList> getListToUse()
+    @Override
+    public void onListSelected(PineTaskList list)
     {
-        return getPreviousListIdIfExists().switchIfEmpty(getFirstListIdIfExists()).flatMap(listId -> mDbHelper.getPineTaskList(listId).toMaybe());
-    }
-
-    /** Emits the previously used list ID if non-null and it still exists, otherwise empty. **/
-    Maybe<String> getPreviousListIdIfExists()
-    {
-        String previousListId = mPrefsManager.getCurrentListId();
-        if (previousListId == null) return Maybe.empty();
-        else return mDbHelper.canAccessList(mUserId, previousListId).flatMapMaybe(canAccess -> canAccess ? Maybe.just(previousListId) : Maybe.empty());
-    }
-
-    /** If the user has any lists, emit their first list ID. Otherwise, emit empty result. **/
-    Maybe<String> getFirstListIdIfExists()
-    {
-        return mDbHelper.getListIdsForUser(mUserId).toList().flatMapMaybe(listIds ->
-        {
-            if (listIds != null && listIds.size() > 0) return Maybe.just(listIds.get(0));
-            return Maybe.empty();
-        });
-    }
-
-    private void logAndShowError(Throwable ex, String message, Object... args)
-    {
-        logError(message);
-        logException(ex);
-        if (mView != null) mView.showError(message, args);
+        mActiveListManager.setActiveList(list);
     }
 
     /** Set current list to null in shared prefs. Update UI state to indicate there is no current list. **/
     private void onNoListsAvailable()
     {
-        logMsg("onNoListsAvailable: setting current list to null");
-        mPrefsManager.setCurrentListId(null);
         if (mView != null)
         {
-            mView.showCurrentListName("");
+            mView.showCurrentListName(mApplication.getString(R.string.no_lists_found));
             mView.hideBottomMenuBar();
             mView.showNoListsFoundMessage();
             if (mPrefsManager.getIsFirstLaunch())
@@ -168,24 +158,15 @@ public class MainActivityPresenter extends BasePresenter implements MainActivity
     @Override
     public void onPurgeCompletedItemsSelected()
     {
-        PineTaskList currentList = mCurrentList;
+        PineTaskList currentList = mActiveListManager.getActiveList();
         if (currentList != null)
         {
             logMsg("onPurgeCompletedItemsSelected: starting purge for list %s", currentList.getId());
-            mDbHelper.getListName(currentList.getId()).subscribe(listName ->
-            {
-                if (mView != null) mView.showPurgeCompletedItemsDialog(currentList.getId(), currentList.getName());
-            }, ex ->
-            {
-                logAndShowError(ex, mApplication.getString(R.string.error_getting_list_name));
-            });
+            if (mView != null) mView.showPurgeCompletedItemsDialog(currentList.getId(), currentList.getName());
         }
         else
         {
             showErrorMessage(mApplication.getString(R.string.error_no_current_list));
         }
-
     }
-
-
 }

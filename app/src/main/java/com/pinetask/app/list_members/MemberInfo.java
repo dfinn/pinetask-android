@@ -15,4 +15,12 @@ public class MemberInfo
         IsOwner = isOwner;
         CanBeDeleted = canBeDeleted;
     }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof MemberInfo)) return false;
+        MemberInfo memberInfo = (MemberInfo) obj;
+        return UserId.equals(memberInfo.UserId);
+    }
 }

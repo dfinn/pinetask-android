@@ -82,4 +82,12 @@ public abstract class BasePresenter
     }
 
     protected abstract void showErrorMessage(String message, Object... args);
+
+    protected void logAndShowError(Throwable ex, String message, Object... args)
+    {
+        logError(message);
+        logException(ex);
+        showErrorMessage(message, args);
+    }
+
 }

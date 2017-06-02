@@ -134,7 +134,13 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
     /** Initiate async query to find out the name of the user with the specified username.  When query returns, populates the "claimed by" textview in the holder provided. **/
     private void populateClaimedBy(final ItemViewHolder holder, final String claimedBy)
     {
-        mDbHelper.getUserNameSingle(claimedBy).subscribe(mDbHelper.singleObserver((String data) -> holder.mClaimedByTextView.setText((data != null && data.length()>0) ? data.substring(0, 1) : "?")));
+        mDbHelper.getUserNameSingle(claimedBy).subscribe(data ->
+        {
+            holder.mClaimedByTextView.setText((data != null && data.length() > 0) ? data.substring(0, 1) : "?");
+        }, ex ->
+        {
+            Logger.logErrorAndException(getClass(), ex, "Error getting user name for user %s", claimedBy);
+        });
     }
 
     @Override

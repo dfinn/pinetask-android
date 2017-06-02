@@ -23,7 +23,7 @@ public class PineTaskApplication extends MultiDexApplication
     UserComponent mUserComponent;
     public void createUserComponent(String userId) { mAppComponent.userComponent(new UserModule(userId)); }
     public UserComponent getUserComponent() { return mUserComponent; }
-    public void releaseUserComponent() { mUserComponent = null; }
+    public void destroyUserComponent() { mUserComponent = null; }
 
     @Inject Bus mEventBus;
 

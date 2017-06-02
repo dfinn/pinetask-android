@@ -1,5 +1,7 @@
 package com.pinetask.app.common;
 
+import com.pinetask.app.list_members.MembersAdapter;
+import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.main.MainActivity;
 import com.pinetask.app.main.PurgeCompletedItemsDialogFragment;
 
@@ -12,4 +14,6 @@ public interface UserComponent
 {
     void inject(MainActivity target);
     void inject(PurgeCompletedItemsDialogFragment target);
+    void inject(MembersFragment target);
+    void inject(MembersAdapter target);
 }

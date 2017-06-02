@@ -16,6 +16,7 @@ import com.pinetask.app.list_items.PineTaskItem;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.R;
+import com.pinetask.app.main.InviteInfo;
 import com.pinetask.app.manage_lists.StartupMessage;
 import com.pinetask.common.Logger;
 import com.squareup.otto.Bus;
@@ -315,55 +316,55 @@ public class DbHelper
 
     /** Returns a Completable that, when subscribed to, checks if the invite for the specified list exists.  If it does, invokes onComplete().
      *  If it doesn't exists, or if an error occurs when checking, calls onError(). **/
-    public Completable verifyInviteExists(final String listId, final String inviteId)
+    public Completable verifyInviteExists(InviteInfo inviteInfo)
     {
         return Completable.create((final CompletableEmitter emitter) ->
+        {
+            logMsg("verifyInviteExists: %s", inviteInfo);
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(inviteInfo.ListId).child(inviteInfo.InviteId).child(INVITE_CREATED_AT_KEY);
+            ref.addListenerForSingleValueEvent(new ValueEventListener()
             {
-                logMsg("verifyInviteExists: listId=%s, inviteId=%s", listId, inviteId);
-                final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(listId).child(inviteId).child(INVITE_CREATED_AT_KEY);
-                ref.addListenerForSingleValueEvent(new ValueEventListener()
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot)
                 {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot)
+                    logMsg("verifyInviteExists: onDataChanged, value=%s", dataSnapshot.getValue());
+                    if (dataSnapshot.getValue() != null)
                     {
-                        logMsg("verifyInviteExists: onDataChanged, value=%s", dataSnapshot.getValue());
-                        if (dataSnapshot.getValue()!=null)
-                        {
-                            logMsg("verifyInviteExists/onDataChange: snapshot value non-null, calling onComplete");
-                            emitter.onComplete();
-                        }
-                        else
-                        {
-                            logMsg("verifyInviteExists/onDataChange: snapshot value is null, calling onError(invite doesn't exist)");
-                            emitter.onError(new PineTaskException(PineTaskApplication.getInstance().getString(R.string.invite_already_used)));
-                        }
+                        logMsg("verifyInviteExists/onDataChange: snapshot value non-null, calling onComplete");
+                        emitter.onComplete();
                     }
+                    else
+                    {
+                        logMsg("verifyInviteExists/onDataChange: snapshot value is null, calling onError(invite doesn't exist)");
+                        emitter.onError(new PineTaskException(PineTaskApplication.getInstance().getString(R.string.invite_already_used)));
+                    }
+                }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError)
-                    {
-                        logMsg("verifyInviteExists: onCancelled, error=%s", databaseError.getMessage());
-                        emitter.onError(new DbOperationCanceledException(ref, databaseError, "verify invite exists"));
-                    }
-                });
+                @Override
+                public void onCancelled(DatabaseError databaseError)
+                {
+                    logMsg("verifyInviteExists: onCancelled, error=%s", databaseError.getMessage());
+                    emitter.onError(new DbOperationCanceledException(ref, databaseError, "verify invite exists"));
+                }
             });
+        });
     }
 
     /** Returns a Completable that, when subscribed to, will delete the invite specified. **/
-    public Completable deleteInvite(final String listId, final String inviteId)
+    public Completable deleteInvite(InviteInfo inviteInfo)
     {
-        logMsg("Deleting invite %s for list %s", inviteId, listId);
-        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(listId).child(inviteId);
+        logMsg("Deleting invite: %s", inviteInfo);
+        final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(inviteInfo.ListId).child(inviteInfo.InviteId);
         return setValueRx(ref, null, "delete invite");
     }
 
     /** Returns a Completable that, when subscribed to, will add the user as a collaborator to the list specified by adding the node:
      *   /list_collaborators/<listid>/<userid>/invite_id with the ID of the invite from which access was given. **/
-    public Completable addUserAsCollaboratorToList(final String listId, final String invitationId, final String userId)
+    public Completable addUserAsCollaboratorToList(InviteInfo inviteInfo, final String userId)
     {
-        logMsg("--- Creating node %s/%s/%s with payload invite_id=%s", LIST_COLLABORATORS_NODE_NAME, listId, userId, invitationId);
-        final DatabaseReference ref = getListCollaboratorsReference(listId).child(userId).child(INVITE_ID_KEY);
-        return setValueRx(ref, invitationId, "add user as list collaborator");
+        logMsg("--- Creating node %s/%s/%s with payload invite_id=%s", LIST_COLLABORATORS_NODE_NAME, inviteInfo.ListId, userId, inviteInfo.InviteId);
+        final DatabaseReference ref = getListCollaboratorsReference(inviteInfo.ListId).child(userId).child(INVITE_ID_KEY);
+        return setValueRx(ref, inviteInfo.InviteId, "add user as list collaborator");
     }
 
     /** Returns a Completable that when subscribed to adds the list ID to the /lists node of the current user (so it shows up in the list of lists this user has access to).
@@ -821,13 +822,13 @@ public class DbHelper
      *  - Adds the list ID to the current user's list of accessible lists.
      *  - Looks up the list's name and returns it
      **/
-    public Single<String> acceptInvite(String listId, String userId, String invitationId)
+    public Single<String> acceptInvite(InviteInfo inviteInfo, String userId)
     {
-        return verifyInviteExists(listId, invitationId)
-                .andThen(addUserAsCollaboratorToList(listId, invitationId, userId))
-                .andThen(deleteInvite(listId, invitationId))
-                .andThen(addListToUserLists(listId, userId, DbHelper.WRITE))
-                .andThen(getListName(listId));
+        return verifyInviteExists(inviteInfo)
+                .andThen(addUserAsCollaboratorToList(inviteInfo, userId))
+                .andThen(deleteInvite(inviteInfo))
+                .andThen(addListToUserLists(inviteInfo.ListId, userId, DbHelper.WRITE))
+                .andThen(getListName(inviteInfo.ListId));
     }
 
     /** Delete all completed items in the list with the ID specified. **/

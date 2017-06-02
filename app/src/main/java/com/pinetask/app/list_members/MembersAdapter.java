@@ -8,8 +8,10 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskException;
+import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.main.MainActivity;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.R;
@@ -28,7 +30,7 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
 {
     List<MemberInfo> mMembers = new ArrayList<>();
     MainActivity mActivity;
-    @Inject PrefsManager mPrefsManager;
+    @Inject ActiveListManager mActiveListManager;
 
     class MemberViewHolder extends RecyclerView.ViewHolder
     {
@@ -43,8 +45,8 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
             {
                 MemberInfo memberInfo = mMembers.get(getAdapterPosition());
                 String userId = memberInfo.UserId;
-                String listId = mPrefsManager.getCurrentListId();
-                RevokeListAccessDialogFragment dialog = RevokeListAccessDialogFragment.newInstance(listId, userId);
+                PineTaskList activeList = mActiveListManager.getActiveList();
+                RevokeListAccessDialogFragment dialog = RevokeListAccessDialogFragment.newInstance(activeList, userId);
                 mActivity.getSupportFragmentManager().beginTransaction().add(dialog, RevokeListAccessDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
             });
         }
@@ -53,7 +55,7 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
     public MembersAdapter(MainActivity activity)
     {
         mActivity = activity;
-        PineTaskApplication.getInstance().getAppComponent().inject(this);
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
     }
 
     @Override

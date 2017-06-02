@@ -18,5 +18,11 @@ public class LoggingBase
         Logger.logException(getClass(), ex);
     }
 
+    protected void logErrorAndException(Throwable ex, String msg, Object... args)
+    {
+        logError(msg, args);
+        logException(ex);
+    }
+
 
 }

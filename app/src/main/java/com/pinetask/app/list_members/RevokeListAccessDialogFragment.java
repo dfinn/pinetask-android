@@ -8,9 +8,11 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskDialogFragment;
+import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.app.db.StringPair;
 import com.pinetask.app.db.StringPairer;
@@ -22,17 +24,17 @@ import io.reactivex.Single;
 /** Dialog which prompts the user to confirm deleting a member from a list.  If they choose yes, initiates delete request. **/
 public class RevokeListAccessDialogFragment extends PineTaskDialogFragment
 {
-    public static String LIST_ID_KEY = "ListId";
+    public static String LIST_KEY = "List";
     public static String USER_ID_KEY = "UserId";
 
     @BindView(R.id.titleTextView) TextView mTitleTextView;
     @BindView(R.id.okButton) Button mOkButton;
     @BindView(R.id.cancelButton) Button mCancelButton;
 
-    public static RevokeListAccessDialogFragment newInstance(String listId, String userId)
+    public static RevokeListAccessDialogFragment newInstance(PineTaskList pineTaskList, String userId)
     {
         Bundle args = new Bundle();
-        args.putString(LIST_ID_KEY, listId);
+        args.putSerializable(LIST_KEY, pineTaskList);
         args.putString(USER_ID_KEY, userId);
         RevokeListAccessDialogFragment dialog = new RevokeListAccessDialogFragment();
         dialog.setArguments(args);
@@ -47,18 +49,23 @@ public class RevokeListAccessDialogFragment extends PineTaskDialogFragment
         ButterKnife.bind(this, view);
         mOkButton.setText(R.string.delete);
 
-        final String listId = getArguments().getString(LIST_ID_KEY);
+        PineTaskList pineTaskList = (PineTaskList) getArguments().getSerializable(LIST_KEY);
         final String userId = getArguments().getString(USER_ID_KEY);
 
         // Look up list name and username, and then populate dialog text.
-        Single.zip(mDbHelper.getListName(listId), mDbHelper.getUserNameSingle(userId), new StringPairer()).subscribe(mDbHelper.singleObserver((StringPair data) ->
-                    {
-                        mTitleTextView.setText(String.format(getString(R.string.really_revoke_access_to_list_x_for_user_y), data.String1, data.String2));
-                    }));
+        mDbHelper.getUserNameSingle(userId).subscribe(userName ->
+        {
+            mTitleTextView.setText(String.format(getString(R.string.really_revoke_access_to_list_x_for_user_y), pineTaskList.getName(), userName));
+        }, ex ->
+        {
+            logException(ex);
+            dismiss();
+            Toast.makeText(getActivity(), R.string.error_getting_username, Toast.LENGTH_LONG).show();
+        });
 
         mOkButton.setOnClickListener((View __) ->
         {
-            mDbHelper.revokeAccessToList(listId, userId).subscribe(activityObserver("revoke access to list " + listId));
+            mDbHelper.revokeAccessToList(pineTaskList.getId(), userId).subscribe(activityObserver("revoke access to list " + pineTaskList.getId()));
             dismiss();
         });
 
