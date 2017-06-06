@@ -1,13 +1,17 @@
 package com.pinetask.app.common;
 
 import com.crashlytics.android.Crashlytics;
+import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.active_list_manager.ActiveListManager;
+import com.pinetask.app.chat.ChatPresenter;
+import com.pinetask.app.chat.ChatPresenterImpl;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.app.list_members.MembersPresenter;
 import com.pinetask.app.list_members.MembersPresenterImpl;
-import com.pinetask.app.main.MainActivityContract;
 import com.pinetask.app.main.MainActivityPresenter;
+import com.pinetask.app.main.MainActivityPresenterImpl;
 import com.pinetask.common.Logger;
+import com.squareup.otto.Bus;
 
 import javax.inject.Named;
 
@@ -44,15 +48,22 @@ public class UserModule
     }
 
     @Provides
-    public MainActivityContract.IMainActivityPresenter providesMainActivityPresenter(DbHelper dbHelper, @Named("user_id") String userId, PrefsManager prefsManager,
-                                                                                     PineTaskApplication pineTaskApplication, ActiveListManager activeListManager)
+    public MainActivityPresenter providesMainActivityPresenter(DbHelper dbHelper, @Named("user_id") String userId, PrefsManager prefsManager,
+                                                               PineTaskApplication pineTaskApplication, ActiveListManager activeListManager)
     {
-        return new MainActivityPresenter(dbHelper, userId, prefsManager, pineTaskApplication, activeListManager);
+        return new MainActivityPresenterImpl(dbHelper, userId, prefsManager, pineTaskApplication, activeListManager);
     }
 
     @Provides
     public MembersPresenter providesMembersPresenter(DbHelper dbHelper, PineTaskApplication pineTaskApplication, ActiveListManager activeListManager, @Named("user_id") String userId)
     {
         return new MembersPresenterImpl(dbHelper, pineTaskApplication, activeListManager, userId);
+    }
+
+    @Provides
+    public ChatPresenter providesChatPresenter(@Named("user_id") String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper,
+                                               Bus eventBus, PineTaskApplication application)
+    {
+        return new ChatPresenterImpl(userId, activeListManager, db, dbHelper, eventBus, application);
     }
 }

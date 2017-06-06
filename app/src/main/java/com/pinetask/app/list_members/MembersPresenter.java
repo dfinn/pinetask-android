@@ -4,5 +4,6 @@ public interface MembersPresenter
 {
     void attachView(MembersView view);
     void detachView();
+    void shutdown();
     void onAddMemberButtonClicked();
 }

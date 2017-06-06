@@ -1,6 +1,5 @@
 package com.pinetask.app.chat;
 
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -87,7 +86,7 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         else
         {
             holder.NameAndTimestampTextView.setText("?\n"+timeAbbrevStr);
-            logError("Warning: senderId for chat message %s is null", chatMessage.getKey());
+            logError("Warning: senderId for chat message %s is null", chatMessage.getId());
         }
 
         // Show message text

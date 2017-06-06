@@ -25,14 +25,16 @@ public class ActiveListManager extends LoggingBase
     Disposable mListsAddedOrDeletedSubscription;
 
     /** Use a BehaviorSubject so that subscribers will get the most recent event, plus all subsequent events. **/
-    BehaviorSubject<ActiveListEvent> mSubject;
+    //BehaviorSubject<ActiveListEvent> mSubject;
+    PublishSubject<ActiveListEvent> mSubject;
 
     public ActiveListManager(PrefsManager prefsManager, DbHelper dbHelper, @Named("user_id") String userId)
     {
         mPrefsManager = prefsManager;
         mDbHelper = dbHelper;
         mUserId = userId;
-        mSubject = BehaviorSubject.create();
+        //mSubject = BehaviorSubject.create();
+        mSubject = PublishSubject.create();
         mListsAddedOrDeletedSubscription = mDbHelper.getListAddedOrDeletedEvents(mUserId)
                                                     .subscribe(this::onListAddedOrDeleted, ex -> logErrorAndException(ex, "Error getting added/deleted events"));
         determineListToUse();

@@ -50,7 +50,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends PineTaskActivity implements ViewPager.OnPageChangeListener, MainActivityContract.IMainActivityView
+public class MainActivity extends PineTaskActivity implements ViewPager.OnPageChangeListener, MainActivityView
 {
     GoogleApiClient mGoogleApiClient;
     ActionBarDrawerToggle mDrawerToggle;
@@ -82,7 +82,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     public static int MANAGE_LISTS_REQUEST_CODE = 1;
 
     @Inject @Named("user_id") String mUserId;
-    @Inject MainActivityContract.IMainActivityPresenter mPresenter;
+    @Inject MainActivityPresenter mPresenter;
     @Inject ActiveListManager mActiveListManager;
 
     /** Launch the main activity, and create the Dagger components in the UserScope. **/
@@ -223,24 +223,21 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     {
         super.onDestroy();
 
-        logMsg("onDestroy: shutting down event listeners");
-
+        logMsg("onDestroy: disconnecting googleApiClient");
         mGoogleApiClient.stopAutoManage(this);
         mGoogleApiClient.disconnect();
 
-        // Unregister event bus
         logMsg("UnRegistering event bus");
         mBus.unregister(this);
+
+        mPresenter.detach();
 
         // If finishing, destroy the Dagger components in the UserScope.
         if (isFinishing())
         {
-            logMsg("onDestroy - finishing activity and releasing UserScope");
-            mActiveListManager.shutdown();
+            logMsg("onDestroy: isFinishing=true, destroying user scope");
             PineTaskApplication.getInstance().destroyUserComponent();
         }
-
-        mPresenter.detach(isFinishing());
     }
 
     @Override
@@ -388,7 +385,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 }
                 else if (position==1)
                 {
-                    ChatFragment chatFragment = ChatFragment.newInstance(mUserId);
+                    ChatFragment chatFragment = ChatFragment.newInstance();
                     return chatFragment;
                 }
                 else if (position==2)

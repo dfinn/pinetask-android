@@ -29,7 +29,7 @@ public class PurgeCompletedItemsDialogFragment extends PineTaskDialogFragment
     @BindView(R.id.cancelButton) Button mCancelButton;
 
     @Inject
-    MainActivityContract.IMainActivityPresenter mPresenter;
+    MainActivityPresenter mPresenter;
 
     public static PurgeCompletedItemsDialogFragment newInstance(String listId, String listName)
     {

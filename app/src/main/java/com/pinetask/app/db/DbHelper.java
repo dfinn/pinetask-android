@@ -9,6 +9,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.AddedOrDeletedEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskException;
@@ -25,7 +26,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -38,13 +38,9 @@ import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
-import io.reactivex.SingleObserver;
 import io.reactivex.SingleOnSubscribe;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 
 import static com.pinetask.app.db.KeyAddedOrDeletedObservable.getKeyAddedOrDeletedEventsAt;
 
@@ -172,10 +168,16 @@ public class DbHelper
         return mDb.getReference(LIST_ITEMS_NODE_NAME).child(listId);
     }
 
-    /** Retruns a reference to /startup_message **/
+    /** Returns a reference to /startup_message **/
     private DatabaseReference getStartupMessageRef()
     {
         return mDb.getReference(STARTUP_MESSAGE_NODE);
+    }
+
+    /** Returns a reference to /chat_messages/$list_id **/
+    private DatabaseReference getChatMessagesRef(String listId)
+    {
+        return mDb.getReference(CHAT_MESSAGES_NODE_NAME).child(listId);
     }
 
     private void deleteListItem(DatabaseReference listItemsRef, final String itemId)
@@ -475,7 +477,26 @@ public class DbHelper
     /** Returns an Observable that will emit any changes to the PineTaskList with the ID provided.  Caller must dispose Observable when no longer needed. **/
     public Observable<PineTaskList> subscribeListInfo(String listId)
     {
-        return subscribeItem(PineTaskList.class, getListInfoReference(listId), "subscribe to list info");
+        return subscribeValueEvents(PineTaskList.class, getListInfoReference(listId), "subscribe to list info");
+    }
+
+    /** Returns a Single that emits the count of chat messages in the list specified. **/
+    public Single<Long> getChatMessageCount(String listId)
+    {
+        return getNodeCount(getChatMessagesRef(listId));
+    }
+
+    /** Returns an observable that emits added/deleted events for chat messages in the list specified. **/
+    public Observable<AddedOrDeletedEvent<ChatMessage>> subscribeChatMessages(String listId)
+    {
+        ValueAddedOrDeletedObservable<ChatMessage> o = new ValueAddedOrDeletedObservable(ChatMessage.class, getChatMessagesRef(listId), "subscribe to chat messages");
+        return o.attachListener();
+    }
+
+    public void sendChatMessage(String listId, ChatMessage chatMessage)
+    {
+        DatabaseReference dbRef = getChatMessagesRef(listId);
+        dbRef.push().setValue(chatMessage);
     }
 
     /** Rename the specified list **/
@@ -555,10 +576,37 @@ public class DbHelper
         });
     }
 
+    /** Returns a single that emits the count of child nodes at the database reference specified.
+     *  TODO: using dataSnapshot.getChildrenCount() is a rather expensive operation, as it retrieves all data including sub-nodes in order to count it client side.
+     *       Revisit this code if Firebase adds a more efficient method to query for this, such as support for the "shallow" argument.
+     *       See: https://stackoverflow.com/questions/41590730/firebase-shallow-query-parameter-for-android **/
+    public Single<Long> getNodeCount(DatabaseReference dbRef)
+    {
+        return Single.create(emitter ->
+        {
+            dbRef.addListenerForSingleValueEvent(new ValueEventListener()
+            {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot)
+                {
+                    long childCount = dataSnapshot.getChildrenCount();
+                    emitter.onSuccess(childCount);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError)
+                {
+                    logDbError("get node count", databaseError, dbRef);
+                    emitter.onError(new DbOperationCanceledException(dbRef, databaseError, "get node count"));
+                }
+            });
+        });
+    }
+
     /** Returns a Single that emits the object at the specified database location, deserialized based on the objClass provided.
      *  If the value is null, error is emitted.
      **/
-    public <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription, final T defaultValue)
+    public <T> Single<T> getItem(final Class cl, final DatabaseReference ref, final String operationDescription, final T defaultValue)
     {
         return Single.create(new SingleOnSubscribe<T>()
         {
@@ -571,7 +619,7 @@ public class DbHelper
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot)
                     {
-                        Object obj = dataSnapshot.getValue(T);
+                        Object obj = dataSnapshot.getValue(cl);
                         logMsg("getItem(%s) onDataChange: %s", ref, obj);
                         if (obj instanceof UsesKeyIdentifier)
                         {
@@ -609,7 +657,7 @@ public class DbHelper
     /** Returns an Observable that emits the object at the specified database location, deserialized based on the type provided.
      *  Continues to emit items via onNext() whenever data at dbRef changes.  When the Observable is disposed, the ValueEventListener is disconnected.
      **/
-    public <T> Observable<T> subscribeItem(final Class T, final DatabaseReference ref, final String operationDescription)
+    public <T> Observable<T> subscribeValueEvents(final Class T, final DatabaseReference ref, final String operationDescription)
     {
         ObjectWrapper<ValueEventListener> eventListenerWrapper = new ObjectWrapper<>();
         ObjectWrapper<Boolean> dataReturnedWrapper = new ObjectWrapper<>(false);
@@ -635,7 +683,7 @@ public class DbHelper
                     }
                     else
                     {
-                        logMsg("subscribeItem(%s): onNext", ref);
+                        logMsg("subscribeValueEvents(%s): onNext", ref);
                         emitter.onNext((T) obj);
                         dataReturnedWrapper.Item=true;
                     }
@@ -648,7 +696,7 @@ public class DbHelper
                     // Check if onDataChange() has previously been called successfully, and if so, just log the error and call onComplete.
                     if (dataReturnedWrapper.Item)
                     {
-                        logError("Error in subscribeItem(%s), but dataReturned=true. Error=%s", ref, databaseError);
+                        logError("Error in subscribeValueEvents(%s), but dataReturned=true. Error=%s", ref, databaseError);
                         emitter.onComplete();
                     }
                     else

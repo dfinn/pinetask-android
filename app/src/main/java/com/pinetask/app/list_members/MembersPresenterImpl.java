@@ -56,6 +56,11 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
     public void detachView()
     {
         mView = null;
+    }
+
+    @Override
+    public void shutdown()
+    {
         if (mMembersAddedDeletedSubscription != null) mMembersAddedDeletedSubscription.dispose();
         if (mActiveListManagerSubscription != null) mActiveListManagerSubscription.dispose();
     }

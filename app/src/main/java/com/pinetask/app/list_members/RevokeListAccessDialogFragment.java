@@ -13,13 +13,9 @@ import android.widget.Toast;
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskDialogFragment;
 import com.pinetask.app.common.PineTaskList;
-import com.pinetask.app.db.DbHelper;
-import com.pinetask.app.db.StringPair;
-import com.pinetask.app.db.StringPairer;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import io.reactivex.Single;
 
 /** Dialog which prompts the user to confirm deleting a member from a list.  If they choose yes, initiates delete request. **/
 public class RevokeListAccessDialogFragment extends PineTaskDialogFragment

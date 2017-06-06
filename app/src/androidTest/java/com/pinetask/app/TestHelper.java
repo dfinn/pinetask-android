@@ -357,7 +357,7 @@ public class TestHelper
         onView(withId(R.id.okButton)).perform(click());
         onView(withRecyclerView(R.id.listsRecyclerView).atPosition(1)).check(matches(hasDescendant(withText(LIST_NAME_2))));
         openListFromManageListsActivity(1);
-        onView(allOf(withId(android.R.id.text1), withParent(withId(R.id.listSpinner)))).check(matches(withText(LIST_NAME_2)));
+        onView(allOf(withId(android.R.id.text1), withParent(withId(R.id.listNameTextView)))).check(matches(withText(LIST_NAME_2)));
     }
 
     public void openListFromManageListsActivity(int pos)
@@ -384,7 +384,7 @@ public class TestHelper
     {
         logMsg("switchToFirstList");
         delay(2000, "wait for onActivityResult() to load new list contents");
-        onView(withId(R.id.listSpinner)).perform(click());
+        onView(withId(R.id.listNameTextView)).perform(click());
         onData(allOf(is(instanceOf(PineTaskList.class)), withListName(LIST_NAME_1))).perform(click());
         delay(500, "wait for spinner popup to open");
     }

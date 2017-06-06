@@ -21,6 +21,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.common.ListSelectedEvent;
+import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskFragment;
 import com.pinetask.app.R;
 import com.pinetask.app.db.StatefulChildListener;
@@ -34,26 +35,20 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 /** Fragment for the "chat" tab: shows chat messages for the currently selected list. **/
-public class ChatFragment extends PineTaskFragment
+public class ChatFragment extends PineTaskFragment implements ChatView
 {
-    DatabaseReference mChatMessagesRef;
     ChatMessagesAdapter mChatMessagesAdapter;
-    StatefulChildListener mChatMessagesListener;
-    String mUserId, mCurrentListId;
+    @Inject ChatPresenter mChatPresenter;
 
     @BindView(R.id.chatRecyclerView) RecyclerView mChatRecyclerView;
     @BindView(R.id.chatMessageEditText) EditText mChatMessageEditText;
     @BindView(R.id.sendMessageButton) FloatingActionButton mSendMessageButton;
     @BindView(R.id.chatLayout) RelativeLayout mChatLayout;
 
-    /** Name of a string argument specifying the user ID. **/
-    public static String USER_ID_KEY = "UserId";
-
-    public static ChatFragment newInstance(String userId)
+    public static ChatFragment newInstance()
     {
         ChatFragment fragment = new ChatFragment();
         Bundle args = new Bundle();
-        args.putString(USER_ID_KEY, userId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -64,13 +59,11 @@ public class ChatFragment extends PineTaskFragment
     {
         View view = inflater.inflate(R.layout.chat_fragment, container, false);
         ButterKnife.bind(this, view);
-
-        // Initialize RecyclerView that will show chat messages.
-        mUserId = getArguments().getString(USER_ID_KEY);
         mChatMessagesAdapter = new ChatMessagesAdapter();
         mChatRecyclerView.setAdapter(mChatMessagesAdapter);
         mChatRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
+        mChatPresenter.attachView(this);
         return view;
     }
 
@@ -79,9 +72,7 @@ public class ChatFragment extends PineTaskFragment
     {
         String message = mChatMessageEditText.getText().toString();
         mChatMessageEditText.setText("");
-        ChatMessage chatMessage = new ChatMessage(message, mUserId);
-        logMsg("Sending chat message: %s", message.replace("%","%%"));
-        mChatMessagesRef.push().setValue(chatMessage);
+        mChatPresenter.sendMessage(message);
 
         // Hide soft keyboard
         View focusedView = getActivity().getCurrentFocus();
@@ -91,81 +82,42 @@ public class ChatFragment extends PineTaskFragment
         }
     }
 
-    /** Called by the event bus when the user has selected a new list. **/
-    @Subscribe
-    public void onListSelected(ListSelectedEvent event)
+    @Override
+    public void showChatMessage(ChatMessage chatMessage)
     {
-        logMsg("onListSelected: listId = %s", event.ListId);
-
-        // Shut down old listener if there was a previous list.  Clear existing chat messages from mListAdapter.
-        if (mChatMessagesListener != null) mChatMessagesListener.shutdown();
-        mChatMessagesAdapter.removeAll();
-
-        mCurrentListId = event.ListId;
-
-        if (mCurrentListId==null)
-        {
-            // All lists have been deleted. Disable chat EditText / send button.
-            logMsg("onListSelected: listId is null, returning");
-            mChatMessageEditText.setVisibility(View.GONE);
-            mSendMessageButton.setVisibility(View.GONE);
-            return;
-        }
-
-        // Enable chat edittext and "send" button
-        mChatMessageEditText.setVisibility(View.VISIBLE);
-        mSendMessageButton.setVisibility(View.VISIBLE);
-
-        mChatMessagesRef = mDatabase.getReference(DbHelper.CHAT_MESSAGES_NODE_NAME).child(mCurrentListId);
-
-        mChatMessagesListener = new StatefulChildListener(mChatMessagesRef, new StatefulChildListener.StatefulChildListenerCallbacks()
-        {
-            @Override
-            public void onInitialLoadCompleted()
-            {
-            }
-
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, boolean isInitialDataLoaded)
-            {
-                ChatMessage chatMessage = dataSnapshot.getValue(ChatMessage.class);
-                chatMessage.setKey(dataSnapshot.getKey());
-                mChatMessagesAdapter.addMessage(chatMessage);
-                mChatRecyclerView.smoothScrollToPosition(mChatMessagesAdapter.getItemCount()-1);
-
-                // Play notification sound and post message to event bus when new messages are received (ie, not from the current user).
-                if (isInitialDataLoaded && !mUserId.equals(chatMessage.getSenderId()))
-                {
-                    Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-                    Ringtone r = RingtoneManager.getRingtone(getActivity().getApplicationContext(), notification);
-                    r.play();
-                    mEventBus.post(chatMessage);
-                }
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, boolean isInitialDataLoaded)
-            {
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot, boolean isInitialDataLoaded)
-            {
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error)
-            {
-                logError("initChatMessagesListener: onCancelled: %s", error.getMessage());
-            }
-        });
+        mChatMessagesAdapter.addMessage(chatMessage);
+        mChatRecyclerView.smoothScrollToPosition(mChatMessagesAdapter.getItemCount()-1);
     }
 
     @Override
-    public void onDestroy()
+    public void playNewMessageSound()
     {
-        super.onDestroy();
-        logMsg("onDestroy: shutting down event listeners");
-        if (mChatMessagesListener != null) mChatMessagesListener.shutdown();
+        Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        Ringtone r = RingtoneManager.getRingtone(getActivity().getApplicationContext(), notification);
+        r.play();
+    }
+
+    @Override
+    public void clearChatMessages()
+    {
+        mChatMessagesAdapter.removeAll();
+    }
+
+    @Override
+    public void showChatLayouts()
+    {
+        mChatLayout.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void hideChatLayouts()
+    {
+        mChatLayout.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void showError(String message, Object... args)
+    {
+        showUserMessage(false, message, args);
     }
 }

@@ -21,9 +21,16 @@ public class PineTaskApplication extends MultiDexApplication
 
     /** Dagger2 component for injection of user-scoped dependencies (Main Activity, etc) **/
     UserComponent mUserComponent;
-    public void createUserComponent(String userId) { mAppComponent.userComponent(new UserModule(userId)); }
+    public void createUserComponent(String userId) { mUserComponent = mAppComponent.userComponent(new UserModule(userId)); }
     public UserComponent getUserComponent() { return mUserComponent; }
-    public void destroyUserComponent() { mUserComponent = null; }
+    public void destroyUserComponent()
+    {
+        mUserComponent.activeListManager().shutdown();
+        mUserComponent.mainActivityPresenter().shutdown();
+        mUserComponent.chatPresenter().shutdown();
+        mUserComponent.membersPresenter().shutdown();
+        mUserComponent = null;
+    }
 
     @Inject Bus mEventBus;
 
