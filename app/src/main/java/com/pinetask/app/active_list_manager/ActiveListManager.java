@@ -49,6 +49,7 @@ public class ActiveListManager extends LoggingBase
     /** Determine the user's current list: previously used list if still available, otherwise their first list, otherwise none. Then, store active list and notify listeners. **/
     private void determineListToUse()
     {
+        logMsg("determineListToUse is starting");
         getInitialListToUse().subscribe(this::setActiveList, this::onListLoadError, this::onNoListsAvailable);
     }
 
@@ -107,12 +108,18 @@ public class ActiveListManager extends LoggingBase
      **/
     Maybe<PineTaskList> getInitialListToUse()
     {
-        return getPreviousListIdIfExists().switchIfEmpty(getFirstListIdIfExists()).flatMap(listId -> mDbHelper.getPineTaskList(listId).toMaybe());
+        logMsg("getInitialListToUse is starting");
+        return getPreviousListIdIfExists().switchIfEmpty(getFirstListIdIfExists()).flatMap(listId ->
+        {
+            logMsg("getInitialListToUse: calling getPineTaskList(%s)", listId);
+            return mDbHelper.getPineTaskList(listId).toMaybe();
+        });
     }
 
     /** Emits the previously used list ID if non-null and it still exists, otherwise empty. **/
     Maybe<String> getPreviousListIdIfExists()
     {
+        logMsg("getPreviousListIdIfExists is starting");
         String previousListId = mPrefsManager.getCurrentListId();
         if (previousListId == null) return Maybe.empty();
         else return mDbHelper.canAccessList(mUserId, previousListId).flatMapMaybe(canAccess -> canAccess ? Maybe.just(previousListId) : Maybe.empty());
@@ -121,6 +128,7 @@ public class ActiveListManager extends LoggingBase
     /** If the user has any lists, emit their first list ID. Otherwise, emit empty result. **/
     Maybe<String> getFirstListIdIfExists()
     {
+        logMsg("getFirstListIdIfExists is starting");
         return mDbHelper.getListIdsForUser(mUserId).toList().flatMapMaybe(listIds ->
         {
             if (listIds != null && listIds.size() > 0) return Maybe.just(listIds.get(0));

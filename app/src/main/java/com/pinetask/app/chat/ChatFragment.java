@@ -86,7 +86,7 @@ public class ChatFragment extends PineTaskFragment implements ChatView
     public void showChatMessage(ChatMessage chatMessage)
     {
         mChatMessagesAdapter.addMessage(chatMessage);
-        mChatRecyclerView.smoothScrollToPosition(mChatMessagesAdapter.getItemCount()-1);
+        mChatRecyclerView.scrollToPosition(mChatMessagesAdapter.getItemCount()-1);
     }
 
     @Override

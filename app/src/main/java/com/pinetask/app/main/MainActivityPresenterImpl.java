@@ -11,6 +11,8 @@ import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.launch.StartupMessageDialogFragment;
+import com.pinetask.app.manage_lists.StartupMessage;
 
 import io.reactivex.disposables.Disposable;
 
@@ -25,6 +27,7 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
     ActiveListManager mActiveListManager;
     Disposable mActiveListManagerSubscription;
     Disposable mUserNameSubscription;
+    StartupMessage mStartupMessage;
 
     public MainActivityPresenterImpl(DbHelper dbHelper, String userId, PrefsManager prefsManager, PineTaskApplication application, ActiveListManager activeListManager)
     {
@@ -40,6 +43,9 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
 
         // Subscribe to user name, so it can be displayed in the side navigation drawer.
         mUserNameSubscription = mDbHelper.getUserNameObservable(mUserId).subscribe(this::showUserName, ex -> logAndShowError(ex, mApplication.getString(R.string.error_getting_username)));
+
+        // Check if there's a newer version of the startup message that the user hasn't seen yet. If so, display it.
+        loadStartupMessage();
     }
 
     /** Process events that have been emitted from the ActiveListManager. **/
@@ -67,18 +73,39 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         }
     }
 
+    /** Unless this is the first app launch, query the server for the startup message and its version.  If the user hasn't seen it yet, display the message now. **/
+    private void loadStartupMessage()
+    {
+        if (mPrefsManager.getIsFirstLaunch()) return;
+        mDbHelper.getStartupMessageIfUnread(mUserId)
+                .subscribe(startupMessage ->
+                {
+                    mStartupMessage = startupMessage;
+                    showStartupMessage();
+                }, ex ->
+                {
+                    logAndShowError(ex, mApplication.getString(R.string.error_loading_startup_message));
+                });
+    }
+
     @Override
     public void attach(MainActivityView view)
     {
         mView = view;
         PineTaskList activeList = mActiveListManager.getActiveList();
-
         if (mUserName != null) mView.showUserName(mUserName);
         if (activeList != null) mView.showCurrentListName(activeList.getName());
+        if (mStartupMessage != null) showStartupMessage();
+    }
 
-        // Check for new startup message the user hasn't seen yet, and display them to the user.
-        // TODO
-
+    private void showStartupMessage()
+    {
+        if (mView != null)
+        {
+            logMsg("Showing startup message version %d", mStartupMessage.version);
+            mView.showStartupMessage(mStartupMessage);
+            mStartupMessage = null;
+        }
     }
 
     @Override

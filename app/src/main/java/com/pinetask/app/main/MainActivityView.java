@@ -1,6 +1,7 @@
 package com.pinetask.app.main;
 
 import com.pinetask.app.common.PineTaskList;
+import com.pinetask.app.manage_lists.StartupMessage;
 
 import java.util.List;
 
@@ -11,7 +12,7 @@ public interface MainActivityView
     void showCurrentListName(String listName);
     void showListChooser(List<PineTaskList> lists);
     void showUserName(String userName);
-    void showStartupMessage(String text, int versionNumber);
+    void showStartupMessage(StartupMessage startupMessage);
     void showAddListDialog();
     void showBottomMenuBar();
     void hideBottomMenuBar();

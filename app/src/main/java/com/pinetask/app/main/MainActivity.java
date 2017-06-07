@@ -1,6 +1,7 @@
 package com.pinetask.app.main;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.Menu;
@@ -20,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -39,6 +42,7 @@ import com.pinetask.app.list_items.ListItemsFragment;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.manage_lists.AddOrRenameListDialogFragment;
 import com.pinetask.app.manage_lists.ManageListsActivity;
+import com.pinetask.app.manage_lists.StartupMessage;
 import com.squareup.otto.Subscribe;
 
 import java.util.List;
@@ -126,9 +130,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         // Initialize the bottom navigation menu with choices for "List Items", "Chat", and "Members"
         initBottomNavigationMenu();
-
-        // Show startup message if it's a newer version than the user has previously seen.
-        showStartupMessage();
 
         // Initialize navigation drawer
         initNavigationDrawer();
@@ -284,7 +285,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         return true;
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {
@@ -433,7 +433,8 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     /** Initialize the bottom navigation menu. **/
     private void initBottomNavigationMenu()
     {
-        mBottomNavigationView.setOnNavigationItemSelectedListener((MenuItem item) -> {
+        mBottomNavigationView.setOnNavigationItemSelectedListener((MenuItem item) ->
+        {
             mActiveMenuItem = item.getItemId();
             int viewPosition = (mActiveMenuItem==R.id.listItemsMenuItem) ? 0 : (mActiveMenuItem==R.id.chatMenuItem) ? 1 : 2;
             mViewPager.setCurrentItem(viewPosition);
@@ -452,26 +453,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         }
     }
 
-    /** Unless this is the first app launch, query the server for the startup message and its version.  If the user hasn't seen it yet, display the message now. **/
-    private void showStartupMessage()
-    {
-        if (mPrefsManager.getIsFirstLaunch()) return;
-
-        mDbHelper.getStartupMessageIfUnread(mUserId)
-                .subscribe(startupMessage ->
-                {
-                    if (mActivityActive)
-                    {
-                        StartupMessageDialogFragment dialog = StartupMessageDialogFragment.newInstance(startupMessage.text, startupMessage.version, mUserId);
-                        getSupportFragmentManager().beginTransaction().add(dialog, StartupMessageDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
-                    }
-                }, ex ->
-                {
-                    logException(ex);
-                    showError(getString(R.string.error_loading_startup_message));
-                });
-    }
-
     @Override
     public void showAddListDialog()
     {
@@ -482,7 +463,13 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     @Override
     public void showListChooser(List<PineTaskList> lists)
     {
-        // TODO: show list chooser dialog
+        ArrayAdapter<PineTaskList> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, lists);
+        new AlertDialog.Builder(this).setAdapter(adapter, (dialogInterface, i) ->
+        {
+            PineTaskList selectedList = adapter.getItem(i);
+            logMsg("User selected list %s (%s)", selectedList.getKey(), selectedList.getName());
+            mPresenter.onListSelected(selectedList);
+        }).create().show();
     }
 
     @Override
@@ -577,9 +564,10 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     }
 
     @Override
-    public void showStartupMessage(String text, int versionNumber)
+    public void showStartupMessage(StartupMessage startupMessage)
     {
-
+        StartupMessageDialogFragment dialog = StartupMessageDialogFragment.newInstance(startupMessage.text, startupMessage.version, mUserId);
+        getSupportFragmentManager().beginTransaction().add(dialog, StartupMessageDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
     }
 
     @Override
