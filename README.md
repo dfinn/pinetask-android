@@ -18,5 +18,5 @@ A sample Android project using the Firebase realtime database.  Users can create
 
 ## Building the code
 
-- Add your google-services.json file to the /app directory (contains info on connecting to your Firebase DB instance).
+- Add your google-services.json file(s) to the /app/src/development and /app/src/production directories (contains info on connecting to your Firebase DB instance).
 - Add fabric.properties to the /app directory, which should contain "apiKey=xxxx" where "xxxx" is your Crashlytics API key.

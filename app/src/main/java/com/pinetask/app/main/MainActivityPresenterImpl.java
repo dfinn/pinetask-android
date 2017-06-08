@@ -58,7 +58,12 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
             // A new list is active: refresh the name displayed on the list selector button.
             ListLoadedEvent listLoadedEvent = (ListLoadedEvent) activeListEvent;
             PineTaskList newList = listLoadedEvent.ActiveList;
-            if (mView != null) mView.showCurrentListName(newList.getName());
+            if (mView != null)
+            {
+                mView.showCurrentListName(newList.getName());
+                mView.hideNoListsFoundMessage();
+                mView.showBottomMenuBar();
+            }
         }
         else if (activeListEvent instanceof ListLoadErrorEvent)
         {
@@ -129,7 +134,7 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         mDbHelper.getListIdsForUser(mUserId).flatMapSingle(mDbHelper::getPineTaskList).toList().subscribe(lists ->
         {
             logMsg("onListSelectorClicked: loaded %s lists", lists.size());
-            if (mView != null) mView.showListChooser(lists);
+            if ((lists.size() > 0) && (mView != null)) mView.showListChooser(lists);
         }, ex ->
         {
             logAndShowError(ex, "Error loading lists");

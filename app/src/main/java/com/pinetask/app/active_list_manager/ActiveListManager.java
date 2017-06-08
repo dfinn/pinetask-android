@@ -1,5 +1,6 @@
 package com.pinetask.app.active_list_manager;
 
+import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.AddedOrDeletedEvent;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskList;
@@ -25,16 +26,14 @@ public class ActiveListManager extends LoggingBase
     Disposable mListsAddedOrDeletedSubscription;
 
     /** Use a BehaviorSubject so that subscribers will get the most recent event, plus all subsequent events. **/
-    //BehaviorSubject<ActiveListEvent> mSubject;
-    PublishSubject<ActiveListEvent> mSubject;
+    BehaviorSubject<ActiveListEvent> mSubject;
 
     public ActiveListManager(PrefsManager prefsManager, DbHelper dbHelper, @Named("user_id") String userId)
     {
         mPrefsManager = prefsManager;
         mDbHelper = dbHelper;
         mUserId = userId;
-        //mSubject = BehaviorSubject.create();
-        mSubject = PublishSubject.create();
+        mSubject = BehaviorSubject.create();
         mListsAddedOrDeletedSubscription = mDbHelper.getListAddedOrDeletedEvents(mUserId)
                                                     .subscribe(this::onListAddedOrDeleted, ex -> logErrorAndException(ex, "Error getting added/deleted events"));
         determineListToUse();
@@ -64,6 +63,16 @@ public class ActiveListManager extends LoggingBase
                 logMsg("onListAddedOrDeleted: current list has been deleted");
                 mPrefsManager.setCurrentListId(null);
                 determineListToUse();
+            }
+        }
+        else if (event instanceof AddedEvent)
+        {
+            AddedEvent<String> addedEvent = (AddedEvent<String>) event;
+            String listId = addedEvent.Item;
+            if (mCurrentList == null)
+            {
+                logMsg("onListAddedOrDeleted: no current list, and a list was added - loading it");
+                mDbHelper.getPineTaskList(listId).subscribe(this::setActiveList, this::onListLoadError);
             }
         }
     }
