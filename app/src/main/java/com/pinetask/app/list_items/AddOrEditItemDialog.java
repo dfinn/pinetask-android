@@ -1,5 +1,6 @@
 package com.pinetask.app.list_items;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -7,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -69,6 +71,7 @@ public class AddOrEditItemDialog extends PineTaskDialogFragment
                     logMsg("Adding new item '%s'", description);
                     listItemsFragment.addItem(description);
                 }
+                hideSoftKeyboard();
                 dismiss();
             }
         });
@@ -79,6 +82,7 @@ public class AddOrEditItemDialog extends PineTaskDialogFragment
             @Override
             public void onClick(View view)
             {
+                hideSoftKeyboard();
                 dismiss();
             }
         });

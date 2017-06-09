@@ -1,6 +1,7 @@
 package com.pinetask.app.main;
 
 import com.pinetask.app.R;
+import com.pinetask.app.active_list_manager.ActiveListDeletedEvent;
 import com.pinetask.app.active_list_manager.ActiveListEvent;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.active_list_manager.ListLoadErrorEvent;
@@ -70,6 +71,12 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
             // Error occurred when loading list: log and show error.
             ListLoadErrorEvent listLoadErrorEvent = (ListLoadErrorEvent) activeListEvent;
             logAndShowError(listLoadErrorEvent.Error, mApplication.getString(R.string.error_loading_lists));
+        }
+        else if (activeListEvent instanceof ActiveListDeletedEvent)
+        {
+            // Show user a message indicating their active list was deleted.
+            ActiveListDeletedEvent activeListDeletedEvent = (ActiveListDeletedEvent) activeListEvent;
+            showErrorMessage(mApplication.getString(R.string.current_list_x_deleted_switching_to_first_available), activeListDeletedEvent.DeletedListName);
         }
         else if (activeListEvent instanceof NoListsAvailableEvent)
         {

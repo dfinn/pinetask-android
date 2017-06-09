@@ -12,11 +12,10 @@ import com.google.firebase.database.ValueEventListener;
 import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.AddedOrDeletedEvent;
 import com.pinetask.app.common.PineTaskApplication;
-import com.pinetask.app.common.PineTaskException;
+import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
 import com.pinetask.app.list_items.PineTaskItem;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
-import com.pinetask.app.R;
 import com.pinetask.app.main.InviteInfo;
 import com.pinetask.app.manage_lists.StartupMessage;
 import com.pinetask.common.Logger;
@@ -238,6 +237,16 @@ public class DbHelper
         return getItem(String.class, getUserNameRef(userId), "get user name");
     }
 
+    /** Looks up the name of the user based on the ChatMessage's senderId, and populates the username field. **/
+    public Observable<ChatMessage> populateUserName(ChatMessage chatMessage)
+    {
+        return getUserNameSingle(chatMessage.getSenderId()).map(userName ->
+        {
+            chatMessage.setSenderName(userName);
+            return chatMessage;
+        }).toObservable();
+    }
+
     /** Sets up event listener to query the username for the userId specified.  Must be disposed of when not needed any longer to detach the listener. **/
     public Observable<String> getUserNameObservable(final String userId)
     {
@@ -338,7 +347,7 @@ public class DbHelper
                     else
                     {
                         logMsg("verifyInviteExists/onDataChange: snapshot value is null, calling onError(invite doesn't exist)");
-                        emitter.onError(new PineTaskException(PineTaskApplication.getInstance().getString(R.string.invite_already_used)));
+                        emitter.onError(new PineTaskInviteAlreadyUsedException());
                     }
                 }
 
@@ -870,13 +879,13 @@ public class DbHelper
      *  - Adds the list ID to the current user's list of accessible lists.
      *  - Looks up the list's name and returns it
      **/
-    public Single<String> acceptInvite(InviteInfo inviteInfo, String userId)
+    public Single<PineTaskList> acceptInvite(InviteInfo inviteInfo, String userId)
     {
         return verifyInviteExists(inviteInfo)
                 .andThen(addUserAsCollaboratorToList(inviteInfo, userId))
                 .andThen(deleteInvite(inviteInfo))
                 .andThen(addListToUserLists(inviteInfo.ListId, userId, DbHelper.WRITE))
-                .andThen(getListName(inviteInfo.ListId));
+                .andThen(getPineTaskList(inviteInfo.ListId));
     }
 
     /** Delete all completed items in the list with the ID specified. **/

@@ -1,8 +1,10 @@
 package com.pinetask.app.common;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
+import android.view.inputmethod.InputMethodManager;
 
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.Logger;
@@ -45,4 +47,9 @@ public class PineTaskDialogFragment extends DialogFragment
         return activity.activityObserver(operationDescription, null);
     }
 
+    public void hideSoftKeyboard()
+    {
+        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(getDialog().getWindow().getDecorView().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+    }
 }

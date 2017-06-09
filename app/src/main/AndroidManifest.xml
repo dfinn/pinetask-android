@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.pinetask.app.main.MainActivity" android:launchMode="singleTask">
+        <activity android:name="com.pinetask.app.main.MainActivity" android:launchMode="singleTask" android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
             </intent-filter>

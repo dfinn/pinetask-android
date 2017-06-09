@@ -70,7 +70,7 @@ public class InviteManager extends LoggingBase
     }
 
     /** Checks if any Firebase invites are pending.  If so, processes each one, accepting the invite to the shared list and emitting the list name. **/
-    public Observable<String> checkForInvites()
+    public Observable<PineTaskList> checkForInvites()
     {
         return getPendingInvites().flatMap(inviteInfo -> mDbHelper.acceptInvite(inviteInfo, mUserId).toObservable());
     }

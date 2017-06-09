@@ -62,6 +62,7 @@ public class ActiveListManager extends LoggingBase
             {
                 logMsg("onListAddedOrDeleted: current list has been deleted");
                 mPrefsManager.setCurrentListId(null);
+                mSubject.onNext(new ActiveListDeletedEvent(mCurrentList.getName()));
                 determineListToUse();
             }
         }
@@ -108,6 +109,7 @@ public class ActiveListManager extends LoggingBase
     {
         logMsg("onNoListsAvailable: setting current list to null");
         mPrefsManager.setCurrentListId(null);
+        mCurrentList = null;
         mSubject.onNext(new NoListsAvailableEvent());
     }
 

@@ -54,6 +54,13 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         notifyDataSetChanged();
     }
 
+    public void showMessages(List<ChatMessage> messages)
+    {
+        mChatMessages.clear();
+        mChatMessages.addAll(messages);
+        notifyDataSetChanged();
+    }
+
     @Override
     public ChatMessageViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
     {
@@ -66,30 +73,9 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
     public void onBindViewHolder(ChatMessageViewHolder holder, int position)
     {
         ChatMessage chatMessage = mChatMessages.get(position);
-
-        // Show abbreviated timestamp indicating age of the message
         DateTime timestamp = new DateTime(chatMessage.getCreatedAt());
         String timeAbbrevStr = getAbbreviatedDurationString(timestamp);
-
-        // Start async request to populate sender name
-        if (chatMessage.getSenderId()!=null)
-        {
-            mDbHelper.getUserNameSingle(chatMessage.getSenderId()).subscribe(userName ->
-            {
-                holder.NameAndTimestampTextView.setText((userName != null ? userName : "?") + "\n" + timeAbbrevStr);
-            }, ex ->
-            {
-                Logger.logMsg(getClass(), "Error getting username");
-                Logger.logException(getClass(), ex);
-            });
-        }
-        else
-        {
-            holder.NameAndTimestampTextView.setText("?\n"+timeAbbrevStr);
-            logError("Warning: senderId for chat message %s is null", chatMessage.getId());
-        }
-
-        // Show message text
+        holder.NameAndTimestampTextView.setText(chatMessage.getSenderName() + "\n" + timeAbbrevStr);
         holder.MessageTextView.setText(chatMessage.getMessage());
     }
 

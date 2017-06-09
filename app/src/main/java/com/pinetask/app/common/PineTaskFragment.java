@@ -98,4 +98,10 @@ public class PineTaskFragment extends DialogFragment
             pineTaskActivity.showUserMessage(finishActivity, message, args);
         }
     }
+
+    public void hideSoftKeyboard()
+    {
+        PineTaskActivity pineTaskActivity = (PineTaskActivity) getActivity();
+        if (pineTaskActivity != null) pineTaskActivity.hideSoftKeyboard();
+    }
 }

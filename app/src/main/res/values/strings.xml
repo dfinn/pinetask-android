@@ -84,8 +84,7 @@
     <string name="access_granted_to_list_x">You\'ve been granted access to the list \'%1$s\'.</string>
     <string name="invite_already_used">Sorry, this invitation has already been used. Please ask the list owner to send you a new invitation.</string>
     <string name="error_deleting_list_x">Error deleting list: %1$s</string>
-    <string name="current_list_deleted">The current list was deleted.</string>
-    <string name="current_list_deleted_will_display_x">The current list was deleted. Will display first available list \'%s\'.</string>
+    <string name="current_list_x_deleted_switching_to_first_available">The current list \'%1$s\' was deleted. Switching to first available list.</string>
     <string name="list_items">List Items</string>
     <string name="chat_messages">Chat</string>
     <string name="no_lists_found_please_use_the_add_button_to_create_one">No lists found.\nPlease use the \'add\' button to create one.</string>
@@ -94,6 +93,7 @@
     <string name="user_not_signed_in">User not signed in, exiting</string>
     <string name="drawer_open">Open Navigation Drawer</string>
     <string name="drawer_close">Close Navigation Drawer</string>
+    <string name="message_from_x">Message from %1$s</string>
 
     <!-- Settings activity -->
     <string name="username">Name</string>

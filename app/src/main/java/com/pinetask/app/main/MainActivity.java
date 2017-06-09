@@ -31,6 +31,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListManager;
+import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
 import com.pinetask.app.launch.TutorialActivity;
 import com.pinetask.app.chat.ChatFragment;
@@ -141,14 +142,16 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     private void checkForInvites()
     {
         logMsg("Checking for pending invites");
-        mInviteManager.checkForInvites().subscribe(listName ->
+        mInviteManager.checkForInvites().subscribe(list ->
         {
-            showUserMessage(false, getString(R.string.access_granted_to_list_x), listName);
+            showUserMessage(false, getString(R.string.access_granted_to_list_x), list.getName());
+            mPresenter.onListSelected(list);
         }, ex ->
         {
             logError("Error accepting list invite");
             logException(ex);
-            showError(getString(R.string.error_accepting_invite_see_log_for_details));
+            if (ex instanceof PineTaskInviteAlreadyUsedException) showError(getString(R.string.invite_already_used));
+            else showError(getString(R.string.error_accepting_invite_see_log_for_details));
         });
     }
 
@@ -442,17 +445,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         });
     }
 
-    /** Hide soft keyboard **/
-    private void hideSoftKeyboard()
-    {
-        View focusedView = getCurrentFocus();
-        if (focusedView != null)
-        {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
-        }
-    }
-
     @Override
     public void showAddListDialog()
     {
@@ -528,7 +520,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             menuItem.setTitle(String.format("%s (%d)", getString(R.string.chat), mNumUnreadChatMessages));
         }
     }
-
 
     @Override
     public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels)

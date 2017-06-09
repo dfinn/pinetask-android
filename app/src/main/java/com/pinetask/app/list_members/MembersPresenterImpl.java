@@ -46,6 +46,7 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
     @Override
     public void attachView(MembersView view)
     {
+        logMsg("Attaching view");
         mView = view;
         mView.clearListDisplay();
         for (MemberInfo m : mCurrentListMembers) mView.addListMember(m);
@@ -55,6 +56,7 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
     @Override
     public void detachView()
     {
+        logMsg("Detaching view");
         mView = null;
     }
 

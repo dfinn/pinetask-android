@@ -53,14 +53,20 @@ public class MembersFragment extends PineTaskFragment implements MembersView
         mAdapter = new MembersAdapter((MainActivity)getActivity());
         mMembersRecyclerView.setAdapter(mAdapter);
         mMembersRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        mPresenter.attachView(this);
         return view;
     }
 
     @Override
-    public void onDestroy()
+    public void onStart()
     {
-        super.onDestroy();
+        super.onStart();
+        mPresenter.attachView(this);
+    }
+
+    @Override
+    public void onStop()
+    {
+        super.onStop();
         mPresenter.detachView();
     }
 

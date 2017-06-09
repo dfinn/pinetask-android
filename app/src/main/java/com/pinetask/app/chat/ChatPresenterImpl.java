@@ -1,24 +1,23 @@
 package com.pinetask.app.chat;
 
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.support.v4.app.NotificationCompat;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListEvent;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.active_list_manager.ListLoadedEvent;
 import com.pinetask.app.active_list_manager.NoListsAvailableEvent;
-import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.BasePresenter;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
 import com.squareup.otto.Bus;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.reactivex.disposables.Disposable;
 
@@ -29,10 +28,11 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     ActiveListManager mActiveListManager;
     FirebaseDatabase mDatabase;
     DbHelper mDbHelper;
-    Disposable mChatMessagesSubscription;
+    ChatMessageLoader mChatMessageLoader;
     Disposable mActiveListManagerSubscription;
     Bus mEventBus;
     PineTaskApplication mApplication;
+    Integer mNotificationId;
 
     public ChatPresenterImpl(String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper, Bus eventBus, PineTaskApplication application)
     {
@@ -65,12 +65,15 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     @Override
     public void attachView(ChatView chatView)
     {
+        logMsg("Attaching view");
         mChatView = chatView;
+        if (mChatMessageLoader != null) mChatView.showChatMessages(mChatMessageLoader.getChatMessages());
     }
 
     @Override
     public void detachView()
     {
+        logMsg("Detaching view");
         mChatView = null;
     }
 
@@ -78,7 +81,7 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     public void shutdown()
     {
         if (mActiveListManagerSubscription != null) mActiveListManagerSubscription.dispose();
-        if (mChatMessagesSubscription != null) mChatMessagesSubscription.dispose();
+        if (mChatMessageLoader != null) mChatMessageLoader.shutdown();
     }
 
     @Override
@@ -103,6 +106,9 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
         if (mChatView != null) mChatView.showError(message, args);
     }
 
+    /** Subscribe to chat messages in the list specified.  As chat messages are loaded, add them to the cached list (mChatMessages), and display them to the view.
+     *  If it's a new message from a sender other than the current user, then play "new message" sound and post to eventbus (MainActivity will show a pop-up if Chat fragment not active).
+     **/
     private void loadChatMessagesForList(PineTaskList pineTaskList)
     {
         logMsg("loadChatMessagesForList: %s (%s)", pineTaskList.getId(), pineTaskList.getName());
@@ -113,29 +119,44 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
             mChatView.showChatLayouts();
         }
 
-        if (mChatMessagesSubscription != null)
+        if (mChatMessageLoader != null)
         {
-            logMsg("Disposing of old subscription");
-            mChatMessagesSubscription.dispose();
+            logMsg("loadChatMessagesForList: Shutting down old mChatMessageLoader");
+            mChatMessageLoader.shutdown();
         }
 
-        ChatMessageLoader chatMessageLoader = new ChatMessageLoader(mDbHelper, pineTaskList);
-        mChatMessagesSubscription = chatMessageLoader.loadChatMessages().subscribe(addedEvent ->
+        mChatMessageLoader = new ChatMessageLoader(mDbHelper, pineTaskList, this::onInitialMessagesLoaded, this::onChatMessageAdded, this::onChatMessageLoadError);
+    }
+
+    private void onInitialMessagesLoaded(List<ChatMessage> messages)
+    {
+        logMsg("Finished initial load of %d messages", messages.size());
+        if (mChatView != null) mChatView.showChatMessages(messages);
+    }
+
+    private void onChatMessageAdded(ChatMessage chatMessage)
+    {
+        mEventBus.post(chatMessage);
+        if (mChatView != null)
         {
-            if (mChatView != null)
-            {
-                mChatView.showChatMessage(addedEvent.Item);
-                // If it's a new message (received after the initial load, and not from the current user): play notification sound and post to event bus.
-                if (addedEvent.getIsNew() && !mUserId.equals(addedEvent.Item.getSenderId()))
-                {
-                    mChatView.playNewMessageSound();
-                    mEventBus.post(addedEvent.Item);
-                }
-            }
-        }, ex ->
+            mChatView.addChatMessage(chatMessage);
+            if (!mUserId.equals(chatMessage.getSenderId())) mChatView.playNewMessageSound();
+        }
+        else
         {
-            logError("Error in chat messages subscription");
-            logException(ex);
-        });
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mApplication)
+                            .setSmallIcon(R.drawable.launcher_icon)
+                            .setContentTitle(String.format(mApplication.getString(R.string.message_from_x), chatMessage.getSenderName()))
+                            .setContentText(chatMessage.getMessage());
+            NotificationManager mNotificationManager = (NotificationManager) mApplication.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationId = 0;
+            mNotificationManager.notify(mNotificationId, mBuilder.build());
+        }
+    }
+
+    private void onChatMessageLoadError(Throwable ex)
+    {
+        logError("Error in chat messages subscription");
+        logException(ex);
     }
 }

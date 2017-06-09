@@ -29,6 +29,12 @@ public class ChatMessage implements UsesKeyIdentifier
     public String getSenderId() { return mSenderId; }
     public void setSenderId(String senderId) { mSenderId = senderId; }
 
+    /** Name of the sender. **/
+    private String mName;
+    @Exclude    // No need to include this when writing the object to Firebase.
+    public String getSenderName() { return mName; }
+    public void setSenderName(String name) { mName = name; }
+
     public ChatMessage()
     {
     }

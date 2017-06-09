@@ -1,9 +1,14 @@
 package com.pinetask.app.chat;
 
+import java.util.List;
+
 public interface ChatView
 {
+    /** Shows all chat messages in the list, replacing any current contents. **/
+    void showChatMessages(List<ChatMessage> messages);
+
     /** Adds the specified chat message to the bottom of the list. **/
-    void showChatMessage(ChatMessage chatMessage);
+    void addChatMessage(ChatMessage chatMessage);
 
     /** Plays a sound to indicate a new chat message arrived. **/
     void playNewMessageSound();

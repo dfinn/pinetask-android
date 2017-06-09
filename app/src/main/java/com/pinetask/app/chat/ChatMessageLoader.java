@@ -5,42 +5,49 @@ import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.LoggingBase;
 
-import io.reactivex.Observable;
+import java.util.ArrayList;
+import java.util.List;
+
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 public class ChatMessageLoader extends LoggingBase
 {
-    DbHelper mDbHelper;
-    PineTaskList mList;
     Long mOriginalMessageCount;
-    Long mLoadedCount=0L;
+    Disposable mSubscription;
+    List<ChatMessage> mChatMessages = new ArrayList<>();
+    public List<ChatMessage> getChatMessages() { return mChatMessages; }
 
-    public ChatMessageLoader(DbHelper dbHelper, PineTaskList list)
+    /** Get count of existing chat messages and store it. Subscribe to chat messages in list. As soon as expected initial count has been loaded, notify
+     *  the mInitialLoadCompletedListener.  Then, continue to emit subsequent messages to the mChatMessageAddedListener. **/
+    public ChatMessageLoader(DbHelper dbHelper, PineTaskList list, Consumer<List<ChatMessage>> initialLoadCompleted, Consumer<ChatMessage> messageAdded, Consumer<Throwable> onError)
     {
-        mDbHelper = dbHelper;
-        mList = list;
-    }
-
-    /** Get the current number of chat messages in the specified list and store as mOriginalMessageCount.
-     *  Then, attach a child event listener to emit added/deleted events for chat messages in the list.
-     *  For added events:  if more than mOriginalCount message have been loaded, then set flag indicating the message is new (arrived after initial load).
-     *  Deleted events are ignored. **/
-    public Observable<AddedEvent<ChatMessage>> loadChatMessages()
-    {
-        return mDbHelper.getChatMessageCount(mList.getId())
-                .flatMapObservable(messageCount ->
-                {
-                    logMsg("loadChatMessages: original message count is %d", messageCount);
-                    mOriginalMessageCount = messageCount;
-                    return mDbHelper.subscribeChatMessages(mList.getId());
-                })
+        mSubscription = dbHelper.getChatMessageCount(list.getId())
+                .map(messageCount -> mOriginalMessageCount = messageCount)
+                .map(messageCount -> list.getId())
+                .flatMapObservable(dbHelper::subscribeChatMessages)
                 .filter(event -> event instanceof AddedEvent)
                 .map(event -> (AddedEvent<ChatMessage>) event)
-                .map(addedEvent ->
+                .map(addedEvent -> addedEvent.Item)
+                .flatMap(dbHelper::populateUserName)
+                .map(chatMessage ->
                 {
-                    mLoadedCount++;
-                    logMsg("loadChatMessages: mLoadedCount=%d, mOriginalMessageCount=%d", mLoadedCount, mOriginalMessageCount);
-                    if (mLoadedCount > mOriginalMessageCount) addedEvent.setIsNew(true);
-                    return addedEvent;
-                });
+                    mChatMessages.add(chatMessage);
+                    logMsg("loadChatMessages: mLoadedCount=%d, mOriginalMessageCount=%d", mChatMessages.size(), mOriginalMessageCount);
+                    if (mChatMessages.size() == mOriginalMessageCount)
+                    {
+                        logMsg("Expected original message count (%d items) have loaded, notifying mInitialLoadCompletedListener", mOriginalMessageCount);
+                        initialLoadCompleted.accept(mChatMessages);
+                    }
+                    return chatMessage;
+                })
+                .filter(chatMessage -> mChatMessages.size() > mOriginalMessageCount)
+                .doOnDispose(() -> logMsg("loadChatMessages: disposing subscription"))
+                .subscribe(messageAdded, onError);
+    }
+
+    public void shutdown()
+    {
+        mSubscription.dispose();
     }
 }

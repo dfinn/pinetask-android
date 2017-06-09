@@ -1,8 +1,11 @@
 package com.pinetask.app.common;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
 import com.pinetask.app.db.DbCallback;
 import com.pinetask.app.db.DbHelper;
@@ -172,4 +175,14 @@ public abstract class PineTaskActivity extends AppCompatActivity
             getSupportFragmentManager().beginTransaction().add(dialog, ErrorDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
         }
     }
+
+    public void hideSoftKeyboard()
+    {
+        View focusedView = getCurrentFocus();
+        if (focusedView != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
+        }
+    }
+
 }

@@ -28,6 +28,8 @@ import com.pinetask.app.db.StatefulChildListener;
 import com.pinetask.app.db.DbHelper;
 import com.squareup.otto.Subscribe;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import butterknife.BindView;
@@ -57,14 +59,28 @@ public class ChatFragment extends PineTaskFragment implements ChatView
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState)
     {
+        logMsg("onCreateView");
         View view = inflater.inflate(R.layout.chat_fragment, container, false);
         ButterKnife.bind(this, view);
         mChatMessagesAdapter = new ChatMessagesAdapter();
         mChatRecyclerView.setAdapter(mChatMessagesAdapter);
         mChatRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         PineTaskApplication.getInstance().getUserComponent().inject(this);
-        mChatPresenter.attachView(this);
         return view;
+    }
+
+    @Override
+    public void onStart()
+    {
+        super.onStart();
+        mChatPresenter.attachView(this);
+    }
+
+    @Override
+    public void onStop()
+    {
+        super.onStop();
+        mChatPresenter.detachView();
     }
 
     @OnClick(R.id.sendMessageButton)
@@ -73,17 +89,17 @@ public class ChatFragment extends PineTaskFragment implements ChatView
         String message = mChatMessageEditText.getText().toString();
         mChatMessageEditText.setText("");
         mChatPresenter.sendMessage(message);
-
-        // Hide soft keyboard
-        View focusedView = getActivity().getCurrentFocus();
-        if (focusedView != null) {
-            InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
-        }
+        hideSoftKeyboard();
     }
 
     @Override
-    public void showChatMessage(ChatMessage chatMessage)
+    public void showChatMessages(List<ChatMessage> messages)
+    {
+        mChatMessagesAdapter.showMessages(messages);
+    }
+
+    @Override
+    public void addChatMessage(ChatMessage chatMessage)
     {
         mChatMessagesAdapter.addMessage(chatMessage);
         mChatRecyclerView.scrollToPosition(mChatMessagesAdapter.getItemCount()-1);
