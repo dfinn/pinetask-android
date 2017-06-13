@@ -10,28 +10,28 @@ import java.io.Serializable;
 public class PineTaskItem implements Serializable
 {
     /** Key identifying the item **/
-    private String mKey;
+    protected String mKey;
     @Exclude    // No need to include this when writing the object to Firebase.
     public String getKey() { return mKey; }
     public void setKey(String key) { mKey = key; }
 
     /** OperationDescription of the item (ex: "bananas") **/
-    private String mItemDescription;
+    protected String mItemDescription;
     public String getItemDescription() { return mItemDescription; }
     public void setItemDescription(String description) { mItemDescription = description; }
 
     /** ID of the person who has claimed the item, or null if unclaimed. **/
-    private String mClaimedBy;
+    protected String mClaimedBy;
     public String getClaimedBy() { return mClaimedBy; }
     public void setClaimedBy(String claimedBy) { mClaimedBy = claimedBy; }
 
     /** Set to true after the item has been completed (ie, purchased) **/
-    private boolean mIsCompleted;
+    protected boolean mIsCompleted;
     public boolean getIsCompleted() { return mIsCompleted; }
     public void setIsCompleted(boolean isCompleted) { mIsCompleted = isCompleted; }
 
     /** Timestamp when the item was created. **/
-    long mCreatedAt;
+    protected long mCreatedAt;
     public long getCreatedAt() { return mCreatedAt; }
     public void setCreatedAt(long createdAt) { mCreatedAt = createdAt; }
 
@@ -60,5 +60,19 @@ public class PineTaskItem implements Serializable
     public String toString()
     {
         return String.format("[%s] %s", mIsCompleted ? "X" : " ", mItemDescription);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof PineTaskItem)
+        {
+           PineTaskItem other = (PineTaskItem) obj;
+            return other.getKey().equals(getKey());
+        }
+        else
+            {
+            return false;
+        }
     }
 }

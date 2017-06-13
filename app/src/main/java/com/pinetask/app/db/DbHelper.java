@@ -10,7 +10,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.pinetask.app.chat.ChatMessage;
-import com.pinetask.app.common.AddedOrDeletedEvent;
+import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
 import com.pinetask.app.list_items.PineTaskItem;
@@ -299,13 +299,13 @@ public class DbHelper
     }
 
     /** Returns an Observable that will emit notifications of list added / list deleted events for lists that the specified user has access to. **/
-    public Observable<AddedOrDeletedEvent<String>> getListAddedOrDeletedEvents(String userId)
+    public Observable<ChildEventBase<String>> getListAddedOrDeletedEvents(String userId)
     {
         return getKeyAddedOrDeletedEventsAt(getUserListsRef(userId), "get list added/deleted events");
     }
 
     /** Returns an Observable that will emit AddedEvent or DeletedEvent for member IDs of the list specified. **/
-    public Observable<AddedOrDeletedEvent<String>> getMembersAddedOrDeletedEvents(String listId)
+    public Observable<ChildEventBase<String>> getMembersAddedOrDeletedEvents(String listId)
     {
         return getKeyAddedOrDeletedEventsAt(getListCollaboratorsReference(listId), "get list members added/deleted events");
     }
@@ -496,9 +496,9 @@ public class DbHelper
     }
 
     /** Returns an observable that emits added/deleted events for chat messages in the list specified. **/
-    public Observable<AddedOrDeletedEvent<ChatMessage>> subscribeChatMessages(String listId)
+    public Observable<ChildEventBase<ChatMessage>> subscribeChatMessages(String listId)
     {
-        ValueAddedOrDeletedObservable<ChatMessage> o = new ValueAddedOrDeletedObservable(ChatMessage.class, getChatMessagesRef(listId), "subscribe to chat messages");
+        ChildEventObservable<ChatMessage> o = new ChildEventObservable(ChatMessage.class, getChatMessagesRef(listId), "subscribe to chat messages");
         return o.attachListener();
     }
 
@@ -512,6 +512,32 @@ public class DbHelper
     public Completable renameList(String listId, String newName)
     {
         return setValueRx(getListNameReference(listId), newName, "rename list");
+    }
+
+    /** Returns a Single that emits the count of list items in the list specified. **/
+    public Single<Long> getListItemsCount(String listId)
+    {
+        return getNodeCount(getListItemsRef(listId));
+    }
+
+    /** Returns an observable that emits added/deleted events for items in the list specified. **/
+    public Observable<ChildEventBase<PineTaskItem>> subscribeListItems(String listId)
+    {
+        ChildEventObservable<PineTaskItem> o = new ChildEventObservable(PineTaskItem.class, getListItemsRef(listId), "subscribe to list items");
+        return o.attachListener();
+    }
+
+    /** Make async call to update PineTaskItem in the database. **/
+    public void updateItem(String listId, PineTaskItem item)
+    {
+        DatabaseReference dbRef = getListItemsRef(listId).child(item.getKey());
+        setValue(dbRef, item, "update item");
+    }
+
+    public Completable deleteItem(String listId, PineTaskItem item)
+    {
+        DatabaseReference dbRef = getListItemsRef(listId).child(item.getKey());
+        return removeNode(dbRef);
     }
 
     private void logMsg(String msg, Object...args)
@@ -751,7 +777,7 @@ public class DbHelper
             {
                 if (databaseError == null)
                 {
-                    logMsg("Succssfully removed node %s", dbRef);
+                    logMsg("Successfully removed node %s", dbRef);
                     emitter.onComplete();
                 }
                 else

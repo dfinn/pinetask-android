@@ -5,39 +5,38 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.pinetask.app.common.AddedEvent;
-import com.pinetask.app.common.AddedOrDeletedEvent;
+import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
+import com.pinetask.app.common.UpdatedEvent;
 import com.pinetask.common.LoggingBase;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 
-/** RxJava wrapper which creates an Observable to emit events for items being added or deleted at the specified database location.
+/** RxJava wrapper which creates an Observable to emit events for items being added, updated, or deleted at the specified database location.
  *  When the subscription is disposed, the Firebase ChildEventListener is detached. **/
-public class ValueAddedOrDeletedObservable<T> extends LoggingBase
+public class ChildEventObservable<T> extends LoggingBase
 {
     ChildEventListener mListener;
     DatabaseReference mDbRef;
     String mOperationDescription;
     Class mClass;
 
-    public ValueAddedOrDeletedObservable(Class cl, DatabaseReference dbRef, String operationDescription)
+    public ChildEventObservable(Class cl, DatabaseReference dbRef, String operationDescription)
     {
         mDbRef = dbRef;
         mOperationDescription = operationDescription;
         mClass = cl;
     }
 
-    public <T> Observable<AddedOrDeletedEvent<T>> attachListener()
+    public <T> Observable<ChildEventBase<T>> attachListener()
     {
-        return Observable.create((ObservableEmitter<AddedOrDeletedEvent<T>> emitter) ->
+        return Observable.create((ObservableEmitter<ChildEventBase<T>> emitter) ->
         {
             mListener = mDbRef.addChildEventListener(new ChildEventListener()
             {
-                @Override
-                public void onChildAdded(DataSnapshot dataSnapshot, String s)
+                T getValueFromSnapshot(DataSnapshot dataSnapshot)
                 {
-                    logMsg("onChildAdded(%s): %s", mDbRef, dataSnapshot.getKey());
                     T value = (T) dataSnapshot.getValue(mClass);
                     if (value instanceof UsesKeyIdentifier)
                     {
@@ -45,6 +44,14 @@ public class ValueAddedOrDeletedObservable<T> extends LoggingBase
                         UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) value;
                         keyIdentifier.setId(dataSnapshot.getKey());
                     }
+                    return value;
+                }
+
+                @Override
+                public void onChildAdded(DataSnapshot dataSnapshot, String s)
+                {
+                    logMsg("onChildAdded(%s): %s", mDbRef, dataSnapshot.getKey());
+                    T value = getValueFromSnapshot(dataSnapshot);
                     if (! emitter.isDisposed()) emitter.onNext(new AddedEvent<>(value));
                     else logError("onChildAdded -- observable has been disposed, won't call onNext");
                 }
@@ -52,6 +59,9 @@ public class ValueAddedOrDeletedObservable<T> extends LoggingBase
                 @Override
                 public void onChildChanged(DataSnapshot dataSnapshot, String s)
                 {
+                    T value = getValueFromSnapshot(dataSnapshot);
+                    if (! emitter.isDisposed()) emitter.onNext(new UpdatedEvent<>(value));
+                    else logError("onChildChanged -- observable has been disposed, won't call onNext");
                 }
 
                 @Override

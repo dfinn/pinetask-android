@@ -6,7 +6,7 @@ import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.active_list_manager.ListLoadedEvent;
 import com.pinetask.app.active_list_manager.NoListsAvailableEvent;
 import com.pinetask.app.common.AddedEvent;
-import com.pinetask.app.common.AddedOrDeletedEvent;
+import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.BasePresenter;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskApplication;
@@ -133,7 +133,7 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
     }
 
     /** Look up username for the specified userId, and convert the "user ID added or deleted" event into a "MemberInfo added or deleted" event. **/
-    private Single<AddedOrDeletedEvent<MemberInfo>> getMemberInfoForUserId(AddedOrDeletedEvent<String> userAddedOrDeletedEvent, String currentUserId, String currentListOwnerId)
+    private Single<ChildEventBase<MemberInfo>> getMemberInfoForUserId(ChildEventBase<String> userAddedOrDeletedEvent, String currentUserId, String currentListOwnerId)
     {
         String userId = userAddedOrDeletedEvent.Item;
         return mDbHelper.getUserNameSingle(userId).map(userName ->

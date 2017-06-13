@@ -1,7 +1,7 @@
 package com.pinetask.app.active_list_manager;
 
 import com.pinetask.app.common.AddedEvent;
-import com.pinetask.app.common.AddedOrDeletedEvent;
+import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
@@ -14,7 +14,6 @@ import io.reactivex.Maybe;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.BehaviorSubject;
-import io.reactivex.subjects.PublishSubject;
 
 /** Keeps track of the currently active list, notifying subscribers of events for when the list was changed, or if no list is currently available. **/
 public class ActiveListManager extends LoggingBase
@@ -52,7 +51,7 @@ public class ActiveListManager extends LoggingBase
         getInitialListToUse().subscribe(this::setActiveList, this::onListLoadError, this::onNoListsAvailable);
     }
 
-    private void onListAddedOrDeleted(AddedOrDeletedEvent<String> event)
+    private void onListAddedOrDeleted(ChildEventBase<String> event)
     {
         if (event instanceof DeletedEvent)
         {

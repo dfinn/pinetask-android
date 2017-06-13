@@ -11,16 +11,16 @@ import java.util.List;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
-public class ChatMessageLoader extends LoggingBase
+public class ChatMessagesRepository extends LoggingBase
 {
     Long mOriginalMessageCount;
     Disposable mSubscription;
     List<ChatMessage> mChatMessages = new ArrayList<>();
-    public List<ChatMessage> getChatMessages() { return mChatMessages; }
+    List<ChatMessage> getChatMessages() { return mChatMessages; }
 
     /** Get count of existing chat messages and store it. Subscribe to chat messages in list. As soon as expected initial count has been loaded, notify
      *  the mInitialLoadCompletedListener.  Then, continue to emit subsequent messages to the mChatMessageAddedListener. **/
-    public ChatMessageLoader(DbHelper dbHelper, PineTaskList list, Consumer<List<ChatMessage>> initialLoadCompleted, Consumer<ChatMessage> messageAdded, Consumer<Throwable> onError)
+    public ChatMessagesRepository(DbHelper dbHelper, PineTaskList list, Consumer<List<ChatMessage>> initialLoadCompleted, Consumer<ChatMessage> messageAdded, Consumer<Throwable> onError)
     {
         mSubscription = dbHelper.getChatMessageCount(list.getId())
                 .map(messageCount -> mOriginalMessageCount = messageCount)

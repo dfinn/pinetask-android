@@ -149,6 +149,13 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         return mItems.size();
     }
 
+    public void showItems(List<PineTaskItem> items)
+    {
+        mItems.clear();
+        mItems.addAll(items);
+        notifyDataSetChanged();
+    }
+
     public void add(PineTaskItem item)
     {
         mItems.add(item);
@@ -165,6 +172,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
             {
                 mItems.remove(i);
                 notifyItemRemoved(i);
+                break;
             }
         }
     }
@@ -178,6 +186,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
             {
                 item.updateFrom(updatedItem);
                 notifyItemChanged(i);
+                break;
             }
         }
     }

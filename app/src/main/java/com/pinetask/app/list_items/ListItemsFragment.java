@@ -23,41 +23,30 @@ import com.pinetask.app.db.StatefulChildListener;
 import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 /** Fragment for the "list items" tab: shows a list of items in the currently selected list. **/
-public class ListItemsFragment extends PineTaskFragment
+public class ListItemsFragment extends PineTaskFragment implements ListItemsView
 {
-    FirebaseDatabase mDatabase;
-    DatabaseReference mListItemsRef;
     ListItemAdapter mItemsListAdapter;
-    StatefulChildListener mItemsListener;
-    String mUserId;
-    String mCurrentListId;
+
     @BindView(R.id.itemsRecyclerView) RecyclerView mItemsRecyclerView;
     @BindView(R.id.addItemButton) FloatingActionButton mAddItemButton;
 
-    /** Name of a string argument specifying the user ID. **/
-    public static String USER_ID_KEY = "UserId";
+    @Inject ListItemsPresenter mPresenter;
 
-    public static ListItemsFragment newInstance(String userId)
+    public static ListItemsFragment newInstance()
     {
         ListItemsFragment fragment = new ListItemsFragment();
         Bundle args = new Bundle();
-        args.putString(USER_ID_KEY, userId);
         fragment.setArguments(args);
         return fragment;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        mDatabase = FirebaseDatabase.getInstance();
-        mUserId = getArguments().getString(USER_ID_KEY);
     }
 
     @Nullable
@@ -66,28 +55,11 @@ public class ListItemsFragment extends PineTaskFragment
     {
         View view = inflater.inflate(R.layout.list_items_fragment, container, false);
         ButterKnife.bind(this, view);
-        initUI();
-        return view;
-    }
-
-    @Override
-    public void onDestroy()
-    {
-        super.onDestroy();
-        logMsg("onDestroy: shutting down event listeners");
-        if (mItemsListener != null) mItemsListener.shutdown();
-    }
-
-    private void initUI()
-    {
-        // Initialize RecyclerView that will show the list of items.
-        mItemsListAdapter = new ListItemAdapter(this, new ArrayList<PineTaskItem>());
+        mItemsListAdapter = new ListItemAdapter(this, new ArrayList<>());
         mItemsRecyclerView.setAdapter(mItemsListAdapter);
         mItemsRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-
-        // Get current list ID and display items in it.
-        String listId = mPrefsManager.getCurrentListId();
-        displayListItems(listId);
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
+        return view;
     }
 
     /** When "add" floating action button is clicked, open dialog for adding new item. **/
@@ -99,98 +71,12 @@ public class ListItemsFragment extends PineTaskFragment
         dialog.show(getFragmentManager(), AddOrEditItemDialog.class.getSimpleName());
     }
 
-    /** Adds a new item to the database. **/
-    public void addItem(String description)
-    {
-        PineTaskItem item = new PineTaskItem(null, description);
-        mListItemsRef.push().setValue(item);
-    }
-
-    /** Updates the specified item in the database. **/
-    public void updateItem(PineTaskItem item)
-    {
-        // Make async request to update item in Firebase DB
-        mListItemsRef.child(item.getKey()).setValue(item);
-        // Update item UI state in the RecyclerView
-        mItemsListAdapter.update(item);
-    }
-
-    /** Deletes the specified item from the database. **/
-    public void deleteItem(final PineTaskItem item)
-    {
-        logMsg("Deleting item: %s", item.getItemDescription());
-        mListItemsRef.child(item.getKey()).removeValue((DatabaseError databaseError, DatabaseReference databaseReference) -> logMsg("onComplete: Item '%s' deleted", item.getItemDescription()));
-        mItemsListAdapter.remove(item.getKey());
-    }
-
-    /** Deletes all completed items in the current list. **/
-    public void purgeCompletedItems()
-    {
-        logMsg("Deleting all completed items");
-
-    }
-
-    /** Sets the item to be claimed by the current user, and then updates the item in the database. **/
-    public void claimItem(PineTaskItem item)
-    {
-        logMsg("Claiming item '%s'", item.getItemDescription());
-        item.setClaimedBy(mUserId);
-        updateItem(item);
-    }
-
-    /** Sets the item to be unclaimed (set claimed_by to null), and then updates the item in the database. **/
-    public void unclaimItem(PineTaskItem item)
-    {
-        logMsg("Unclaiming item '%s'", item.getItemDescription());
-        item.setClaimedBy(null);
-        updateItem(item);
-    }
-
-    /** Sets the item to be uncompleted, and then updates the item in the database. **/
-    public void uncompleteItem(PineTaskItem item)
-    {
-        logMsg("Uncompleting item '%s'", item.getItemDescription());
-        item.setIsCompleted(false);
-        updateItem(item);
-    }
-
     /** Shows a dialog allowing the user to edit the description of the specified item. **/
-    public void editItem(PineTaskItem item)
+    public void showEditDialog(PineTaskItem item)
     {
         AddOrEditItemDialog dialog = AddOrEditItemDialog.newInstance(item);
         dialog.setTargetFragment(this, -1);
         dialog.show(getFragmentManager(), AddOrEditItemDialog.class.getSimpleName());
-    }
-
-    /** Sets the "is completed" status for the item to the state specified, and then updates the item in the database. **/
-    public void setCompletedStatus(PineTaskItem item, boolean isCompleted)
-    {
-        logMsg("Setting completion status for '%s' to %b", item.getItemDescription(), isCompleted);
-        item.setClaimedBy(mUserId);
-        item.setIsCompleted(isCompleted);
-        updateItem(item);
-    }
-
-    /** Called by the event bus when a list has been deleted. **/
-    @Subscribe
-    public void onListDeleted(ListDeletedEvent event)
-    {
-        logMsg("ListDeletedEvent for list %s", event.ListId);
-        if (event.ListId.equals(mCurrentListId))
-        {
-            logMsg("onListDeleted: disconnecting mItemsListener, current list %s was deleted", mCurrentListId);
-            // Disconnect listener for previously selected list, if any.
-            if (mItemsListener != null) mItemsListener.shutdown();
-            mCurrentListId = null;
-        }
-    }
-
-    /** Called by the event bus when the user has selected a new list. **/
-    @Subscribe
-    public void onListSelected(ListSelectedEvent event)
-    {
-        logMsg("onListSelected: listId = %s", event.ListId);
-        displayListItems(event.ListId);
     }
 
     /** Clears the currently displayed list, if any, and disconnects the list items listener.
@@ -275,5 +161,49 @@ public class ListItemsFragment extends PineTaskFragment
                 }
             }
         });
+    }
+
+    @Override
+    public void showListItems(List<PineTaskItem> items)
+    {
+        mItemsListAdapter.showItems(items);
+    }
+
+    @Override
+    public void addItem(PineTaskItem item)
+    {
+        mItemsListAdapter.add(item);
+    }
+
+    @Override
+    public void removeItem(String itemId)
+    {
+        mItemsListAdapter.remove(itemId);
+    }
+
+    @Override
+    public void updateItem(PineTaskItem item)
+    {
+        mItemsListAdapter.update(item);
+    }
+
+    @Override
+    public void showListItemsLayouts()
+    {
+        mItemsRecyclerView.setVisibility(View.VISIBLE);
+        mAddItemButton.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void hideListItemsLayouts()
+    {
+        mItemsRecyclerView.setVisibility(View.GONE);
+        mAddItemButton.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void showError(String message, Object... args)
+    {
+        showUserMessage(false, message, args);
     }
 }

@@ -3,6 +3,8 @@ package com.pinetask.app.common;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatFragment;
 import com.pinetask.app.chat.ChatPresenter;
+import com.pinetask.app.list_items.ListItemsFragment;
+import com.pinetask.app.list_items.ListItemsPresenter;
 import com.pinetask.app.list_members.MembersAdapter;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.list_members.MembersPresenter;
@@ -19,12 +21,14 @@ public interface UserComponent
 {
     ActiveListManager activeListManager();
     MainActivityPresenter mainActivityPresenter();
+    ListItemsPresenter listItemsPresenter();
     ChatPresenter chatPresenter();
     MembersPresenter membersPresenter();
 
     void inject(MainActivity target);
     void inject(PurgeCompletedItemsDialogFragment target);
     void inject(MembersFragment target);
-    void inject(MembersAdapter target);
+    void inject(ListItemsFragment target);
     void inject(ChatFragment target);
+    void inject(MembersAdapter target);
 }

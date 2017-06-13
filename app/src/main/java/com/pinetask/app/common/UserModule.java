@@ -6,6 +6,8 @@ import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatPresenter;
 import com.pinetask.app.chat.ChatPresenterImpl;
 import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.list_items.ListItemsPresenter;
+import com.pinetask.app.list_items.ListItemsPresenterImpl;
 import com.pinetask.app.list_members.MembersPresenter;
 import com.pinetask.app.list_members.MembersPresenterImpl;
 import com.pinetask.app.main.MainActivityPresenter;
@@ -58,6 +60,13 @@ public class UserModule extends LoggingBase
     {
         logMsg("creating MainActivityPresenter");
         return new MainActivityPresenterImpl(dbHelper, userId, prefsManager, pineTaskApplication, activeListManager);
+    }
+
+    @Provides
+    @UserScope
+    public ListItemsPresenter providesListItemsPresenter(DbHelper dbHelper, ActiveListManager activeListManager, @Named("user_id") String userId)
+    {
+        return new ListItemsPresenterImpl(dbHelper, activeListManager, userId);
     }
 
     @Provides

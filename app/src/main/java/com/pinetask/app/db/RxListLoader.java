@@ -1,7 +1,7 @@
 package com.pinetask.app.db;
 
 import com.pinetask.app.common.AddedEvent;
-import com.pinetask.app.common.AddedOrDeletedEvent;
+import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
@@ -78,7 +78,7 @@ public class RxListLoader extends LoggingBase
         }
 
         // Build stream that will emit both list added / list deleted events.
-        ConnectableObservable<AddedOrDeletedEvent<String>> connection = mDbHelper.getListAddedOrDeletedEvents(mUserId).observeOn(AndroidSchedulers.mainThread()).publish();
+        ConnectableObservable<ChildEventBase<String>> connection = mDbHelper.getListAddedOrDeletedEvents(mUserId).observeOn(AndroidSchedulers.mainThread()).publish();
 
         // Subscribe to stream filtered to only AddedEvents.
         connection.filter(event -> event instanceof AddedEvent)

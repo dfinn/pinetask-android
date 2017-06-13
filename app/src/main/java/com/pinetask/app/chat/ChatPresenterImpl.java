@@ -23,7 +23,7 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     ActiveListManager mActiveListManager;
     FirebaseDatabase mDatabase;
     DbHelper mDbHelper;
-    ChatMessageLoader mChatMessageLoader;
+    ChatMessagesRepository mChatMessageLoader;
     Disposable mActiveListManagerSubscription;
     Bus mEventBus;
     PineTaskApplication mApplication;
@@ -119,7 +119,7 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
             mChatMessageLoader.shutdown();
         }
 
-        mChatMessageLoader = new ChatMessageLoader(mDbHelper, pineTaskList, this::onInitialMessagesLoaded, this::onChatMessageAdded, this::onChatMessageLoadError);
+        mChatMessageLoader = new ChatMessagesRepository(mDbHelper, pineTaskList, this::onInitialMessagesLoaded, this::onChatMessageAdded, this::onChatMessageLoadError);
     }
 
     private void onInitialMessagesLoaded(List<ChatMessage> messages)

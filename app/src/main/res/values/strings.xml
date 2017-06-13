@@ -84,6 +84,7 @@
     <string name="access_granted_to_list_x">You\'ve been granted access to the list \'%1$s\'.</string>
     <string name="invite_already_used">Sorry, this invitation has already been used. Please ask the list owner to send you a new invitation.</string>
     <string name="error_deleting_list_x">Error deleting list: %1$s</string>
+    <string name="error_deleting_item">Error deleting item</string>
     <string name="current_list_x_deleted_switching_to_first_available">The current list \'%1$s\' was deleted. Switching to first available list.</string>
     <string name="list_items">List Items</string>
     <string name="chat_messages">Chat</string>

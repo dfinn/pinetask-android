@@ -5,7 +5,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.pinetask.app.common.AddedEvent;
-import com.pinetask.app.common.AddedOrDeletedEvent;
+import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.common.LoggingBase;
 
@@ -20,7 +20,7 @@ public class KeyAddedOrDeletedObservable extends LoggingBase
     DatabaseReference mDbRef;
     String mOperationDescription;
 
-    public static Observable<AddedOrDeletedEvent<String>> getKeyAddedOrDeletedEventsAt(DatabaseReference ref, String operationDescription)
+    public static Observable<ChildEventBase<String>> getKeyAddedOrDeletedEventsAt(DatabaseReference ref, String operationDescription)
     {
         KeyAddedOrDeletedObservable keyAddedOrDeletedObservable = new KeyAddedOrDeletedObservable(ref, operationDescription);
         return keyAddedOrDeletedObservable.attachListener();
@@ -32,9 +32,9 @@ public class KeyAddedOrDeletedObservable extends LoggingBase
         mOperationDescription = operationDescription;
     }
 
-    private Observable<AddedOrDeletedEvent<String>> attachListener()
+    private Observable<ChildEventBase<String>> attachListener()
     {
-        return Observable.create((ObservableEmitter<AddedOrDeletedEvent<String>> emitter) ->
+        return Observable.create((ObservableEmitter<ChildEventBase<String>> emitter) ->
         {
             mListener = mDbRef.addChildEventListener(new ChildEventListener()
             {

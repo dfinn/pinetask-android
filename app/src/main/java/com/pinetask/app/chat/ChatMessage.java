@@ -37,6 +37,7 @@ public class ChatMessage implements UsesKeyIdentifier
 
     /** Indicates if the message is new (ie, has not yet been displayed to the user) **/
     private boolean mIsNewMessage;
+    @Exclude    // No need to include this when writing the object to Firebase.
     public boolean getIsNewMessage() { return mIsNewMessage; }
     public void setIsNewMessage(boolean isNew) { mIsNewMessage = isNew; }
 
