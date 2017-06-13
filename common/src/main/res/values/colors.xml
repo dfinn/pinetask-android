@@ -32,4 +32,7 @@
     <color name="white">#ffffff</color>
     <color name="white_87percent">#ddffffff</color>
     <color name="white_67percent">#aaffffff</color>
+
+    <!-- Misc -->
+    <color name="highlighted_background">#e0f250</color>
 </resources>

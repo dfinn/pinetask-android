@@ -1,9 +1,5 @@
 package com.pinetask.app.chat;
 
-import android.app.NotificationManager;
-import android.content.Context;
-import android.support.v4.app.NotificationCompat;
-
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListEvent;
@@ -16,7 +12,6 @@ import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
 import com.squareup.otto.Bus;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.disposables.Disposable;
@@ -32,7 +27,6 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     Disposable mActiveListManagerSubscription;
     Bus mEventBus;
     PineTaskApplication mApplication;
-    Integer mNotificationId;
 
     public ChatPresenterImpl(String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper, Bus eventBus, PineTaskApplication application)
     {
@@ -141,16 +135,6 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
         {
             mChatView.addChatMessage(chatMessage);
             if (!mUserId.equals(chatMessage.getSenderId())) mChatView.playNewMessageSound();
-        }
-        else
-        {
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mApplication)
-                            .setSmallIcon(R.drawable.launcher_icon)
-                            .setContentTitle(String.format(mApplication.getString(R.string.message_from_x), chatMessage.getSenderName()))
-                            .setContentText(chatMessage.getMessage());
-            NotificationManager mNotificationManager = (NotificationManager) mApplication.getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationId = 0;
-            mNotificationManager.notify(mNotificationId, mBuilder.build());
         }
     }
 

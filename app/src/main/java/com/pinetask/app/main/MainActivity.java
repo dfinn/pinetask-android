@@ -1,15 +1,20 @@
 package com.pinetask.app.main;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -25,6 +30,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.appinvite.AppInvite;
 import com.google.android.gms.common.ConnectionResult;
@@ -59,6 +65,8 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 {
     GoogleApiClient mGoogleApiClient;
     ActionBarDrawerToggle mDrawerToggle;
+    private boolean mIsActivityActive;
+    ChatFragment mChatFragment;
 
     /** Identifies the active menu item from the bottom navigation drawer. **/
     int mActiveMenuItem=-1;
@@ -76,6 +84,11 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     @BindView(R.id.userNameTextView) TextView mUserNameTextView;
     @BindView(R.id.settingsTextView) TextView mSettingsTextView;
 
+    /** Indices of the list items, chat, and members fragments within the viewpager. **/
+    final int LIST_ITEMS_INDEX = 0;
+    final int CHAT_INDEX = 1;
+    final int MEMBERS_INDEX = 2;
+
     /** InviteManager is in charge of sending invites to share a list, and processing invites received to grant access to someone else's list. **/
     InviteManager mInviteManager;
     public InviteManager getInviteManager() { return mInviteManager; }
@@ -86,16 +99,23 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     /** Activity request code for launching the Manage Lists Activity. **/
     public static int MANAGE_LISTS_REQUEST_CODE = 1;
 
+    /** Name of string extra specifying the user ID **/
+    public static String USER_ID_KEY = "UserId";
+
+    /** Name of a string extra specifying the ID of a chat message to highlight.  Used when launched from PendingIntent when user clicks item in notification drawer. **/
+    public static String CHAT_MESSAGE_ID_KEY = "ChatMessageId";
+
     @Inject @Named("user_id") String mUserId;
     @Inject MainActivityPresenter mPresenter;
     @Inject ActiveListManager mActiveListManager;
 
     /** Launch the main activity, and create the Dagger components in the UserScope. **/
-    public static void launch(Context context, String userId)
+    public static Intent buildLaunchIntent(Context context, String userId, String chatMessageId)
     {
-        PineTaskApplication.getInstance().createUserComponent(userId);
         Intent i = new Intent(context, MainActivity.class);
-        context.startActivity(i);
+        i.putExtra(USER_ID_KEY, userId);
+        i.putExtra(CHAT_MESSAGE_ID_KEY, chatMessageId);
+        return i;
     }
 
     @Override
@@ -104,6 +124,14 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
         ButterKnife.bind(this);
+
+        // Create user scope dependencies if not done yet.
+        if (PineTaskApplication.getInstance().getUserComponent() == null)
+        {
+            String userId = getIntent().getStringExtra(USER_ID_KEY);
+            logMsg("Creating user component for user %s", userId);
+            PineTaskApplication.getInstance().createUserComponent(userId);
+        }
 
         // Inject UserScope dependencies
         PineTaskApplication.getInstance().getUserComponent().inject(this);
@@ -197,9 +225,17 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     }
 
     @Override
+    protected void onPause()
+    {
+        super.onPause();
+        mIsActivityActive = false;
+    }
+
+    @Override
     protected void onResume()
     {
         super.onResume();
+        mIsActivityActive = true;
         // Close the navigation drawer if it's open and the activity is resuming
         if(mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START))
         {
@@ -250,6 +286,11 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         super.onNewIntent(intent);
         logMsg("onNewIntent: %s", intent.toString());
         checkForInvites();
+        String chatMessageId = intent.getStringExtra(CHAT_MESSAGE_ID_KEY);
+        if ((chatMessageId != null) && (mChatFragment != null))
+        {
+            mViewPager.setCurrentItem(CHAT_INDEX);
+        }
     }
 
     @Override
@@ -381,17 +422,17 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             @Override
             public Fragment getItem(int position)
             {
-                if (position==0)
+                if (position == LIST_ITEMS_INDEX)
                 {
                     ListItemsFragment listItemsFragment = ListItemsFragment.newInstance(mUserId);
                     return listItemsFragment;
                 }
-                else if (position==1)
+                else if (position == CHAT_INDEX)
                 {
-                    ChatFragment chatFragment = ChatFragment.newInstance();
-                    return chatFragment;
+                    mChatFragment = ChatFragment.newInstance();
+                    return mChatFragment;
                 }
-                else if (position==2)
+                else if (position == MEMBERS_INDEX)
                 {
                     MembersFragment membersFragment = MembersFragment.newInstance();
                     return membersFragment;
@@ -411,15 +452,15 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             @Override
             public CharSequence getPageTitle(int position)
             {
-                if (position==0)
+                if (position == LIST_ITEMS_INDEX)
                 {
                     return getString(R.string.list_items);
                 }
-                else if (position==1)
+                else if (position == CHAT_INDEX)
                 {
                     return getString(R.string.chat_messages);
                 }
-                else if (position==2)
+                else if (position == MEMBERS_INDEX)
                 {
                     return getString(R.string.members);
                 }
@@ -488,15 +529,32 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         mBottomNavigationView.setVisibility(View.GONE);
     }
 
-    /** Called by the event bus when a chat message is received.  If the chat tab is not currently active, look up username of the message sender.
-     *  Then, show name and message in a Snackbar message, and update the number of unread messages on the Chat tab header. **/
+    /** Called by the event bus when a chat message is received.   **/
     @Subscribe
     public void onChatMessageReceived(ChatMessage chatMessage)
     {
-        if (mActiveMenuItem != R.id.chatMenuItem)
+        if ((! mIsActivityActive))
         {
-            final String msg = chatMessage.getMessage();
-            mDbHelper.getUserNameSingle(chatMessage.getSenderId()).subscribe(singleObserver((String name) -> Snackbar.make(getWindow().getDecorView(), name + ": " + msg, Snackbar.LENGTH_LONG).show()));
+            // Raise system notification if app is currently in the background.  Clicking the notification will open the app and go to the chat tab.
+            logMsg("onChatMessageReceived: building pending intent for chat message %s", chatMessage.getId());
+            Intent intent = MainActivity.buildLaunchIntent(this, mUserId, chatMessage.getId());
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                    .setSmallIcon(R.drawable.launcher_icon)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setVibrate(new long[] {0, 500, 500, 500})
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                    .setContentTitle(String.format(getString(R.string.message_from_x), chatMessage.getSenderName()))
+                    .setContentText(chatMessage.getMessage());
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(0, mBuilder.build());
+        }
+        else if (mViewPager.getCurrentItem() != CHAT_INDEX)
+        {
+            // Show pop-up message and play sound
+            Toast.makeText(this, chatMessage.getSenderName() + ": " + chatMessage.getMessage(), Toast.LENGTH_SHORT).show();
             mNumUnreadChatMessages++;
             updateUnreadChatMessageCount();
         }

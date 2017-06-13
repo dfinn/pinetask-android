@@ -59,7 +59,8 @@ public class LaunchActivity extends PineTaskActivity
                 else
                 {
                     logMsg("onCreate: FirebaseAuth reports user %s is already signed in, launching MainActivity", user.getUid());
-                    MainActivity.launch(this, user.getUid());
+                    Intent intent = MainActivity.buildLaunchIntent(this, user.getUid(), null);
+                    startActivity(intent);
                     finish();
                 }
             }));

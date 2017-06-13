@@ -40,6 +40,7 @@ import butterknife.OnClick;
 public class ChatFragment extends PineTaskFragment implements ChatView
 {
     ChatMessagesAdapter mChatMessagesAdapter;
+    LinearLayoutManager mLayoutManager;
     @Inject ChatPresenter mChatPresenter;
 
     @BindView(R.id.chatRecyclerView) RecyclerView mChatRecyclerView;
@@ -62,9 +63,10 @@ public class ChatFragment extends PineTaskFragment implements ChatView
         logMsg("onCreateView");
         View view = inflater.inflate(R.layout.chat_fragment, container, false);
         ButterKnife.bind(this, view);
-        mChatMessagesAdapter = new ChatMessagesAdapter();
+        mLayoutManager = new LinearLayoutManager(getActivity());
+        mChatMessagesAdapter = new ChatMessagesAdapter(mLayoutManager);
         mChatRecyclerView.setAdapter(mChatMessagesAdapter);
-        mChatRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        mChatRecyclerView.setLayoutManager(mLayoutManager);
         PineTaskApplication.getInstance().getUserComponent().inject(this);
         return view;
     }
@@ -96,13 +98,14 @@ public class ChatFragment extends PineTaskFragment implements ChatView
     public void showChatMessages(List<ChatMessage> messages)
     {
         mChatMessagesAdapter.showMessages(messages);
+        mChatRecyclerView.postDelayed(mChatMessagesAdapter::scrollToBottom, 300);
     }
 
     @Override
     public void addChatMessage(ChatMessage chatMessage)
     {
         mChatMessagesAdapter.addMessage(chatMessage);
-        mChatRecyclerView.scrollToPosition(mChatMessagesAdapter.getItemCount()-1);
+        mChatRecyclerView.postDelayed(mChatMessagesAdapter::scrollToBottom, 300);
     }
 
     @Override
@@ -136,4 +139,5 @@ public class ChatFragment extends PineTaskFragment implements ChatView
     {
         showUserMessage(false, message, args);
     }
+
 }

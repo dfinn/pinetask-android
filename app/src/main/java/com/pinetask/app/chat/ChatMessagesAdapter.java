@@ -1,5 +1,12 @@
 package com.pinetask.app.chat;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,9 +29,17 @@ import javax.inject.Inject;
 /** Adapter for RecyclerView that shows a list of chat messages. **/
 public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapter.ChatMessageViewHolder>
 {
-    List<ChatMessage> mChatMessages = new ArrayList<>();
+    private List<ChatMessage> mChatMessages = new ArrayList<>();
+    private LinearLayoutManager mLayoutManager;
     @Inject PineTaskApplication mAppContext;
-    @Inject DbHelper mDbHelper;
+    private RecyclerView mRecyclerView;
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView)
+    {
+        super.onAttachedToRecyclerView(recyclerView);
+        mRecyclerView = recyclerView;
+    }
 
     public static class ChatMessageViewHolder extends RecyclerView.ViewHolder
     {
@@ -37,8 +52,9 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         }
     }
 
-    public ChatMessagesAdapter()
+    public ChatMessagesAdapter(LinearLayoutManager linearLayoutManager)
     {
+        mLayoutManager = linearLayoutManager;
         PineTaskApplication.getInstance().getAppComponent().inject(this);
     }
 
@@ -46,6 +62,11 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
     {
         mChatMessages.add(chatMessage);
         notifyItemInserted(mChatMessages.size()-1);
+    }
+
+    public void scrollToBottom()
+    {
+        mLayoutManager.scrollToPosition(mChatMessages.size()-1);
     }
 
     public void removeAll()
@@ -77,6 +98,16 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
         String timeAbbrevStr = getAbbreviatedDurationString(timestamp);
         holder.NameAndTimestampTextView.setText(chatMessage.getSenderName() + "\n" + timeAbbrevStr);
         holder.MessageTextView.setText(chatMessage.getMessage());
+
+        if (chatMessage.getIsNewMessage())
+        {
+            Drawable drawable = holder.MessageTextView.getBackground();
+            int highlightColor = ContextCompat.getColor(mAppContext, R.color.highlighted_background);
+            int whiteColor = ContextCompat.getColor(mAppContext, R.color.white);
+            ObjectAnimator.ofObject(holder.MessageTextView, "backgroundColor", new ArgbEvaluator(), highlightColor, whiteColor, highlightColor, whiteColor).setDuration(1500).start();
+            chatMessage.setIsNewMessage(false);
+            mLayoutManager.scrollToPosition(position);
+        }
     }
 
     /**

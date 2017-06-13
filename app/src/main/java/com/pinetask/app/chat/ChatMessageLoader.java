@@ -42,6 +42,7 @@ public class ChatMessageLoader extends LoggingBase
                     return chatMessage;
                 })
                 .filter(chatMessage -> mChatMessages.size() > mOriginalMessageCount)
+                .map(chatMessage -> { chatMessage.setIsNewMessage(true); return chatMessage; } )
                 .doOnDispose(() -> logMsg("loadChatMessages: disposing subscription"))
                 .subscribe(messageAdded, onError);
     }

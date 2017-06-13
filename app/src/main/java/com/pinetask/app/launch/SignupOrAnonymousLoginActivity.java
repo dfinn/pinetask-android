@@ -70,7 +70,7 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
         else
         {
             logMsg("User has already completed anonymous setup on prior launch: going to MainActivity");
-            MainActivity.launch(this, user.getUid());
+            launchMainActivity(user);
             finish();
         }
     }
@@ -94,7 +94,7 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
                 logMsg("createNewUser: FirebaseUser is: uid=%s, name=%s, email=%s, photoUri=%s", user.getUid(), user.getDisplayName(), user.getEmail(), user.getPhotoUrl());
                 mDbHelper.setUserName(user.getUid(), user.getDisplayName()).andThen(mDbHelper.setIsAnonymous(user.getUid(), false)).subscribe(activityObserver("setup new user", ()->
                 {
-                    MainActivity.launch(SignupOrAnonymousLoginActivity.this, user.getUid());
+                    launchMainActivity(user);
                     finish();
                 }));
             }
@@ -110,7 +110,7 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
             if (resultCode == RESULT_OK)
             {
                 logMsg("onActivityResult: ANONYMOUS_AUTH_REQUEST_CODE returned ok");
-                MainActivity.launch(SignupOrAnonymousLoginActivity.this, user.getUid());
+                launchMainActivity(user);
                 finish();
             }
             else
@@ -119,5 +119,11 @@ public class SignupOrAnonymousLoginActivity extends PineTaskActivity
                 finish();
             }
         }
+    }
+
+    private void launchMainActivity(FirebaseUser user)
+    {
+        Intent intent = MainActivity.buildLaunchIntent(this, user.getUid(), null);
+        startActivity(intent);
     }
 }

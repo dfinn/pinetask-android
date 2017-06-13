@@ -3,6 +3,7 @@
                 xmlns:tools="http://schemas.android.com/tools"
                 android:orientation="horizontal"
                 android:gravity="top"
+                android:background="@color/white"
                 android:padding="3dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
@@ -27,6 +28,7 @@
         android:layout_toRightOf="@id/nameAndTimestampTextView"
         tools:text="Can you please pick up some mango, apples, oranges, bread, and almonds?"
         android:padding="3dp"
+        android:background="@color/white"
         android:textSize="12sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>

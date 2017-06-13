@@ -35,6 +35,11 @@ public class ChatMessage implements UsesKeyIdentifier
     public String getSenderName() { return mName; }
     public void setSenderName(String name) { mName = name; }
 
+    /** Indicates if the message is new (ie, has not yet been displayed to the user) **/
+    private boolean mIsNewMessage;
+    public boolean getIsNewMessage() { return mIsNewMessage; }
+    public void setIsNewMessage(boolean isNew) { mIsNewMessage = isNew; }
+
     public ChatMessage()
     {
     }
