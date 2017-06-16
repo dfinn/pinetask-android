@@ -23,7 +23,6 @@ public interface AppComponent
     void inject(PineTaskFragment target);
     void inject(PineTaskDialogFragment target);
     void inject(ChatMessagesAdapter target);
-    void inject(ListItemAdapter target);
     void inject(TutorialActivity target);
     void inject(RxListLoader target);
     void inject(InviteManager target);

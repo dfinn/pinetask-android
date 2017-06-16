@@ -22,20 +22,37 @@ import javax.inject.Inject;
 
 public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemViewHolder>
 {
-    List<PineTaskItem> mItems;
+    List<PineTaskItemExt> mItems;
     ListItemsFragment mListItemsFragment;
     @Inject DbHelper mDbHelper;
+    @Inject ListItemsPresenter mListItemsPresenter;
 
     // IDs for pop-up menu items
     public static int MENU_ITEM_DELETE = 0;
     public static int MENU_ITEM_UNCLAIM = 1;
     public static int MENU_ITEM_UNCOMPLETE = 2;
 
-    public ListItemAdapter(ListItemsFragment listItemsFragment, List<PineTaskItem> items)
+    public ListItemAdapter(ListItemsFragment listItemsFragment, List<PineTaskItemExt> items)
     {
         mListItemsFragment = listItemsFragment;
         mItems = items;
-        PineTaskApplication.getInstance().getAppComponent().inject(this);
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
+    }
+
+    public static class ItemViewHolder extends RecyclerView.ViewHolder
+    {
+        ImageButton mOptionsImageButton, mClaimImageButton, mCompletedImageButton;
+        TextView mItemDescriptionTextView, mClaimedByTextView;
+
+        public ItemViewHolder(View itemView)
+        {
+            super(itemView);
+            mItemDescriptionTextView = (TextView) itemView.findViewById(R.id.itemDescriptionTextView);
+            mOptionsImageButton = (ImageButton) itemView.findViewById(R.id.optionsImageButton);
+            mClaimImageButton = (ImageButton) itemView.findViewById(R.id.claimImageButton);
+            mClaimedByTextView = (TextView) itemView.findViewById(R.id.claimedByTextView);
+            mCompletedImageButton = (ImageButton) itemView.findViewById(R.id.completedImageButton);
+        }
     }
 
     @Override
@@ -49,7 +66,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
     @Override
     public void onBindViewHolder(ItemViewHolder holder, int position)
     {
-        final PineTaskItem item = mItems.get(position);
+        final PineTaskItemExt item = mItems.get(position);
 
         // Show item description text.  If marked as completed, show text with strikethrough and use lighter color.
         holder.mItemDescriptionTextView.setText(item.getItemDescription());
@@ -68,53 +85,28 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         {
             if (item.getClaimedBy()!=null) popupMenu.getMenu().add(Menu.NONE, MENU_ITEM_UNCLAIM, Menu.NONE, R.string.unclaim);
         }
-        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
+        popupMenu.setOnMenuItemClickListener(menuItem ->
         {
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem)
-            {
-                if (menuItem.getItemId() == MENU_ITEM_DELETE) mListItemsFragment.deleteItem(item);
-                else if (menuItem.getItemId() == MENU_ITEM_UNCLAIM) mListItemsFragment.unclaimItem(item);
-                else if (menuItem.getItemId() == MENU_ITEM_UNCOMPLETE) mListItemsFragment.uncompleteItem(item);
-                return true;
-            }
+            if (menuItem.getItemId() == MENU_ITEM_DELETE) mListItemsPresenter.deleteItem(item);
+            else if (menuItem.getItemId() == MENU_ITEM_UNCLAIM) mListItemsPresenter.unclaimItem(item);
+            else if (menuItem.getItemId() == MENU_ITEM_UNCOMPLETE) mListItemsPresenter.setCompletedStatus(item, false);
+            return true;
         });
 
         // If the user clicks the item text, open the edit dialog.
-        holder.mItemDescriptionTextView.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                mListItemsFragment.editItem(item);
-            }
-        });
+        holder.mItemDescriptionTextView.setOnClickListener(__ -> mListItemsFragment.showEditDialog(item));
 
         // Configure the "..." button to show the pop-up menu when clicked.
-        holder.mOptionsImageButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                popupMenu.show();
-            }
-        });
+        holder.mOptionsImageButton.setOnClickListener(__ -> popupMenu.show());
 
         // Set "claim" button to claim the item.
-        holder.mClaimImageButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                mListItemsFragment.claimItem(item);
-            }
-        });
+        holder.mClaimImageButton.setOnClickListener(__ -> mListItemsPresenter.claimItem(item));
 
         // Only show the "completed" check box if item not yet complete
         holder.mCompletedImageButton.setVisibility((item.getIsCompleted() == false) ? View.VISIBLE : View.INVISIBLE);
 
         // Set "complete" (checkbox) button to mark the item as completed. It will be claimed by the current user if not already claimed by them.
-        holder.mCompletedImageButton.setOnClickListener(__ -> mListItemsFragment.setCompletedStatus(item, true));
+        holder.mCompletedImageButton.setOnClickListener(__ -> mListItemsPresenter.setCompletedStatus(item, true));
 
         // If claimed, show the initials of the person who has claimed the item.
         // TODO: show avatar of the person who has claimed the item.
@@ -149,67 +141,53 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         return mItems.size();
     }
 
-    public void showItems(List<PineTaskItem> items)
+    public void showItems(List<PineTaskItemExt> items)
     {
         mItems.clear();
         mItems.addAll(items);
         notifyDataSetChanged();
     }
 
-    public void add(PineTaskItem item)
+    /** Add the item if not already in the list **/
+    public void add(PineTaskItemExt item)
     {
-        mItems.add(item);
-        notifyItemInserted(mItems.size()-1);
+        if (findItem(item.getId()) == -1)
+        {
+            mItems.add(item);
+            notifyItemInserted(mItems.size() - 1);
+        }
+    }
+
+    /** Return the index of the item, or -1 if not found **/
+    private int findItem(String key)
+    {
+        for (int i = 0; i< mItems.size(); i++)
+        {
+            PineTaskItemExt item = mItems.get(i);
+            if (item.getId().equals(key)) return i;
+        }
+        return -1;
     }
 
     /** Removes the item with the key provided. **/
     public void remove(String key)
     {
-        for (int i = 0; i< mItems.size(); i++)
+        int i = findItem(key);
+        if (i != -1)
         {
-            PineTaskItem item = mItems.get(i);
-            if (item.getKey().equals(key))
-            {
-                mItems.remove(i);
-                notifyItemRemoved(i);
-                break;
-            }
+            mItems.remove(i);
+            notifyItemRemoved(i);
         }
     }
 
-    public void update(PineTaskItem updatedItem)
+    public void update(PineTaskItemExt updatedItem)
     {
-        for (int i = 0; i< mItems.size(); i++)
+        int i = findItem(updatedItem.getId());
+        if (i != -1)
         {
-            PineTaskItem item = mItems.get(i);
-            if (updatedItem.getKey().equals(item.getKey()))
-            {
-                item.updateFrom(updatedItem);
-                notifyItemChanged(i);
-                break;
-            }
-        }
-    }
-
-    public void clear()
-    {
-        mItems.clear();
-        notifyDataSetChanged();
-    }
-
-    public static class ItemViewHolder extends RecyclerView.ViewHolder
-    {
-        ImageButton mOptionsImageButton, mClaimImageButton, mCompletedImageButton;
-        TextView mItemDescriptionTextView, mClaimedByTextView;
-
-        public ItemViewHolder(View itemView)
-        {
-            super(itemView);
-            mItemDescriptionTextView = (TextView) itemView.findViewById(R.id.itemDescriptionTextView);
-            mOptionsImageButton = (ImageButton) itemView.findViewById(R.id.optionsImageButton);
-            mClaimImageButton = (ImageButton) itemView.findViewById(R.id.claimImageButton);
-            mClaimedByTextView = (TextView) itemView.findViewById(R.id.claimedByTextView);
-            mCompletedImageButton = (ImageButton) itemView.findViewById(R.id.completedImageButton);
+            PineTaskItem oldItem = mItems.get(i);
+            oldItem.updateFrom(updatedItem);
+            notifyItemChanged(i);
         }
     }
 

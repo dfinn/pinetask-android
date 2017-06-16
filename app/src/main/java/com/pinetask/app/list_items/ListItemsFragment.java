@@ -8,19 +8,11 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.pinetask.app.common.ListDeletedEvent;
-import com.pinetask.app.common.ListSelectedEvent;
+import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskFragment;
-import com.pinetask.app.R;
-import com.pinetask.app.db.DbHelper;
-import com.pinetask.app.db.StatefulChildListener;
-import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +54,20 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
         return view;
     }
 
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+        mPresenter.detachView();
+    }
+
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        mPresenter.attachView(this);
+    }
+
     /** When "add" floating action button is clicked, open dialog for adding new item. **/
     @OnClick(R.id.addItemButton)
     public void onAddButtonClicked(View view)
@@ -72,107 +78,28 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     }
 
     /** Shows a dialog allowing the user to edit the description of the specified item. **/
-    public void showEditDialog(PineTaskItem item)
+    public void showEditDialog(PineTaskItemExt item)
     {
         AddOrEditItemDialog dialog = AddOrEditItemDialog.newInstance(item);
         dialog.setTargetFragment(this, -1);
         dialog.show(getFragmentManager(), AddOrEditItemDialog.class.getSimpleName());
     }
 
-    /** Clears the currently displayed list, if any, and disconnects the list items listener.
-     * If listId is non-null, starts async load of all items in the list with the ID specified and displays them to the RecyclerView. **/
-    private void displayListItems(final String listId)
-    {
-        logMsg("displayListItems: listid=%s, mCurrentListId=%s", listId, mCurrentListId);
-        if (mCurrentListId != null && mCurrentListId.equals(listId))
-        {
-            logMsg("displayListItems: Already displaying list %s, returning.", mCurrentListId);
-            return;
-        }
-
-        logMsg("Loading items in list %s", listId);
-        mCurrentListId = listId;
-        mItemsListAdapter.clear();
-
-        // Disconnect listener for previously selected list, if any.
-        if (mItemsListener != null) mItemsListener.shutdown();
-
-        if (listId==null)
-        {
-            // Disable the "add item" button
-            mAddItemButton.setVisibility(View.GONE);
-            logMsg("displayListItems: listId is null, returning");
-            return;
-        }
-
-        // Enable the "add item" button
-        mAddItemButton.setVisibility(View.VISIBLE);
-
-        PineTaskApplication.getInstance().addActiveTask();
-        mListItemsRef = mDatabase.getReference(DbHelper.LIST_ITEMS_NODE_NAME).child(listId);
-        mItemsListener = new StatefulChildListener(mListItemsRef, new StatefulChildListener.StatefulChildListenerCallbacks()
-        {
-            @Override
-            public void onInitialLoadCompleted()
-            {
-                logMsg("onInitialLoadCompleted");
-                PineTaskApplication.getInstance().endActiveTask();
-            }
-
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, boolean isInitialDataLoaded)
-            {
-                logMsg("onChildAdded: %s=%s", dataSnapshot.getKey(), dataSnapshot.getValue());
-                PineTaskItem item = dataSnapshot.getValue(PineTaskItem.class);
-                item.setKey(dataSnapshot.getKey());
-                mItemsListAdapter.add(item);
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, boolean isInitialDataLoaded)
-            {
-                logMsg("onChildChanged: %s=%s", dataSnapshot.getKey(), dataSnapshot.getValue());
-                PineTaskItem item = dataSnapshot.getValue(PineTaskItem.class);
-                item.setKey(dataSnapshot.getKey());
-                mItemsListAdapter.update(item);
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot, boolean isInitialDataLoaded)
-            {
-                logMsg("onChildRemoved: %s=%s", dataSnapshot.getKey(), dataSnapshot.getValue());
-                PineTaskItem item = dataSnapshot.getValue(PineTaskItem.class);
-                mItemsListAdapter.remove(dataSnapshot.getKey());
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error)
-            {
-                PineTaskApplication.getInstance().endActiveTask();
-                // Only show error if a list is currently active. If list was just deleted, mCurrentListId will be null so we can ignore this error.
-                if (mCurrentListId != null)
-                {
-                    logError("displayListItems: onCancelled: %s", error.getMessage());
-                }
-                else
-                {
-                    // Suppress reporting error message: works around issue where callback might get fired soon after list was deleted (even if callback was removed)
-                    logMsg("displayListItems(listId=%s): suppressing error, list no longer active", listId);
-                }
-            }
-        });
-    }
-
     @Override
-    public void showListItems(List<PineTaskItem> items)
+    public void showListItems(List<PineTaskItemExt> items)
     {
         mItemsListAdapter.showItems(items);
     }
 
     @Override
-    public void addItem(PineTaskItem item)
+    public void addItem(PineTaskItemExt item)
     {
         mItemsListAdapter.add(item);
+        if (item.getIsNewItem())
+        {
+            Toast.makeText(getActivity(), String.format(getString(R.string.x_has_been_added), item.getItemDescription()), Toast.LENGTH_SHORT).show();
+            item.setIsNewItem(false);
+        }
     }
 
     @Override
@@ -182,7 +109,7 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     }
 
     @Override
-    public void updateItem(PineTaskItem item)
+    public void updateItem(PineTaskItemExt item)
     {
         mItemsListAdapter.update(item);
     }

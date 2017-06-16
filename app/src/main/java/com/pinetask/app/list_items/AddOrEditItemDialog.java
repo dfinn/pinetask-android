@@ -1,6 +1,5 @@
 package com.pinetask.app.list_items;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -8,13 +7,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.pinetask.app.common.PineTaskDialogFragment;
 import com.pinetask.app.R;
+import com.pinetask.app.common.PineTaskApplication;
+import com.pinetask.app.common.PineTaskDialogFragment;
+
+import javax.inject.Inject;
 
 /** Dialog for adding a new item or editing an existing one. **/
 public class AddOrEditItemDialog extends PineTaskDialogFragment
@@ -22,7 +23,10 @@ public class AddOrEditItemDialog extends PineTaskDialogFragment
     /** Name of a serializable argument that specifies the PineTaskItem to edit (or null if adding a new item) **/
     public static String ITEM_KEY = "PineTaskItem";
 
-    public static AddOrEditItemDialog newInstance(PineTaskItem item)
+    @Inject
+    ListItemsPresenter mListItemsPresenter;
+
+    public static AddOrEditItemDialog newInstance(PineTaskItemExt item)
     {
         AddOrEditItemDialog dialog = new AddOrEditItemDialog();
         Bundle args = new Bundle();
@@ -42,7 +46,9 @@ public class AddOrEditItemDialog extends PineTaskDialogFragment
         Button okButton = (Button) view.findViewById(R.id.okButton);
         Button cancelButton = (Button) view.findViewById(R.id.cancelButton);
 
-        final PineTaskItem item = (PineTaskItem) getArguments().getSerializable(ITEM_KEY);
+        final PineTaskItemExt item = (PineTaskItemExt) getArguments().getSerializable(ITEM_KEY);
+
+        PineTaskApplication.getInstance().getUserComponent().inject(this);
 
         // If adding an item, show "Add Item", otherwise show "Edit Item"
         titleTextView.setText((item == null) ? R.string.add_item : R.string.edit_item);
@@ -51,50 +57,41 @@ public class AddOrEditItemDialog extends PineTaskDialogFragment
         if (item != null) descriptionEditText.setText(item.getItemDescription());
 
         // OK button will add/update the item in the database.
-        okButton.setOnClickListener(new View.OnClickListener()
+        okButton.setOnClickListener(__ ->
         {
-            @Override
-            public void onClick(View view)
+            ListItemsFragment listItemsFragment = (ListItemsFragment) getTargetFragment();
+            String description = descriptionEditText.getText().toString();
+            if (item != null)
             {
-                ListItemsFragment listItemsFragment = (ListItemsFragment) getTargetFragment();
-                String description = descriptionEditText.getText().toString();
-                if (item != null)
-                {
-                    // Update existing item
-                    logMsg("Updating item '%s' to '%s'", item.getItemDescription(), description);
-                    item.setItemDescription(description);
-                    listItemsFragment.updateItem(item);
-                }
-                else
-                {
-                    // Add new item
-                    logMsg("Adding new item '%s'", description);
-                    listItemsFragment.addItem(description);
-                }
-                hideSoftKeyboard();
-                dismiss();
+                // Update existing item
+                logMsg("Updating item '%s' to '%s'", item.getItemDescription(), description);
+                item.setItemDescription(description);
+                mListItemsPresenter.updateItem(item);
             }
+            else
+            {
+                // Add new item
+                logMsg("Adding new item '%s'", description);
+                mListItemsPresenter.addItem(description);
+            }
+            hideSoftKeyboard();
+            dismiss();
         });
 
         // Cancel button closes dialog without saving
-        cancelButton.setOnClickListener(new View.OnClickListener()
+        cancelButton.setOnClickListener(__ ->
         {
-            @Override
-            public void onClick(View view)
-            {
-                hideSoftKeyboard();
-                dismiss();
-            }
+            hideSoftKeyboard();
+            dismiss();
         });
 
         // Show soft keyboard when dialog opens.
-        descriptionEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) {
-                    getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-                    descriptionEditText.selectAll();
-                }
+        descriptionEditText.setOnFocusChangeListener((View v, boolean hasFocus) ->
+        {
+            if (hasFocus)
+            {
+                getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                descriptionEditText.selectAll();
             }
         });
 

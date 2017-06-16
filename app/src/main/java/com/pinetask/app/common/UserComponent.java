@@ -3,6 +3,8 @@ package com.pinetask.app.common;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatFragment;
 import com.pinetask.app.chat.ChatPresenter;
+import com.pinetask.app.list_items.AddOrEditItemDialog;
+import com.pinetask.app.list_items.ListItemAdapter;
 import com.pinetask.app.list_items.ListItemsFragment;
 import com.pinetask.app.list_items.ListItemsPresenter;
 import com.pinetask.app.list_members.MembersAdapter;
@@ -31,4 +33,6 @@ public interface UserComponent
     void inject(ListItemsFragment target);
     void inject(ChatFragment target);
     void inject(MembersAdapter target);
+    void inject(AddOrEditItemDialog target);
+    void inject(ListItemAdapter target);
 }

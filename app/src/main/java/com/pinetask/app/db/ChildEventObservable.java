@@ -67,7 +67,7 @@ public class ChildEventObservable<T> extends LoggingBase
                 @Override
                 public void onChildRemoved(DataSnapshot dataSnapshot)
                 {
-                    T value = (T) dataSnapshot.getValue();
+                    T value = getValueFromSnapshot(dataSnapshot);
                     if (! emitter.isDisposed()) emitter.onNext(new DeletedEvent<>(value));
                     else logError("onChildRemoved -- observable has been disposed, won't call onNext");
                 }

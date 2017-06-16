@@ -424,7 +424,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             {
                 if (position == LIST_ITEMS_INDEX)
                 {
-                    ListItemsFragment listItemsFragment = ListItemsFragment.newInstance(mUserId);
+                    ListItemsFragment listItemsFragment = ListItemsFragment.newInstance();
                     return listItemsFragment;
                 }
                 else if (position == CHAT_INDEX)

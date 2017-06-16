@@ -1,7 +1,5 @@
 package com.pinetask.app.list_items;
 
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListEvent;
 import com.pinetask.app.active_list_manager.ActiveListManager;
@@ -22,20 +20,20 @@ import io.reactivex.disposables.Disposable;
 
 public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPresenter
 {
-    DbHelper mDbHelper;
-    ActiveListManager mActiveListManager;
-    String mUserId;
-    ListItemsView mView;
-    Disposable mActiveListSubscription;
-    ListItemsRepository mListItemsRepository;
-    PineTaskApplication mApplication;
+    private DbHelper mDbHelper;
+    private String mUserId;
+    private ListItemsView mView;
+    private Disposable mActiveListSubscription;
+    private ListItemsRepository mListItemsRepository;
+    private PineTaskApplication mApplication;
+    private ActiveListManager mActiveListManager;
 
     public ListItemsPresenterImpl(PineTaskApplication application, DbHelper dbHelper, ActiveListManager activeListManager, String userId)
     {
         mApplication = application;
         mDbHelper = dbHelper;
-        mActiveListManager = activeListManager;
         mUserId = userId;
+        mActiveListManager = activeListManager;
         mActiveListSubscription = activeListManager.subscribe(this::onActiveListEvent, ex -> logError("Error getting event from ActiveListManager"));
     }
 
@@ -83,7 +81,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         mListItemsRepository = new ListItemsRepository(mDbHelper, list, this::onListItemsLoaded, this::processChildEvent, this::onListItemsLoadError);
     }
 
-    private void onListItemsLoaded(List<PineTaskItem> items)
+    private void onListItemsLoaded(List<PineTaskItemExt> items)
     {
         if (mView != null)
         {
@@ -98,17 +96,17 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         {
             if (childEvent instanceof AddedEvent)
             {
-                AddedEvent<PineTaskItem> addedEvent = (AddedEvent<PineTaskItem>) childEvent;
+                AddedEvent<PineTaskItemExt> addedEvent = (AddedEvent<PineTaskItemExt>) childEvent;
                 mView.addItem(addedEvent.Item);
             }
             else if (childEvent instanceof DeletedEvent)
             {
-                DeletedEvent<PineTaskItem> deletedEvent = (DeletedEvent<PineTaskItem>) childEvent;
-                mView.removeItem(deletedEvent.Item.getKey());
+                DeletedEvent<PineTaskItemExt> deletedEvent = (DeletedEvent<PineTaskItemExt>) childEvent;
+                mView.removeItem(deletedEvent.Item.getId());
             }
             else if (childEvent instanceof UpdatedEvent)
             {
-                UpdatedEvent<PineTaskItem> updatedEvent = (UpdatedEvent<PineTaskItem>) childEvent;
+                UpdatedEvent<PineTaskItemExt> updatedEvent = (UpdatedEvent<PineTaskItemExt>) childEvent;
                 mView.updateItem(updatedEvent.Item);
             }
         }
@@ -120,47 +118,52 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         logException(ex);
     }
 
-    /** Adds a new item to the database. **/
+    /** Start async request to add a new item to the database.  If error occurs, it will be logged and shown to the user. **/
+    @Override
     public void addItem(String description)
     {
-        PineTaskItem item = new PineTaskItem(null, description);
-        mListItemsRef.push().setValue(item);
+        PineTaskList activeList = mActiveListManager.getActiveList();
+        if (activeList != null)
+        {
+            PineTaskItemExt item = mDbHelper.addPineTaskItem(activeList.getId(), description, this::showErrorMessage);
+            if (mView != null) mView.addItem(item);
+        }
+        else
+        {
+            showErrorMessage(mApplication.getString(R.string.error_no_current_list));
+        }
     }
 
     /** Make async request to perform database update, and then update the view immediately. **/
-    public void updateItem(String listId, PineTaskItem item)
+    @Override
+    public void updateItem(PineTaskItemExt item)
     {
-        mDbHelper.updateItem(listId, item);
+        mDbHelper.updateItem(item, this::showErrorMessage);
         if (mView != null) mView.updateItem(item);
     }
 
     /** Sets the "is completed" status for the item to the state specified, and then updates the item in the database. **/
-    public void setCompletedStatus(PineTaskItem item, boolean isCompleted)
+    @Override
+    public void setCompletedStatus(PineTaskItemExt item, boolean isCompleted)
     {
         logMsg("Setting completion status for '%s' to %b", item.getItemDescription(), isCompleted);
-        item.setClaimedBy(mUserId);
+        if (isCompleted) item.setClaimedBy(mUserId);
         item.setIsCompleted(isCompleted);
         updateItem(item);
     }
 
     /** Make async request to delete item from database, and immediately remove item from the view. **/
-    public void deleteItem(String listId, PineTaskItem item)
+    @Override
+    public void deleteItem(PineTaskItemExt item)
     {
         logMsg("Deleting item: %s", item.getItemDescription());
-        mDbHelper.deleteItem(listId, item).subscribe(() ->
-        {
-            logMsg("Item %s deleted", item.getKey());
-        }, ex ->
-        {
-            logError("Error deleting item %s", item.getKey());
-            logException(ex);
-            showErrorMessage(mApplication.getString(R.string.error_deleting_item));
-        });
-        if (mView != null) mView.removeItem(item.getKey());
+        mDbHelper.deleteItem(item, this::showErrorMessage);
+        if (mView != null) mView.removeItem(item.getId());
     }
 
     /** Sets the item to be claimed by the current user, and then updates the item in the database. **/
-    public void claimItem(PineTaskItem item)
+    @Override
+    public void claimItem(PineTaskItemExt item)
     {
         logMsg("Claiming item '%s'", item.getItemDescription());
         item.setClaimedBy(mUserId);
@@ -168,18 +171,11 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     }
 
     /** Sets the item to be unclaimed (set claimed_by to null), and then updates the item in the database. **/
-    public void unclaimItem(PineTaskItem item)
+    @Override
+    public void unclaimItem(PineTaskItemExt item)
     {
         logMsg("Unclaiming item '%s'", item.getItemDescription());
         item.setClaimedBy(null);
-        updateItem(item);
-    }
-
-    /** Sets the item to be uncompleted, and then updates the item in the database. **/
-    public void uncompleteItem(PineTaskItem item)
-    {
-        logMsg("Uncompleting item '%s'", item.getItemDescription());
-        item.setIsCompleted(false);
         updateItem(item);
     }
 

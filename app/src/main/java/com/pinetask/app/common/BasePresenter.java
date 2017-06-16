@@ -28,5 +28,4 @@ public abstract class BasePresenter
         logException(ex);
         showErrorMessage(message, args);
     }
-
 }

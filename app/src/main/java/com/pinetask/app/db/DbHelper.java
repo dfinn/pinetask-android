@@ -13,9 +13,11 @@ import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
+import com.pinetask.app.common.UserMessageListener;
 import com.pinetask.app.list_items.PineTaskItem;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
+import com.pinetask.app.list_items.PineTaskItemExt;
 import com.pinetask.app.main.InviteInfo;
 import com.pinetask.app.manage_lists.StartupMessage;
 import com.pinetask.common.Logger;
@@ -33,6 +35,7 @@ import javax.inject.Singleton;
 
 import io.reactivex.Completable;
 import io.reactivex.CompletableEmitter;
+import io.reactivex.CompletableObserver;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -40,6 +43,7 @@ import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
+import io.reactivex.disposables.Disposable;
 
 import static com.pinetask.app.db.KeyAddedOrDeletedObservable.getKeyAddedOrDeletedEventsAt;
 
@@ -458,9 +462,8 @@ public class DbHelper
     {
         Logger.logMsg(DbHelper.class, "Adding new list '%s' with owner %s", listName, ownerId);
         PineTaskList newList = new PineTaskList(null, listName, ownerId);
-        final DatabaseReference listInfoRef = FirebaseDatabase.getInstance().getReference(LIST_INFO_NODE_NAME).push();
+        DatabaseReference listInfoRef = FirebaseDatabase.getInstance().getReference(LIST_INFO_NODE_NAME).push();
         String listId = listInfoRef.getKey();
-        //final DatabaseReference collaboratorsRef = getListCollaboratorsReference(listId).child(ownerId);
         final DatabaseReference collaboratorsRef = getListCollaboratorsReference(listId);
 
         Map<String,String> collaboratorsMap = new HashMap<>();
@@ -521,23 +524,59 @@ public class DbHelper
     }
 
     /** Returns an observable that emits added/deleted events for items in the list specified. **/
-    public Observable<ChildEventBase<PineTaskItem>> subscribeListItems(String listId)
+    public Observable<ChildEventBase<PineTaskItemExt>> subscribeListItems(String listId)
     {
-        ChildEventObservable<PineTaskItem> o = new ChildEventObservable(PineTaskItem.class, getListItemsRef(listId), "subscribe to list items");
+        ChildEventObservable<PineTaskItem> o = new ChildEventObservable(PineTaskItemExt.class, getListItemsRef(listId), "subscribe to list items");
         return o.attachListener();
     }
 
-    /** Make async call to update PineTaskItem in the database. **/
-    public void updateItem(String listId, PineTaskItem item)
+    /** Make async call to update PineTaskItem in the database.  If error occurs, it will be logged and shown to the user. **/
+    public void updateItem(PineTaskItemExt item, UserMessageListener userMessageListener)
     {
-        DatabaseReference dbRef = getListItemsRef(listId).child(item.getKey());
-        setValue(dbRef, item, "update item");
+        DatabaseReference dbRef = getListItemsRef(item.getListId()).child(item.getId());
+        Completable task = setValueRx(dbRef, item, "update item");
+        subscribeAndReportError(task, userMessageListener);
     }
 
-    public Completable deleteItem(String listId, PineTaskItem item)
+    /** Start async operation to delete the PineTaskItem in the list specified. If error occurs, log it and show to the user by calling userMessageListener. **/
+    public void deleteItem(PineTaskItemExt item, UserMessageListener userMessageListener)
     {
-        DatabaseReference dbRef = getListItemsRef(listId).child(item.getKey());
-        return removeNode(dbRef);
+        DatabaseReference dbRef = getListItemsRef(item.getListId()).child(item.getId());
+        subscribeAndReportError(removeNode(dbRef), userMessageListener);
+    }
+
+    /** Make async request to add the item to the list specified. If any error occurs it will be logged. **/
+    public PineTaskItemExt addPineTaskItem(String listId, String description, UserMessageListener userMessageListener)
+    {
+        DatabaseReference dbRef = getListItemsRef(listId).push();
+        PineTaskItemExt item = new PineTaskItemExt(dbRef.getKey(), description, true, listId);
+        Completable task = setValueRx(dbRef, item, "add PineTaskItem");
+        subscribeAndReportError(task, userMessageListener);
+        return item;
+    }
+
+    /** Subscribe to the Completable provided.  If an error occurs, log the exception and then show the exception message to the user using the UserMessageListener provided. **/
+    private void subscribeAndReportError(Completable completable, UserMessageListener userMessageListener)
+    {
+        completable.subscribe(new CompletableObserver()
+        {
+            @Override
+            public void onSubscribe(Disposable d)
+            {
+            }
+
+            @Override
+            public void onComplete()
+            {
+            }
+
+            @Override
+            public void onError(Throwable ex)
+            {
+                logException(ex);
+                userMessageListener.showMessage(ex.getMessage());
+            }
+        });
     }
 
     private void logMsg(String msg, Object...args)
@@ -548,6 +587,11 @@ public class DbHelper
     private void logError(String msg, Object...args)
     {
         Logger.logError(DbHelper.class, msg, args);
+    }
+
+    protected void logException(Throwable ex)
+    {
+        Logger.logException(getClass(), ex);
     }
 
     /** Returns an Observable that emits the list of keys at the database reference specified, and then completes. **/
@@ -778,12 +822,12 @@ public class DbHelper
                 if (databaseError == null)
                 {
                     logMsg("Successfully removed node %s", dbRef);
-                    emitter.onComplete();
+                    if (!emitter.isDisposed()) emitter.onComplete();
                 }
                 else
                 {
                     logDbOperationResult(operationDescription, databaseError, dbRef);
-                    emitter.onError(new DbOperationCanceledException(dbRef, databaseError, operationDescription));
+                    if (!emitter.isDisposed()) emitter.onError(new DbOperationCanceledException(dbRef, databaseError, operationDescription));
                 }
             });
         });

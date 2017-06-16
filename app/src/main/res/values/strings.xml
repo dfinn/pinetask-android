@@ -95,6 +95,7 @@
     <string name="drawer_open">Open Navigation Drawer</string>
     <string name="drawer_close">Close Navigation Drawer</string>
     <string name="message_from_x">Message from %1$s</string>
+    <string name="x_has_been_added">\'%1$s\' has been added</string>
 
     <!-- Settings activity -->
     <string name="username">Name</string>

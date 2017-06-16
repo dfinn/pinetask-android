@@ -1,7 +1,5 @@
 package com.pinetask.app.list_items;
 
-import com.google.firebase.database.Exclude;
-
 import org.joda.time.DateTime;
 
 import java.io.Serializable;
@@ -9,12 +7,6 @@ import java.io.Serializable;
 /** Represents one item in a list. **/
 public class PineTaskItem implements Serializable
 {
-    /** Key identifying the item **/
-    protected String mKey;
-    @Exclude    // No need to include this when writing the object to Firebase.
-    public String getKey() { return mKey; }
-    public void setKey(String key) { mKey = key; }
-
     /** OperationDescription of the item (ex: "bananas") **/
     protected String mItemDescription;
     public String getItemDescription() { return mItemDescription; }
@@ -39,9 +31,8 @@ public class PineTaskItem implements Serializable
     {
     }
 
-    public PineTaskItem(String key, String itemDescription)
+    public PineTaskItem(String itemDescription)
     {
-        mKey = key;
         mItemDescription = itemDescription;
         mClaimedBy = null;
         mIsCompleted = false;
@@ -60,19 +51,5 @@ public class PineTaskItem implements Serializable
     public String toString()
     {
         return String.format("[%s] %s", mIsCompleted ? "X" : " ", mItemDescription);
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (obj instanceof PineTaskItem)
-        {
-           PineTaskItem other = (PineTaskItem) obj;
-            return other.getKey().equals(getKey());
-        }
-        else
-            {
-            return false;
-        }
     }
 }
