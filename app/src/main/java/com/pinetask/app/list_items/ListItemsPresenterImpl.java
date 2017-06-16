@@ -57,7 +57,11 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     public void attachView(ListItemsView view)
     {
         mView = view;
-        if (mListItemsRepository != null) mView.showListItems(mListItemsRepository.getItems());
+        if (mListItemsRepository != null)
+        {
+            mView.showListItemsLayouts();
+            mView.showListItems(mListItemsRepository.getItems());
+        }
     }
 
     @Override

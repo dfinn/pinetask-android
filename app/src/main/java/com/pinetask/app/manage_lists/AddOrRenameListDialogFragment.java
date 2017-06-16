@@ -118,6 +118,7 @@ public class AddOrRenameListDialogFragment extends PineTaskDialogFragment
             // Add new list
             mDbHelper.createList(userId, newName).subscribe(activityObserver("create list", () -> logMsg("Create list completed")));
         }
+        hideSoftKeyboard();
         dismiss();
     }
 

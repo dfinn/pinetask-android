@@ -229,6 +229,11 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     {
         super.onPause();
         mIsActivityActive = false;
+
+        if(mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START))
+        {
+            mDrawerLayout.closeDrawer(Gravity.LEFT);
+        }
     }
 
     @Override
@@ -236,11 +241,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     {
         super.onResume();
         mIsActivityActive = true;
-        // Close the navigation drawer if it's open and the activity is resuming
-        if(mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START))
-        {
-            mDrawerLayout.closeDrawer(Gravity.LEFT);
-        }
     }
 
     @Override

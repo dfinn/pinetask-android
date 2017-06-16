@@ -29,14 +29,20 @@ public class ListItemsRepository extends LoggingBase
     {
         mOnInitialLoadCompleted = onInitialLoadCompleted;
         mSubscription = dbHelper.getListItemsCount(list.getId())
-                .map(itemCount -> mOriginalItemCount = itemCount)
-                .map(itemCount -> list.getId())
-                .flatMapObservable(dbHelper::subscribeListItems)
-                .map(childEvent -> { childEvent.Item.setListId(list.getId()); return childEvent; } )
-                .map(this::processChildEvent)
+                .doOnSuccess(itemCount -> { mOriginalItemCount = itemCount; if (itemCount == 0) notifyInitialLoadCompleted(); } )
+                .flatMapObservable(__ -> dbHelper.subscribeListItems(list.getId()))
+                .doOnNext(childEvent -> childEvent.Item.setListId(list.getId()))
+                .doOnNext(this::updateCache)
                 .filter(this::reportInitialLoadAndFilterNewEvents)
-                .map(childEvent -> { childEvent.Item.setIsNewItem(true); return childEvent; } )
+                .doOnNext(childEvent -> childEvent.Item.setIsNewItem(true))
                 .subscribe(onChildEvent, onError);
+    }
+
+    private void notifyInitialLoadCompleted() throws Exception
+    {
+        logMsg("Reporting initial load completed for %d items", mItems.size());
+        mOnInitialLoadCompleted.accept(mItems);
+        mInitialLoadReported = true;
     }
 
     /** If initial load not triggered yet and we've reached the expected number of items, invoke the onInitialLoadCompleted callback and set mInitialLoadReported flag to true.
@@ -50,23 +56,19 @@ public class ListItemsRepository extends LoggingBase
         }
         else
         {
-            if (mItems.size() == mOriginalItemCount)
-            {
-                logMsg("Reporting initial load completed for %d items", mItems.size());
-                mOnInitialLoadCompleted.accept(mItems);
-                mInitialLoadReported = true;
-            }
+            if (mItems.size() == mOriginalItemCount) notifyInitialLoadCompleted();
             return false;
         }
     }
 
-    private ChildEventBase<PineTaskItemExt> processChildEvent(ChildEventBase<PineTaskItemExt> childEvent)
+    /** Process added/deleted/uddated events and update mItems as needed. **/
+    private void updateCache(ChildEventBase<PineTaskItemExt> childEvent)
     {
         if (childEvent instanceof DeletedEvent)
         {
             DeletedEvent<PineTaskItemExt> deletedEvent = (DeletedEvent<PineTaskItemExt>) childEvent;
             logMsg("DeletedEvent for %s", childEvent.Item.getId());
-            removeItem(deletedEvent.Item);
+            mItems.remove(deletedEvent.Item);
         }
         else if (childEvent instanceof AddedEvent)
         {
@@ -76,42 +78,14 @@ public class ListItemsRepository extends LoggingBase
         else if (childEvent instanceof UpdatedEvent)
         {
             UpdatedEvent<PineTaskItemExt> updatedEvent = (UpdatedEvent<PineTaskItemExt>) childEvent;
-            updateItem(updatedEvent.Item);
+            int i = mItems.indexOf(updatedEvent);
+            if (i != -1) mItems.set(i, updatedEvent.Item);
         }
         logMsg("mLoadedCount=%d, mOriginalItemCount=%d", mItems.size(), mOriginalItemCount);
-        return childEvent;
-    }
-
-    private void removeItem(PineTaskItemExt itemToRemove)
-    {
-        Iterator<PineTaskItemExt> iter = mItems.iterator();
-        while (iter.hasNext())
-        {
-            PineTaskItemExt item = iter.next();
-            if (item.getId().equals(itemToRemove.getId()))
-            {
-                iter.remove();
-                break;
-            }
-        }
-    }
-
-    private void updateItem(PineTaskItemExt itemToUpdate)
-    {
-        for (int i=0 ; i<mItems.size() ; i++)
-        {
-            PineTaskItemExt item = mItems.get(i);
-            if (item.getId().equals(itemToUpdate.getId()))
-            {
-                mItems.set(i, itemToUpdate);
-                break;
-            }
-        }
     }
 
     public void shutdown()
     {
         mSubscription.dispose();
     }
-
 }
