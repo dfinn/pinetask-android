@@ -127,7 +127,7 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
                 }
             }, ex ->
             {
-                logError("getListOwnerAndSubscribeToMemberAddedOrDeletedEvents: error getting member added/deleted events");
+                logError("subscribeToMemberAddedDeletedEvents: error getting member added/deleted events");
                 logException(ex);
             });
     }

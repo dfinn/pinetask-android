@@ -6,9 +6,6 @@ import com.crashlytics.android.Crashlytics;
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.BuildConfig;
 import com.pinetask.common.Logger;
-import com.squareup.otto.Bus;
-
-import javax.inject.Inject;
 
 import io.fabric.sdk.android.Fabric;
 import io.reactivex.plugins.RxJavaPlugins;
@@ -32,8 +29,6 @@ public class PineTaskApplication extends MultiDexApplication
         mUserComponent.membersPresenter().shutdown();
         mUserComponent = null;
     }
-
-    @Inject Bus mEventBus;
 
     static PineTaskApplication mApplicationInstance;
     public static PineTaskApplication getInstance() { return mApplicationInstance; }

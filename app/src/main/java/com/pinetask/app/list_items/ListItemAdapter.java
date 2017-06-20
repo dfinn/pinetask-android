@@ -141,10 +141,9 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         return mItems.size();
     }
 
-    public void showItems(List<PineTaskItemExt> items)
+    public void clear()
     {
         mItems.clear();
-        mItems.addAll(items);
         notifyDataSetChanged();
     }
 

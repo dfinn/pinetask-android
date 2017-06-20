@@ -12,7 +12,6 @@ import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.LoggingBase;
-import com.squareup.otto.Bus;
 
 import javax.inject.Inject;
 
@@ -27,7 +26,6 @@ public class InviteManager extends LoggingBase
 
     @Inject DbHelper mDbHelper;
     @Inject PrefsManager mPrefsManager;
-    @Inject Bus mBus;
 
     /** Base URL used to represent a link to a list (ex: pinetask://lists/12345) **/
     public static String PINETASK_URL_LIST_BASE = "pinetask://lists";

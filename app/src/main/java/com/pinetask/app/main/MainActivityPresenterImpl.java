@@ -1,5 +1,12 @@
 package com.pinetask.app.main;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.media.RingtoneManager;
+import android.support.v4.app.NotificationCompat;
+
 import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListDeletedEvent;
 import com.pinetask.app.active_list_manager.ActiveListEvent;
@@ -7,7 +14,9 @@ import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.active_list_manager.ListLoadErrorEvent;
 import com.pinetask.app.active_list_manager.ListLoadedEvent;
 import com.pinetask.app.active_list_manager.NoListsAvailableEvent;
+import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.BasePresenter;
+import com.pinetask.app.common.ChatMessageEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
@@ -82,6 +91,39 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         {
             // The user's last list has been deleted - update list name selector button to indicate this.
             onNoListsAvailable();
+        }
+        else if (activeListEvent instanceof ChatMessageEvent)
+        {
+            // A chat message was received in the active list
+            ChatMessageEvent chatMessageEvent = (ChatMessageEvent) activeListEvent;
+            notifyChatMessage(chatMessageEvent.Message);
+        }
+    }
+
+    private void notifyChatMessage(ChatMessage chatMessage)
+    {
+        if (mView != null && mView.isVisible())
+        {
+            // If app is active but MainActivity is not on the chat tab, show message as a Toast.
+            mView.notifyOfChatMessage(chatMessage);
+        }
+        else
+        {
+            // Raise system notification if app is currently in the background.  Clicking the notification will open the app and go to the chat tab.
+            logMsg("onChatMessageReceived: building pending intent for chat message %s", chatMessage.getId());
+            Intent intent = MainActivity.buildLaunchIntent(mApplication, mUserId, chatMessage.getId());
+            PendingIntent pendingIntent = PendingIntent.getActivity(mApplication, 0, intent, 0);
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mApplication)
+                    .setSmallIcon(R.drawable.launcher_icon)
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setVibrate(new long[] {0, 500, 500, 500})
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                    .setContentTitle(String.format(mApplication.getString(R.string.message_from_x), chatMessage.getSenderName()))
+                    .setContentText(chatMessage.getMessage());
+            NotificationManager mNotificationManager = (NotificationManager) mApplication.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(0, mBuilder.build());
         }
     }
 

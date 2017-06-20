@@ -86,12 +86,6 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     }
 
     @Override
-    public void showListItems(List<PineTaskItemExt> items)
-    {
-        mItemsListAdapter.showItems(items);
-    }
-
-    @Override
     public void addItem(PineTaskItemExt item)
     {
         mItemsListAdapter.add(item);
@@ -100,6 +94,12 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
             Toast.makeText(getActivity(), String.format(getString(R.string.x_has_been_added), item.getItemDescription()), Toast.LENGTH_SHORT).show();
             item.setIsNewItem(false);
         }
+    }
+
+    @Override
+    public void clearListItems()
+    {
+        mItemsListAdapter.clear();
     }
 
     @Override

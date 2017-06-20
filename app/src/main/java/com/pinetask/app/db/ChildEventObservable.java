@@ -20,38 +20,26 @@ public class ChildEventObservable<T> extends LoggingBase
     ChildEventListener mListener;
     DatabaseReference mDbRef;
     String mOperationDescription;
-    Class mClass;
+    Class<T> mClass;
 
-    public ChildEventObservable(Class cl, DatabaseReference dbRef, String operationDescription)
+    public ChildEventObservable(Class<T> cl, DatabaseReference dbRef, String operationDescription)
     {
         mDbRef = dbRef;
         mOperationDescription = operationDescription;
         mClass = cl;
     }
 
-    public <T> Observable<ChildEventBase<T>> attachListener()
+    public Observable<ChildEventBase<T>> attachListener()
     {
         return Observable.create((ObservableEmitter<ChildEventBase<T>> emitter) ->
         {
             mListener = mDbRef.addChildEventListener(new ChildEventListener()
             {
-                T getValueFromSnapshot(DataSnapshot dataSnapshot)
-                {
-                    T value = (T) dataSnapshot.getValue(mClass);
-                    if (value instanceof UsesKeyIdentifier)
-                    {
-                        // Object uses the database key as an identifier, so populate it in the return object.
-                        UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) value;
-                        keyIdentifier.setId(dataSnapshot.getKey());
-                    }
-                    return value;
-                }
-
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s)
                 {
                     logMsg("onChildAdded(%s): %s", mDbRef, dataSnapshot.getKey());
-                    T value = getValueFromSnapshot(dataSnapshot);
+                    T value = DbHelper.getValueFromSnapshot(dataSnapshot, mClass);
                     if (! emitter.isDisposed()) emitter.onNext(new AddedEvent<>(value));
                     else logError("onChildAdded -- observable has been disposed, won't call onNext");
                 }
@@ -59,7 +47,7 @@ public class ChildEventObservable<T> extends LoggingBase
                 @Override
                 public void onChildChanged(DataSnapshot dataSnapshot, String s)
                 {
-                    T value = getValueFromSnapshot(dataSnapshot);
+                    T value = DbHelper.getValueFromSnapshot(dataSnapshot, mClass);
                     if (! emitter.isDisposed()) emitter.onNext(new UpdatedEvent<>(value));
                     else logError("onChildChanged -- observable has been disposed, won't call onNext");
                 }
@@ -67,7 +55,7 @@ public class ChildEventObservable<T> extends LoggingBase
                 @Override
                 public void onChildRemoved(DataSnapshot dataSnapshot)
                 {
-                    T value = getValueFromSnapshot(dataSnapshot);
+                    T value = DbHelper.getValueFromSnapshot(dataSnapshot, mClass);
                     if (! emitter.isDisposed()) emitter.onNext(new DeletedEvent<>(value));
                     else logError("onChildRemoved -- observable has been disposed, won't call onNext");
                 }

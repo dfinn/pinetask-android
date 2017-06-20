@@ -8,25 +8,26 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
-import com.pinetask.app.common.UserMessageListener;
-import com.pinetask.app.list_items.PineTaskItem;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
+import com.pinetask.app.common.UserMessageListener;
+import com.pinetask.app.list_items.PineTaskItem;
 import com.pinetask.app.list_items.PineTaskItemExt;
 import com.pinetask.app.main.InviteInfo;
 import com.pinetask.app.manage_lists.StartupMessage;
 import com.pinetask.common.Logger;
-import com.squareup.otto.Bus;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -86,6 +87,9 @@ public class DbHelper
     /** Name of node in the Firebase DB where lists accessible to a certain user are stored (/users/<userid>/lists) **/
     public static String LISTS_NODE_NAME = "lists";
 
+    /** Name of node where last access timestamp for each of a user's lists is stored (/users/$userId/lists/last_opened_at) **/
+    public static String LAST_OPENED_AT_KEY = "last_opened_at";
+
     /** Value for a list entry indicating the user is the owner of the list. **/
     final String OWNER = "owner";
 
@@ -105,15 +109,13 @@ public class DbHelper
     final String IS_COMPLETED_KEY_NAME = "isCompleted";
 
     private PineTaskApplication mPineTaskApplication;
-    private Bus mEventBus;
     private FirebaseDatabase mDb;
 
     @Inject
-    public DbHelper(PineTaskApplication appContext, Bus eventBus, FirebaseDatabase db)
+    public DbHelper(PineTaskApplication appContext, FirebaseDatabase db)
     {
         logMsg("Creating DbHelper");
         mPineTaskApplication = appContext;
-        mEventBus = eventBus;
         mDb = db;
     }
 
@@ -127,6 +129,12 @@ public class DbHelper
     private DatabaseReference getUserListsRef(String userId)
     {
         return getUserRef(userId).child(LISTS_NODE_NAME);
+    }
+
+    /** Returns a reference to /users/$userId/lists/$listId/last_opened_at **/
+    private DatabaseReference getUserListLastOpenedTimestamp(String userId, String listId)
+    {
+        return getUserListsRef(userId).child(listId).child(LAST_OPENED_AT_KEY);
     }
 
     /** Returns a reference to /users/$userId/userName **/
@@ -241,6 +249,20 @@ public class DbHelper
         return getItem(String.class, getUserNameRef(userId), "get user name");
     }
 
+    /** Sets the timestamp of the last time the user opened the list with the specified ID.  Timestamp is generated server-side. **/
+    public Completable updateLastOpenTimeForList(String userId, String listId)
+    {
+        DatabaseReference dbRef = getUserListLastOpenedTimestamp(userId, listId);
+        return setValueRx(dbRef, ServerValue.TIMESTAMP, "update last opened timestamp for list");
+    }
+
+    /** Looks up the timestamp of the last time the user opened the list with the specified ID. **/
+    public Single<Long> getLastOpenTimeForList(String userId, String listId)
+    {
+        DatabaseReference dbRef = getUserListLastOpenedTimestamp(userId, listId);
+        return getItem(Long.class, dbRef, "get last opened timestamp for list");
+    }
+
     /** Looks up the name of the user based on the ChatMessage's senderId, and populates the username field. **/
     public Observable<ChatMessage> populateUserName(ChatMessage chatMessage)
     {
@@ -324,9 +346,8 @@ public class DbHelper
     public void createInvite(final String listId, final String inviteId)
     {
         final DatabaseReference ref = FirebaseDatabase.getInstance().getReference(LIST_INVITES_NODE_NAME).child(listId).child(inviteId).child(INVITE_CREATED_AT_KEY);
-        String timestamp = DateTime.now().toString(ISODateTimeFormat.basicDateTime());
-        logMsg("Creating invite for list %s with timestamp %s", listId, timestamp);
-        ref.setValue(timestamp, (dbErr, errRef) -> logDbOperationResult("create invite", dbErr, errRef));
+        logMsg("Creating invite for list %s", listId);
+        ref.setValue(ServerValue.TIMESTAMP, (dbErr, errRef) -> logDbOperationResult("create invite", dbErr, errRef));
     }
 
     /** Returns a Completable that, when subscribed to, checks if the invite for the specified list exists.  If it does, invokes onComplete().
@@ -452,11 +473,17 @@ public class DbHelper
     }
 
     /** Add a new list.  The following nodes are created:
-     *    /list_info/<listid>
-     *    /list_info/<listid>/name
-     *    /list_info/<listid>/ownerId
-     *    /users/<userId>/lists/<listid> = "owner"
-     *    /list_collaborators/<listid>/<userid> = "owner"
+     *    /list_info/$listId
+     *    /list_info/$listId/name
+     *    /list_info/$listId/ownerId
+     *    /users/$listId/lists/$listId = "owner"
+     *    /list_collaborators/$listId/$userId = "owner"
+     *    /list_items/$listId = "0"
+     *    /chat_messages/$listId = "0"
+     *    /list_collaborators/$listId = "0"
+     * NOTE: The nodes which are set to "0" must be created this way because Firebase won't allow creation of an empty node.  However, if we don't create the node with
+     *       some initial value, then after attaching a listener to that location subsequently it will block until it receives a value from the server.  This creates a problem
+     *       if the list is initially created and then opened when there was no network connection.  Creating these empty nodes allows offline operation when the list is first added.
      **/
     public Completable createList(final String ownerId, String listName)
     {
@@ -471,7 +498,10 @@ public class DbHelper
 
         return setValueRx(listInfoRef, newList, "create list info node")
             .andThen(addListToUserLists(listId, ownerId, OWNER))
-                .andThen(setValueRx(collaboratorsRef, collaboratorsMap, "add owner as collaborator"));
+                .andThen(setValueRx(collaboratorsRef, collaboratorsMap, "add owner as collaborator"))
+                    .andThen(setValueRx(getListItemsRef(listId), 0, "create list items node"))
+                        .andThen(setValueRx(getChatMessagesRef(listId), 0, "create chat messages node"))
+                            .andThen(setValueRx(getListCollaboratorsReference(listId), 0, "create list collaborators node"));
     }
 
     /** Returns a single that will emit the populated PineTaskList object for the list ID provided. **/
@@ -523,10 +553,22 @@ public class DbHelper
         return getNodeCount(getListItemsRef(listId));
     }
 
+    /** Returns the timestamp of the last PineTaskItem in the specified list, or 0 if it contains no items. **/
+    public Single<Long> getLastListItemTimestamp(String listId)
+    {
+        Query dbRef = getListItemsRef(listId).orderByChild("createdAt");
+        logMsg("getLastListItemTimestamp starting, listId=%s, dbRef=%s", listId, dbRef);
+        return getItemsOfType(PineTaskItemExt.class, dbRef)
+                .doOnNext(item -> logMsg("getLastListItemTimestamp: query returned item %s", item.getId()))
+                .last(new PineTaskItemExt())
+                .doOnSuccess(item -> logMsg("getLastListItemTimestamp: last item is %s", item.getId()))
+                .map(PineTaskItem::getCreatedAtMs);
+    }
+
     /** Returns an observable that emits added/deleted events for items in the list specified. **/
     public Observable<ChildEventBase<PineTaskItemExt>> subscribeListItems(String listId)
     {
-        ChildEventObservable<PineTaskItem> o = new ChildEventObservable(PineTaskItemExt.class, getListItemsRef(listId), "subscribe to list items");
+        ChildEventObservable<PineTaskItemExt> o = new ChildEventObservable<>(PineTaskItemExt.class, getListItemsRef(listId), "subscribe to list items");
         return o.attachListener();
     }
 
@@ -623,7 +665,7 @@ public class DbHelper
             });
     }
 
-    public <T> Single<T> getItem(final Class T, final DatabaseReference ref, final String operationDescription)
+    public <T> Single<T> getItem(final Class T, final Query ref, final String operationDescription)
     {
         return getItem(T, ref, operationDescription, null);
     }
@@ -685,7 +727,7 @@ public class DbHelper
     /** Returns a Single that emits the object at the specified database location, deserialized based on the objClass provided.
      *  If the value is null, error is emitted.
      **/
-    public <T> Single<T> getItem(final Class cl, final DatabaseReference ref, final String operationDescription, final T defaultValue)
+    public <T> Single<T> getItem(final Class<T> cl, final Query ref, final String operationDescription, final T defaultValue)
     {
         return Single.create(new SingleOnSubscribe<T>()
         {
@@ -698,14 +740,8 @@ public class DbHelper
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot)
                     {
-                        Object obj = dataSnapshot.getValue(cl);
+                        T obj = getValueFromSnapshot(dataSnapshot, cl);
                         logMsg("getItem(%s) onDataChange: %s", ref, obj);
-                        if (obj instanceof UsesKeyIdentifier)
-                        {
-                            // Object uses the database key as an identifier, so populate it in the return object.
-                            UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) obj;
-                            keyIdentifier.setId(dataSnapshot.getKey());
-                        }
                         if (obj != null)
                         {
                             emitter.onSuccess((T) obj);
@@ -736,7 +772,7 @@ public class DbHelper
     /** Returns an Observable that emits the object at the specified database location, deserialized based on the type provided.
      *  Continues to emit items via onNext() whenever data at dbRef changes.  When the Observable is disposed, the ValueEventListener is disconnected.
      **/
-    public <T> Observable<T> subscribeValueEvents(final Class T, final DatabaseReference ref, final String operationDescription)
+    public <T> Observable<T> subscribeValueEvents(Class<T> cl, final DatabaseReference ref, final String operationDescription)
     {
         ObjectWrapper<ValueEventListener> eventListenerWrapper = new ObjectWrapper<>();
         ObjectWrapper<Boolean> dataReturnedWrapper = new ObjectWrapper<>(false);
@@ -747,13 +783,7 @@ public class DbHelper
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot)
                 {
-                    Object obj = dataSnapshot.getValue(T);
-                    if (obj instanceof UsesKeyIdentifier)
-                    {
-                        // Object uses the database key as an identifier, so populate it in the return object.
-                        UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) obj;
-                        keyIdentifier.setId(dataSnapshot.getKey());
-                    }
+                    T obj = getValueFromSnapshot(dataSnapshot, cl);
                     if (obj==null)
                     {
                         // Null value means the database location was deleted.
@@ -858,39 +888,29 @@ public class DbHelper
     }
 
     /** Enumerate items at the specified database reference, and return each one deserialized as an item of the class specified. **/
-    public <T> Observable<T> getItemsOfType(Class T, DatabaseReference dbRef)
+    public <T> Observable<T> getItemsOfType(Class<T> cl, Query dbRef)
     {
-        return Observable.create(new ObservableOnSubscribe<T>()
+        return Observable.create(emitter ->
         {
-            @Override
-            public void subscribe(ObservableEmitter<T> emitter) throws Exception
+            dbRef.addListenerForSingleValueEvent(new ValueEventListener()
             {
-                dbRef.addListenerForSingleValueEvent(new ValueEventListener()
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot)
                 {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot)
+                    for (DataSnapshot ds : dataSnapshot.getChildren())
                     {
-                        for (DataSnapshot ds : dataSnapshot.getChildren())
-                        {
-                            T item = (T) ds.getValue(T);
-                            if (item instanceof UsesKeyIdentifier)
-                            {
-                                // Object uses the database key as an identifier, so populate it in the return object.
-                                UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) item;
-                                keyIdentifier.setId(ds.getKey());
-                            }
-                            emitter.onNext(item);
-                        }
-                        emitter.onComplete();
+                        T item = getValueFromSnapshot(ds, cl);
+                        if (!emitter.isDisposed()) emitter.onNext(item);
                     }
+                    if (!emitter.isDisposed()) emitter.onComplete();
+                }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError)
-                    {
-                        emitter.onError(new DbOperationCanceledException(dbRef, databaseError, "get item"));
-                    }
-                });
-            }
+                @Override
+                public void onCancelled(DatabaseError databaseError)
+                {
+                    if (!emitter.isDisposed()) emitter.onError(new DbOperationCanceledException(dbRef, databaseError, "get item"));
+                }
+            });
         });
     }
 
@@ -965,5 +985,17 @@ public class DbHelper
         DatabaseReference listItemsRef = FirebaseDatabase.getInstance().getReference(LIST_ITEMS_NODE_NAME).child(listId);
         Query query = listItemsRef.orderByChild(IS_COMPLETED_KEY_NAME).equalTo(true);
         return getKeysAt(query, "get list items to purge").flatMapCompletable(itemId -> removeNode(listItemsRef.child(itemId)));
+    }
+
+    public static <T> T getValueFromSnapshot(DataSnapshot dataSnapshot, Class<T> cl)
+    {
+        T value = (T) dataSnapshot.getValue(cl);
+        if (value instanceof UsesKeyIdentifier)
+        {
+            // Object uses the database key as an identifier, so populate it in the return object.
+            UsesKeyIdentifier keyIdentifier = (UsesKeyIdentifier) value;
+            keyIdentifier.setId(dataSnapshot.getKey());
+        }
+        return value;
     }
 }

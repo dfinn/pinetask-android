@@ -4,9 +4,6 @@ import java.util.List;
 
 public interface ListItemsView
 {
-    /** Shows all items in the list, replacing any current contents. **/
-    void showListItems(List<PineTaskItemExt> items);
-
     /** Adds the specified item to the bottom of the list. **/
     void addItem(PineTaskItemExt item);
 
@@ -18,6 +15,8 @@ public interface ListItemsView
 
     /** Show the items list and "add" button. **/
     void showListItemsLayouts();
+
+    void clearListItems();
 
     /** Hide items list and "add" button. **/
     void hideListItemsLayouts();

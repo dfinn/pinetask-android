@@ -10,7 +10,6 @@ import com.pinetask.app.common.BasePresenter;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
-import com.squareup.otto.Bus;
 
 import java.util.List;
 
@@ -25,16 +24,14 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     DbHelper mDbHelper;
     ChatMessagesRepository mChatMessageLoader;
     Disposable mActiveListManagerSubscription;
-    Bus mEventBus;
     PineTaskApplication mApplication;
 
-    public ChatPresenterImpl(String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper, Bus eventBus, PineTaskApplication application)
+    public ChatPresenterImpl(String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper, PineTaskApplication application)
     {
         mUserId = userId;
         mActiveListManager = activeListManager;
         mDatabase = db;
         mDbHelper = dbHelper;
-        mEventBus = eventBus;
         mApplication = application;
         mActiveListManagerSubscription = activeListManager.subscribe(this::processActiveListEvent, ex -> logError("Error from activeListManager: %s", ex.getMessage()));
     }
@@ -100,9 +97,7 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
         if (mChatView != null) mChatView.showError(message, args);
     }
 
-    /** Subscribe to chat messages in the list specified.  As chat messages are loaded, add them to the cached list (mChatMessages), and display them to the view.
-     *  If it's a new message from a sender other than the current user, then play "new message" sound and post to eventbus (MainActivity will show a pop-up if Chat fragment not active).
-     **/
+    /** Clear layout if visible, shut down previous chat repository if active, and then subscribe to chat messages in the list specified. **/
     private void loadChatMessagesForList(PineTaskList pineTaskList)
     {
         logMsg("loadChatMessagesForList: %s (%s)", pineTaskList.getId(), pineTaskList.getName());
@@ -128,9 +123,11 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
         if (mChatView != null) mChatView.showChatMessages(messages);
     }
 
+    /** Post "chat message received" event so that MainActivityPresenter can be notified -- if the chat tab isn't active, chat message will show as a toast. If app is in the
+     *  background, a system notification will be raised.  Add chat message to ChatFragment if view is attached.  If message is from another sender, play sound. **/
     private void onChatMessageAdded(ChatMessage chatMessage)
     {
-        mEventBus.post(chatMessage);
+        mActiveListManager.notifyChatMessageReceived(chatMessage);
         if (mChatView != null)
         {
             mChatView.addChatMessage(chatMessage);

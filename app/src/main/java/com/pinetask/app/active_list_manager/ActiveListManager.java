@@ -1,6 +1,8 @@
 package com.pinetask.app.active_list_manager;
 
+import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.AddedEvent;
+import com.pinetask.app.common.ChatMessageEvent;
 import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskList;
@@ -19,6 +21,7 @@ import io.reactivex.subjects.BehaviorSubject;
 public class ActiveListManager extends LoggingBase
 {
     PineTaskList mCurrentList;
+    boolean mListLoadInProgress;
     PrefsManager mPrefsManager;
     DbHelper mDbHelper;
     String mUserId;
@@ -33,8 +36,6 @@ public class ActiveListManager extends LoggingBase
         mDbHelper = dbHelper;
         mUserId = userId;
         mSubject = BehaviorSubject.create();
-        mListsAddedOrDeletedSubscription = mDbHelper.getListAddedOrDeletedEvents(mUserId)
-                                                    .subscribe(this::onListAddedOrDeleted, ex -> logErrorAndException(ex, "Error getting added/deleted events"));
         determineListToUse();
     }
 
@@ -69,9 +70,10 @@ public class ActiveListManager extends LoggingBase
         {
             AddedEvent<String> addedEvent = (AddedEvent<String>) event;
             String listId = addedEvent.Item;
-            if (mCurrentList == null)
+            if (mCurrentList == null && !mListLoadInProgress)
             {
                 logMsg("onListAddedOrDeleted: no current list, and a list was added - loading it");
+                mListLoadInProgress = true;
                 mDbHelper.getPineTaskList(listId).subscribe(this::setActiveList, this::onListLoadError);
             }
         }
@@ -80,6 +82,11 @@ public class ActiveListManager extends LoggingBase
     public Disposable subscribe(Consumer<ActiveListEvent> onNext, Consumer<Throwable> onError)
     {
         return mSubject.subscribe(onNext, onError);
+    }
+
+    public void notifyChatMessageReceived(ChatMessage chatMessage)
+    {
+        mSubject.onNext(new ChatMessageEvent(chatMessage));
     }
 
     public PineTaskList getActiveList()
@@ -91,16 +98,27 @@ public class ActiveListManager extends LoggingBase
     public void setActiveList(PineTaskList list)
     {
         logMsg("onListSelected: setting current list to %s (%s)", list.getKey(), list.getName());
+        mListLoadInProgress = false;
         mCurrentList = list;
         mPrefsManager.setCurrentListId(list.getKey());
         mSubject.onNext(new ListLoadedEvent(list));
+        initListsAddedOrDeletedSubscription();
+    }
+
+    private void initListsAddedOrDeletedSubscription()
+    {
+        logMsg("initListsAddedOrDeletedSubscription is running");
+        mListsAddedOrDeletedSubscription = mDbHelper.getListAddedOrDeletedEvents(mUserId)
+                .subscribe(this::onListAddedOrDeleted, ex -> logErrorAndException(ex, "Error getting added/deleted events"));
     }
 
     private void onListLoadError(Throwable ex)
     {
         logError("onListLoadError: %s", ex.getMessage());
+        mListLoadInProgress = false;
         logException(ex);
         mSubject.onNext(new ListLoadErrorEvent(ex));
+        initListsAddedOrDeletedSubscription();
     }
 
     /** Set current list to null, and notify listeners that no list is available (the user has deleted their last list) **/
@@ -110,6 +128,7 @@ public class ActiveListManager extends LoggingBase
         mPrefsManager.setCurrentListId(null);
         mCurrentList = null;
         mSubject.onNext(new NoListsAvailableEvent());
+        initListsAddedOrDeletedSubscription();
     }
 
     /** Look up the ID of the user's previously selected list. If it still exists, emit it.

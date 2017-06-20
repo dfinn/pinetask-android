@@ -94,7 +94,7 @@ public class ChatMessagesAdapter extends RecyclerView.Adapter<ChatMessagesAdapte
     public void onBindViewHolder(ChatMessageViewHolder holder, int position)
     {
         ChatMessage chatMessage = mChatMessages.get(position);
-        DateTime timestamp = new DateTime(chatMessage.getCreatedAt());
+        DateTime timestamp = new DateTime(chatMessage.getCreatedAtMs());
         String timeAbbrevStr = getAbbreviatedDurationString(timestamp);
         holder.NameAndTimestampTextView.setText(chatMessage.getSenderName() + "\n" + timeAbbrevStr);
         holder.MessageTextView.setText(chatMessage.getMessage());

@@ -7,7 +7,6 @@ import android.support.v4.app.DialogFragment;
 
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.common.Logger;
-import com.squareup.otto.Bus;
 
 import javax.inject.Inject;
 
@@ -23,7 +22,6 @@ public class PineTaskFragment extends DialogFragment
         Logger.logError(getClass(), msg, args);
     }
 
-    @Inject protected Bus mEventBus;
     @Inject protected FirebaseDatabase mDatabase;
     @Inject protected PrefsManager mPrefsManager;
 
@@ -33,18 +31,6 @@ public class PineTaskFragment extends DialogFragment
         super.onCreate(savedInstanceState);
         logMsg("onCreate");
         PineTaskApplication.getInstance().getAppComponent().inject(this);
-        mEventBus.register(this);
-    }
-
-    @Override
-    public void onDestroy()
-    {
-        super.onDestroy();
-        logMsg("onDestroy");
-
-        // Unregister event bus
-        logMsg("UnRegistering event bus");
-        mEventBus.unregister(this);
     }
 
     @Override

@@ -1,8 +1,12 @@
 package com.pinetask.app.list_items;
 
+import com.google.firebase.database.Exclude;
+import com.google.firebase.database.ServerValue;
+
 import org.joda.time.DateTime;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /** Represents one item in a list. **/
 public class PineTaskItem implements Serializable
@@ -23,8 +27,10 @@ public class PineTaskItem implements Serializable
     public void setIsCompleted(boolean isCompleted) { mIsCompleted = isCompleted; }
 
     /** Timestamp when the item was created. **/
-    protected long mCreatedAt;
-    public long getCreatedAt() { return mCreatedAt; }
+    long mCreatedAt;
+    public Map<String, String> getCreatedAt() { return ServerValue.TIMESTAMP; }
+    @Exclude
+    public long getCreatedAtMs() { return mCreatedAt; }
     public void setCreatedAt(long createdAt) { mCreatedAt = createdAt; }
 
     public PineTaskItem()
@@ -36,7 +42,6 @@ public class PineTaskItem implements Serializable
         mItemDescription = itemDescription;
         mClaimedBy = null;
         mIsCompleted = false;
-        mCreatedAt = DateTime.now().getMillis();
     }
 
     public void updateFrom(PineTaskItem updatedItem)
@@ -44,7 +49,7 @@ public class PineTaskItem implements Serializable
         mItemDescription = updatedItem.getItemDescription();
         mClaimedBy = updatedItem.getClaimedBy();
         mIsCompleted = updatedItem.getIsCompleted();
-        mCreatedAt = updatedItem.getCreatedAt();
+        mCreatedAt = updatedItem.getCreatedAtMs();
     }
 
     @Override

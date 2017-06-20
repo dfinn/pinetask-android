@@ -1,8 +1,6 @@
 package com.pinetask.app.common;
 
 import com.google.firebase.database.FirebaseDatabase;
-import com.pinetask.common.Logger;
-import com.squareup.otto.Bus;
 
 import javax.inject.Singleton;
 
@@ -24,13 +22,6 @@ public class AppModule
     @Singleton
     PineTaskApplication providesApplication() { return mPineTaskApplication; }
 
-    @Provides
-    @Singleton
-    Bus providesEventBus()
-    {
-        Logger.logMsg(getClass(), "Creating new event bus");
-        return new Bus();
-    }
 
     @Provides
     @Singleton

@@ -1,9 +1,12 @@
 package com.pinetask.app.chat;
 
 import com.google.firebase.database.Exclude;
+import com.google.firebase.database.ServerValue;
 import com.pinetask.app.db.UsesKeyIdentifier;
 
 import org.joda.time.DateTime;
+
+import java.util.Map;
 
 /** Represents one chat message: a timestamp, a message string, and the ID of the user who sent it. **/
 public class ChatMessage implements UsesKeyIdentifier
@@ -16,7 +19,9 @@ public class ChatMessage implements UsesKeyIdentifier
 
     /** Timestamp when the message was sent. **/
     long mCreatedAt;
-    public long getCreatedAt() { return mCreatedAt; }
+    public Map<String, String> getCreatedAt() { return ServerValue.TIMESTAMP; }
+    @Exclude
+    public long getCreatedAtMs() { return mCreatedAt; }
     public void setCreatedAt(long createdAt) { mCreatedAt = createdAt; }
 
     /** Message text **/
@@ -47,7 +52,6 @@ public class ChatMessage implements UsesKeyIdentifier
 
     public ChatMessage(String message, String senderId)
     {
-        mCreatedAt = DateTime.now().getMillis();
         mMessage = message;
         mSenderId = senderId;
     }

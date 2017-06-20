@@ -8,6 +8,9 @@ import com.pinetask.app.common.UpdatedEvent;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.LoggingBase;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,46 +22,25 @@ public class ListItemsRepository extends LoggingBase
 {
     List<PineTaskItemExt> mItems = new ArrayList<>();
     List<PineTaskItemExt> getItems() { return mItems; }
-    Long mOriginalItemCount;
+    Long mLastItemTimestamp;
     Disposable mSubscription;
-    private boolean mInitialLoadReported;
-    Consumer<List<PineTaskItemExt>> mOnInitialLoadCompleted;
 
-    public ListItemsRepository(DbHelper dbHelper, PineTaskList list, Consumer<List<PineTaskItemExt>> onInitialLoadCompleted, Consumer<ChildEventBase<PineTaskItemExt>> onChildEvent,
-                               Consumer<Throwable> onError)
+    public ListItemsRepository(DbHelper dbHelper, PineTaskList list, Consumer<ChildEventBase<PineTaskItemExt>> onChildEvent, Consumer<Throwable> onError)
     {
-        mOnInitialLoadCompleted = onInitialLoadCompleted;
-        mSubscription = dbHelper.getListItemsCount(list.getId())
-                .doOnSuccess(itemCount -> { mOriginalItemCount = itemCount; if (itemCount == 0) notifyInitialLoadCompleted(); } )
+        mSubscription = dbHelper.getLastListItemTimestamp(list.getId())
+                .doOnSuccess(lastItemTimestamp -> logMsg("Last item's timestamp for list %s is %s", list.getId(), getTimestamp(lastItemTimestamp)))
+                .doOnSuccess(lastOpenTimestamp -> mLastItemTimestamp = lastOpenTimestamp)
                 .flatMapObservable(__ -> dbHelper.subscribeListItems(list.getId()))
                 .doOnNext(childEvent -> childEvent.Item.setListId(list.getId()))
                 .doOnNext(this::updateCache)
-                .filter(this::reportInitialLoadAndFilterNewEvents)
-                .doOnNext(childEvent -> childEvent.Item.setIsNewItem(true))
+                .doOnNext(childEvent -> childEvent.Item.setIsNewItem(childEvent.Item.getCreatedAtMs() > mLastItemTimestamp))
+                .doOnNext(childEvent -> logMsg("Loaded item %s, createdAt=%s, isNew=%b", childEvent.Item.getId(), getTimestamp(childEvent.Item.getCreatedAtMs()), childEvent.Item.getIsNewItem()))
                 .subscribe(onChildEvent, onError);
     }
 
-    private void notifyInitialLoadCompleted() throws Exception
+    private String getTimestamp(Long ms)
     {
-        logMsg("Reporting initial load completed for %d items", mItems.size());
-        mOnInitialLoadCompleted.accept(mItems);
-        mInitialLoadReported = true;
-    }
-
-    /** If initial load not triggered yet and we've reached the expected number of items, invoke the onInitialLoadCompleted callback and set mInitialLoadReported flag to true.
-     * @return True if this is a new item (after the initial load batch)
-     */
-    private boolean reportInitialLoadAndFilterNewEvents(ChildEventBase<PineTaskItemExt> childEvent) throws Exception
-    {
-        if (mInitialLoadReported)
-        {
-            return true;
-        }
-        else
-        {
-            if (mItems.size() == mOriginalItemCount) notifyInitialLoadCompleted();
-            return false;
-        }
+        return String.format("%d (%s)", ms, new DateTime(ms).toString(DateTimeFormat.shortDateTime()));
     }
 
     /** Process added/deleted/uddated events and update mItems as needed. **/
@@ -81,7 +63,6 @@ public class ListItemsRepository extends LoggingBase
             int i = mItems.indexOf(updatedEvent);
             if (i != -1) mItems.set(i, updatedEvent.Item);
         }
-        logMsg("mLoadedCount=%d, mOriginalItemCount=%d", mItems.size(), mOriginalItemCount);
     }
 
     public void shutdown()

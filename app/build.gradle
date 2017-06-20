@@ -85,9 +85,6 @@ dependencies {
         transitive = true;
     }
 
-    // Otto eventbus
-    compile 'com.squareup:otto:1.3.8'
-
     // Butterknife for easier view binding.
     compile 'com.jakewharton:butterknife:8.4.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'

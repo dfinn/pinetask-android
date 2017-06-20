@@ -60,7 +60,8 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         if (mListItemsRepository != null)
         {
             mView.showListItemsLayouts();
-            mView.showListItems(mListItemsRepository.getItems());
+            mView.clearListItems();
+            for (PineTaskItemExt item : mListItemsRepository.getItems()) mView.addItem(item);
         }
     }
 
@@ -81,17 +82,12 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     {
         logMsg("Loading items for list %s", list.getId());
         if (mListItemsRepository != null) mListItemsRepository.shutdown();
-        if (mView != null) mView.hideListItemsLayouts();
-        mListItemsRepository = new ListItemsRepository(mDbHelper, list, this::onListItemsLoaded, this::processChildEvent, this::onListItemsLoadError);
-    }
-
-    private void onListItemsLoaded(List<PineTaskItemExt> items)
-    {
         if (mView != null)
         {
+            mView.clearListItems();
             mView.showListItemsLayouts();
-            mView.showListItems(items);
         }
+        mListItemsRepository = new ListItemsRepository(mDbHelper, list, this::processChildEvent, this::onListItemsLoadError);
     }
 
     private void processChildEvent(ChildEventBase childEvent)

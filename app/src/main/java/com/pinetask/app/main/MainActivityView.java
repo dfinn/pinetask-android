@@ -1,5 +1,6 @@
 package com.pinetask.app.main;
 
+import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.manage_lists.StartupMessage;
 
@@ -19,4 +20,6 @@ public interface MainActivityView
     void showNoListsFoundMessage();
     void hideNoListsFoundMessage();
     void showPurgeCompletedItemsDialog(String listId, String listName);
+    boolean isVisible();
+    void notifyOfChatMessage(ChatMessage chatMessage);
 }

@@ -14,7 +14,6 @@ import com.pinetask.app.main.MainActivityPresenter;
 import com.pinetask.app.main.MainActivityPresenterImpl;
 import com.pinetask.common.Logger;
 import com.pinetask.common.LoggingBase;
-import com.squareup.otto.Bus;
 
 import javax.inject.Named;
 
@@ -79,10 +78,9 @@ public class UserModule extends LoggingBase
 
     @Provides
     @UserScope
-    public ChatPresenter providesChatPresenter(@Named("user_id") String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper,
-                                               Bus eventBus, PineTaskApplication application)
+    public ChatPresenter providesChatPresenter(@Named("user_id") String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper, PineTaskApplication application)
     {
         logMsg("Creating ChatPresenter");
-        return new ChatPresenterImpl(userId, activeListManager, db, dbHelper, eventBus, application);
+        return new ChatPresenterImpl(userId, activeListManager, db, dbHelper, application);
     }
 }

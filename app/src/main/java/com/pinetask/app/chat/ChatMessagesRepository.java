@@ -5,6 +5,8 @@ import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.LoggingBase;
 
+import org.joda.time.DateTime;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +26,8 @@ public class ChatMessagesRepository extends LoggingBase
     {
         mSubscription = dbHelper.getChatMessageCount(list.getId())
                 .map(messageCount -> mOriginalMessageCount = messageCount)
-                .map(messageCount -> list.getId())
+                .doOnSuccess(messageCount -> logMsg("Initial message cound is %d", messageCount))
+                .map(__ -> list.getId())
                 .flatMapObservable(dbHelper::subscribeChatMessages)
                 .filter(event -> event instanceof AddedEvent)
                 .map(event -> (AddedEvent<ChatMessage>) event)
@@ -33,7 +36,8 @@ public class ChatMessagesRepository extends LoggingBase
                 .map(chatMessage ->
                 {
                     mChatMessages.add(chatMessage);
-                    logMsg("loadChatMessages: mLoadedCount=%d, mOriginalMessageCount=%d", mChatMessages.size(), mOriginalMessageCount);
+                    String createdStr = new DateTime(chatMessage.getCreatedAtMs()).toString();
+                    logMsg("loadChatMessages: message timestamp=%d (%s), mLoadedCount=%d, mOriginalMessageCount=%d", chatMessage.getCreatedAtMs(), createdStr, mChatMessages.size(), mOriginalMessageCount);
                     if (mChatMessages.size() == mOriginalMessageCount)
                     {
                         logMsg("Expected original message count (%d items) have loaded, notifying mInitialLoadCompletedListener", mOriginalMessageCount);

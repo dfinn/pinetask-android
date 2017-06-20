@@ -10,7 +10,6 @@ import android.view.inputmethod.InputMethodManager;
 import com.pinetask.app.db.DbCallback;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.common.Logger;
-import com.squareup.otto.Bus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,8 +17,6 @@ import java.util.List;
 import javax.inject.Inject;
 
 import io.reactivex.CompletableObserver;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
 import io.reactivex.SingleObserver;
 import io.reactivex.disposables.Disposable;
 
@@ -32,7 +29,6 @@ public abstract class PineTaskActivity extends AppCompatActivity
     @Inject protected PrefsManager mPrefsManager;
     @Inject protected PineTaskApplication mPineTaskApplication;
     @Inject protected DbHelper mDbHelper;
-    @Inject protected Bus mBus;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState)

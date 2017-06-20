@@ -1,20 +1,13 @@
 package com.pinetask.app.main;
 
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -26,7 +19,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -37,20 +29,19 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListManager;
-import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
-import com.pinetask.app.launch.StartupMessageDialogFragment;
-import com.pinetask.app.launch.TutorialActivity;
 import com.pinetask.app.chat.ChatFragment;
 import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.PineTaskActivity;
 import com.pinetask.app.common.PineTaskApplication;
+import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
 import com.pinetask.app.common.PineTaskList;
+import com.pinetask.app.launch.StartupMessageDialogFragment;
+import com.pinetask.app.launch.TutorialActivity;
 import com.pinetask.app.list_items.ListItemsFragment;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.manage_lists.AddOrRenameListDialogFragment;
 import com.pinetask.app.manage_lists.ManageListsActivity;
 import com.pinetask.app.manage_lists.StartupMessage;
-import com.squareup.otto.Subscribe;
 
 import java.util.List;
 
@@ -135,10 +126,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         // Inject UserScope dependencies
         PineTaskApplication.getInstance().getUserComponent().inject(this);
-
-        // Register event bus
-        logMsg("Registering event bus");
-        mBus.register(this);
 
         // Create an auto-managed GoogleApiClient with access to App Invites.
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -266,9 +253,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         logMsg("onDestroy: disconnecting googleApiClient");
         mGoogleApiClient.stopAutoManage(this);
         mGoogleApiClient.disconnect();
-
-        logMsg("UnRegistering event bus");
-        mBus.unregister(this);
 
         mPresenter.detach();
 
@@ -529,29 +513,11 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         mBottomNavigationView.setVisibility(View.GONE);
     }
 
-    /** Called by the event bus when a chat message is received.   **/
-    @Subscribe
-    public void onChatMessageReceived(ChatMessage chatMessage)
+    /** If not currently on the Chat tab, then show a toast message with the chat message content. **/
+    @Override
+    public void notifyOfChatMessage(ChatMessage chatMessage)
     {
-        if ((! mIsActivityActive))
-        {
-            // Raise system notification if app is currently in the background.  Clicking the notification will open the app and go to the chat tab.
-            logMsg("onChatMessageReceived: building pending intent for chat message %s", chatMessage.getId());
-            Intent intent = MainActivity.buildLaunchIntent(this, mUserId, chatMessage.getId());
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                    .setSmallIcon(R.drawable.launcher_icon)
-                    .setContentIntent(pendingIntent)
-                    .setAutoCancel(true)
-                    .setVibrate(new long[] {0, 500, 500, 500})
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                    .setContentTitle(String.format(getString(R.string.message_from_x), chatMessage.getSenderName()))
-                    .setContentText(chatMessage.getMessage());
-            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationManager.notify(0, mBuilder.build());
-        }
-        else if (mViewPager.getCurrentItem() != CHAT_INDEX)
+        if (mViewPager.getCurrentItem() != CHAT_INDEX)
         {
             // Show pop-up message and play sound
             Toast.makeText(this, chatMessage.getSenderName() + ": " + chatMessage.getMessage(), Toast.LENGTH_SHORT).show();
@@ -642,6 +608,12 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     {
         PurgeCompletedItemsDialogFragment dialog = PurgeCompletedItemsDialogFragment.newInstance(listId, listName);
         getSupportFragmentManager().beginTransaction().add(dialog, PurgeCompletedItemsDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
+    }
+
+    @Override
+    public boolean isVisible()
+    {
+        return mActivityActive;
     }
 }
 
