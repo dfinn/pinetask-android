@@ -125,8 +125,16 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         PineTaskList activeList = mActiveListManager.getActiveList();
         if (activeList != null)
         {
-            PineTaskItemExt item = mDbHelper.addPineTaskItem(activeList.getId(), description, this::showErrorMessage);
+            PineTaskItemExt item = new PineTaskItemExt(null, description, true, activeList.getId());
             if (mView != null) mView.addItem(item);
+            mDbHelper.addPineTaskItem(item).subscribe(() ->
+            {
+                logMsg("addItem: item %s added successfully", item.getId());
+            }, ex ->
+            {
+                logAndShowError(ex, mApplication.getString(R.string.error_adding_item_x), item.getItemDescription());
+                if (mView != null) mView.removeItem(item.getId());
+            });
         }
         else
         {

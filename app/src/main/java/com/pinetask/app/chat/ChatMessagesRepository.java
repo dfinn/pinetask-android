@@ -13,20 +13,21 @@ import java.util.List;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
-public class ChatMessagesRepository extends LoggingBase
+class ChatMessagesRepository extends LoggingBase
 {
-    Long mOriginalMessageCount;
-    Disposable mSubscription;
-    List<ChatMessage> mChatMessages = new ArrayList<>();
+    private Long mOriginalMessageCount;
+    private Disposable mSubscription;
+    private List<ChatMessage> mChatMessages = new ArrayList<>();
     List<ChatMessage> getChatMessages() { return mChatMessages; }
 
     /** Get count of existing chat messages and store it. Subscribe to chat messages in list. As soon as expected initial count has been loaded, notify
      *  the mInitialLoadCompletedListener.  Then, continue to emit subsequent messages to the mChatMessageAddedListener. **/
-    public ChatMessagesRepository(DbHelper dbHelper, PineTaskList list, Consumer<List<ChatMessage>> initialLoadCompleted, Consumer<ChatMessage> messageAdded, Consumer<Throwable> onError)
+    ChatMessagesRepository(DbHelper dbHelper, PineTaskList list, Consumer<List<ChatMessage>> initialLoadCompleted, Consumer<ChatMessage> messageAdded, Consumer<Throwable> onError)
     {
         mSubscription = dbHelper.getChatMessageCount(list.getId())
                 .map(messageCount -> mOriginalMessageCount = messageCount)
-                .doOnSuccess(messageCount -> logMsg("Initial message cound is %d", messageCount))
+                .doOnSuccess(messageCount -> logMsg("Initial message count is %d", messageCount))
+                .doOnSuccess(messageCount -> { if (messageCount == 0) initialLoadCompleted.accept(mChatMessages); } )
                 .map(__ -> list.getId())
                 .flatMapObservable(dbHelper::subscribeChatMessages)
                 .filter(event -> event instanceof AddedEvent)

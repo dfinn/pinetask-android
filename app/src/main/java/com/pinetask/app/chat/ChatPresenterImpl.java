@@ -22,7 +22,7 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     ActiveListManager mActiveListManager;
     FirebaseDatabase mDatabase;
     DbHelper mDbHelper;
-    ChatMessagesRepository mChatMessageLoader;
+    ChatMessagesRepository mChatMessagesRepository;
     Disposable mActiveListManagerSubscription;
     PineTaskApplication mApplication;
 
@@ -45,11 +45,7 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
         }
         else if (activeListEvent instanceof NoListsAvailableEvent)
         {
-            if (mChatView != null)
-            {
-                mChatView.clearChatMessages();
-                mChatView.hideChatLayouts();
-            }
+            resetState();
         }
     }
 
@@ -58,7 +54,11 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     {
         logMsg("Attaching view");
         mChatView = chatView;
-        if (mChatMessageLoader != null) mChatView.showChatMessages(mChatMessageLoader.getChatMessages());
+        if (mChatMessagesRepository != null)
+        {
+            mChatView.showChatLayouts();
+            mChatView.showChatMessages(mChatMessagesRepository.getChatMessages());
+        }
     }
 
     @Override
@@ -72,7 +72,7 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     public void shutdown()
     {
         if (mActiveListManagerSubscription != null) mActiveListManagerSubscription.dispose();
-        if (mChatMessageLoader != null) mChatMessageLoader.shutdown();
+        if (mChatMessagesRepository != null) mChatMessagesRepository.shutdown();
     }
 
     @Override
@@ -97,30 +97,37 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
         if (mChatView != null) mChatView.showError(message, args);
     }
 
+    private void resetState()
+    {
+        if (mChatView != null)
+        {
+            mChatView.clearChatMessages();
+            mChatView.hideChatLayouts();
+        }
+
+        if (mChatMessagesRepository != null)
+        {
+            logMsg("loadChatMessagesForList: Shutting down old mChatMessagesRepository");
+            mChatMessagesRepository.shutdown();
+        }
+    }
+
     /** Clear layout if visible, shut down previous chat repository if active, and then subscribe to chat messages in the list specified. **/
     private void loadChatMessagesForList(PineTaskList pineTaskList)
     {
         logMsg("loadChatMessagesForList: %s (%s)", pineTaskList.getId(), pineTaskList.getName());
-
-        if (mChatView != null)
-        {
-            mChatView.clearChatMessages();
-            mChatView.showChatLayouts();
-        }
-
-        if (mChatMessageLoader != null)
-        {
-            logMsg("loadChatMessagesForList: Shutting down old mChatMessageLoader");
-            mChatMessageLoader.shutdown();
-        }
-
-        mChatMessageLoader = new ChatMessagesRepository(mDbHelper, pineTaskList, this::onInitialMessagesLoaded, this::onChatMessageAdded, this::onChatMessageLoadError);
+        resetState();
+        mChatMessagesRepository = new ChatMessagesRepository(mDbHelper, pineTaskList, this::onInitialMessagesLoaded, this::onChatMessageAdded, this::onChatMessageLoadError);
     }
 
     private void onInitialMessagesLoaded(List<ChatMessage> messages)
     {
         logMsg("Finished initial load of %d messages", messages.size());
-        if (mChatView != null) mChatView.showChatMessages(messages);
+        if (mChatView != null)
+        {
+            mChatView.showChatLayouts();
+            mChatView.showChatMessages(messages);
+        }
     }
 
     /** Post "chat message received" event so that MainActivityPresenter can be notified -- if the chat tab isn't active, chat message will show as a toast. If app is in the

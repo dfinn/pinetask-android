@@ -15,8 +15,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 
 public class ListItemsRepository extends LoggingBase
 {
@@ -28,6 +32,7 @@ public class ListItemsRepository extends LoggingBase
     public ListItemsRepository(DbHelper dbHelper, PineTaskList list, Consumer<ChildEventBase<PineTaskItemExt>> onChildEvent, Consumer<Throwable> onError)
     {
         mSubscription = dbHelper.getLastListItemTimestamp(list.getId())
+                .doOnSubscribe(__ -> logMsg("Subscription has been created"))
                 .doOnSuccess(lastItemTimestamp -> logMsg("Last item's timestamp for list %s is %s", list.getId(), getTimestamp(lastItemTimestamp)))
                 .doOnSuccess(lastOpenTimestamp -> mLastItemTimestamp = lastOpenTimestamp)
                 .flatMapObservable(__ -> dbHelper.subscribeListItems(list.getId()))

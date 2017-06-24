@@ -19,15 +19,14 @@ import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.common.UserMessageListener;
 import com.pinetask.app.list_items.PineTaskItem;
 import com.pinetask.app.list_items.PineTaskItemExt;
+import com.pinetask.app.list_members.MemberInfo;
 import com.pinetask.app.main.InviteInfo;
 import com.pinetask.app.manage_lists.StartupMessage;
 import com.pinetask.common.Logger;
 
 import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -40,13 +39,14 @@ import io.reactivex.CompletableObserver;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
 import io.reactivex.Single;
 import io.reactivex.SingleEmitter;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 
-import static com.pinetask.app.db.KeyAddedOrDeletedObservable.getKeyAddedOrDeletedEventsAt;
+import static com.pinetask.app.db.KeyAddedOrDeletedObservable.subscribeKeyAddedOrDeletedEventsAt;
 
 @Singleton
 public class DbHelper
@@ -327,13 +327,13 @@ public class DbHelper
     /** Returns an Observable that will emit notifications of list added / list deleted events for lists that the specified user has access to. **/
     public Observable<ChildEventBase<String>> getListAddedOrDeletedEvents(String userId)
     {
-        return getKeyAddedOrDeletedEventsAt(getUserListsRef(userId), "get list added/deleted events");
+        return subscribeKeyAddedOrDeletedEventsAt(getUserListsRef(userId), "get list added/deleted events");
     }
 
     /** Returns an Observable that will emit AddedEvent or DeletedEvent for member IDs of the list specified. **/
-    public Observable<ChildEventBase<String>> getMembersAddedOrDeletedEvents(String listId)
+    public Observable<ChildEventBase<String>> subscribeMembersAddedOrDeletedEvents(String listId)
     {
-        return getKeyAddedOrDeletedEventsAt(getListCollaboratorsReference(listId), "get list members added/deleted events");
+        return subscribeKeyAddedOrDeletedEventsAt(getListCollaboratorsReference(listId), "get list members added/deleted events").retryWhen(rxDelayedRetry());
     }
 
     /** Returns a Single that, when subscribed to, will look up the name of the specified user in the database. **/
@@ -500,14 +500,24 @@ public class DbHelper
             .andThen(addListToUserLists(listId, ownerId, OWNER))
                 .andThen(setValueRx(collaboratorsRef, collaboratorsMap, "add owner as collaborator"))
                     .andThen(setValueRx(getListItemsRef(listId), 0, "create list items node"))
-                        .andThen(setValueRx(getChatMessagesRef(listId), 0, "create chat messages node"))
-                            .andThen(setValueRx(getListCollaboratorsReference(listId), 0, "create list collaborators node"));
+                        .andThen(setValueRx(getChatMessagesRef(listId), 0, "create chat messages node"));
     }
 
     /** Returns a single that will emit the populated PineTaskList object for the list ID provided. **/
     public Single<PineTaskList> getPineTaskList(String listId)
     {
         return getItem(PineTaskList.class, getListInfoReference(listId), "get list info");
+    }
+
+    /** Returns an Observable that will try to load the PineTaskList with the ID specified, and emit it if successful.
+     *  If it fails to load, emits nothing and logs exception details.  **/
+    public Observable<PineTaskList> tryGetPineTaskList(String listId)
+    {
+        return getPineTaskList(listId)
+                .toObservable()
+                .doOnError(ex -> logMsg("tryGetPineTaskList: error getting info for list %s: %s", listId, ex.getMessage()))
+                .onErrorResumeNext(Observable.empty())
+                .doOnNext(pineTaskList -> logMsg("tryGetPineTaskList: successfully loaded PineTaskList %s (%s)", pineTaskList.getId(), pineTaskList.getName()));
     }
 
     /** Looks up all collaborators for the list specified, and returns a new populated PineTaskListWithCollaborators object. **/
@@ -532,7 +542,7 @@ public class DbHelper
     public Observable<ChildEventBase<ChatMessage>> subscribeChatMessages(String listId)
     {
         ChildEventObservable<ChatMessage> o = new ChildEventObservable(ChatMessage.class, getChatMessagesRef(listId), "subscribe to chat messages");
-        return o.attachListener();
+        return o.attachListener().retryWhen(rxDelayedRetry());
     }
 
     public void sendChatMessage(String listId, ChatMessage chatMessage)
@@ -569,7 +579,20 @@ public class DbHelper
     public Observable<ChildEventBase<PineTaskItemExt>> subscribeListItems(String listId)
     {
         ChildEventObservable<PineTaskItemExt> o = new ChildEventObservable<>(PineTaskItemExt.class, getListItemsRef(listId), "subscribe to list items");
-        return o.attachListener();
+        return o.attachListener()
+                .doOnSubscribe(__ -> logMsg("subscribeListItems: subscription has been created to list %s", listId))
+                .retryWhen(rxDelayedRetry());
+    }
+
+    /** Helper function for use with retryWhen(): retry subscription up to 3 times with increasing delay (1 second, 4 seconds, 6 seconds) **/
+    private Function<Observable<Throwable>, ObservableSource<?>> rxDelayedRetry()
+    {
+        return attempts -> attempts.zipWith(Observable.range(1, 3), (n, i) -> i)
+                                    .flatMap(i ->
+                                    {
+                                        logMsg("subscribeListItems: error, will retry subscription after delay of %d seconds", i*2);
+                                        return Observable.timer(i*2, TimeUnit.SECONDS);
+                                    });
     }
 
     /** Make async call to update PineTaskItem in the database.  If error occurs, it will be logged and shown to the user. **/
@@ -588,13 +611,11 @@ public class DbHelper
     }
 
     /** Make async request to add the item to the list specified. If any error occurs it will be logged. **/
-    public PineTaskItemExt addPineTaskItem(String listId, String description, UserMessageListener userMessageListener)
+    public Completable addPineTaskItem(PineTaskItemExt item)
     {
-        DatabaseReference dbRef = getListItemsRef(listId).push();
-        PineTaskItemExt item = new PineTaskItemExt(dbRef.getKey(), description, true, listId);
-        Completable task = setValueRx(dbRef, item, "add PineTaskItem");
-        subscribeAndReportError(task, userMessageListener);
-        return item;
+        DatabaseReference dbRef = getListItemsRef(item.getListId()).push();
+        item.setId(dbRef.getKey());
+        return setValueRx(dbRef, item, "add PineTaskItem", true);
     }
 
     /** Subscribe to the Completable provided.  If an error occurs, log the exception and then show the exception message to the user using the UserMessageListener provided. **/
@@ -858,30 +879,6 @@ public class DbHelper
                 {
                     logDbOperationResult(operationDescription, databaseError, dbRef);
                     if (!emitter.isDisposed()) emitter.onError(new DbOperationCanceledException(dbRef, databaseError, operationDescription));
-                }
-            });
-        });
-    }
-
-    /** Emits a value indicating whether currently connected to the Firebase server. **/
-    public Single<Boolean> isConnected()
-    {
-        return Single.create(emitter ->
-        {
-            DatabaseReference connectedRef = mDb.getReference(".info/connected");
-            connectedRef.addListenerForSingleValueEvent(new ValueEventListener()
-            {
-                @Override
-                public void onDataChange(DataSnapshot snapshot)
-                {
-                    boolean connected = snapshot.getValue(Boolean.class);
-                    emitter.onSuccess(connected);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError error)
-                {
-                    emitter.onError(new DbOperationCanceledException(connectedRef, error, "get connected state"));
                 }
             });
         });

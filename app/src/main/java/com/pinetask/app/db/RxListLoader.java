@@ -15,6 +15,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.observables.ConnectableObservable;
@@ -44,7 +45,7 @@ public class RxListLoader extends LoggingBase
         mCallback = callback;
 
         mDbHelper.getListIdsForUser(userId)
-                .flatMapSingle(mDbHelper::getPineTaskList)
+                .flatMap(mDbHelper::tryGetPineTaskList)
                 .flatMapSingle(mDbHelper::getPineTaskListWithCollaborators)
                 .toSortedList()
                 .observeOn(AndroidSchedulers.mainThread())
@@ -83,7 +84,7 @@ public class RxListLoader extends LoggingBase
         // Subscribe to stream filtered to only AddedEvents.
         connection.filter(event -> event instanceof AddedEvent)
                 .map(event -> event.Item)
-                .flatMapSingle(mDbHelper::getPineTaskList)
+                .flatMap(mDbHelper::tryGetPineTaskList)
                 .flatMapSingle(mDbHelper::getPineTaskListWithCollaborators)
                 .subscribe(this::onListAdded, mCallback::onError);
 

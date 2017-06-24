@@ -26,12 +26,11 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
 {
     private MembersView mView;
     private String mCurrentUserId;
-    private Disposable mMembersAddedDeletedSubscription;
     private DbHelper mDbHelper;
     private PineTaskApplication mApplication;
     private Disposable mActiveListManagerSubscription;
-    private List<MemberInfo> mCurrentListMembers;
     private ActiveListManager mActiveListManager;
+    private ListMembersRepository mListMembersRepository;
 
     public MembersPresenterImpl(DbHelper dbHelper, PineTaskApplication pineTaskApplication, ActiveListManager activeListManager, @Named("user_id") String userId)
     {
@@ -39,7 +38,6 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
         mApplication = pineTaskApplication;
         mCurrentUserId = userId;
         mActiveListManager = activeListManager;
-        mCurrentListMembers = new ArrayList<>();
         mActiveListManagerSubscription = activeListManager.subscribe(this::handleListLoadEvent, ex -> logError("ActiveListManager reported error event: %s", ex.getMessage()));
     }
 
@@ -49,7 +47,7 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
         logMsg("Attaching view");
         mView = view;
         mView.clearListDisplay();
-        for (MemberInfo m : mCurrentListMembers) mView.addListMember(m);
+        if (mListMembersRepository != null) for (MemberInfo m : mListMembersRepository.getListMembers()) mView.addListMember(m);
         showOrHideAddMembersButton(mActiveListManager.getActiveList());
     }
 
@@ -63,7 +61,7 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
     @Override
     public void shutdown()
     {
-        if (mMembersAddedDeletedSubscription != null) mMembersAddedDeletedSubscription.dispose();
+        if (mListMembersRepository != null) mListMembersRepository.shutdown();
         if (mActiveListManagerSubscription != null) mActiveListManagerSubscription.dispose();
     }
 
@@ -85,10 +83,12 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
     /** Unsubscribe from member add/remove subscription if active, clear the list display, and hide the "Add Member" button. **/
     private void resetState()
     {
-        mCurrentListMembers.clear();
-        if (mMembersAddedDeletedSubscription != null) mMembersAddedDeletedSubscription.dispose();
-        if (mView != null) mView.clearListDisplay();
-        if (mView != null) mView.setAddButtonVisible(false);
+        if (mListMembersRepository != null) mListMembersRepository.shutdown();
+        if (mView != null)
+        {
+            mView.clearListDisplay();
+            mView.setAddButtonVisible(false);
+        }
     }
 
     /** If a list is currently active and the current user is its owner, then show the "Add Members" button, else hide it. **/
@@ -104,46 +104,25 @@ public class MembersPresenterImpl extends BasePresenter implements MembersPresen
         logMsg("loadListMembers: list=%s", list==null ? null : list.getId());
         if (mView != null) mView.setListVisible(true);
         showOrHideAddMembersButton(list);
-        mMembersAddedDeletedSubscription = subscribeToMemberAddedDeletedEvents(list);
+        mListMembersRepository = new ListMembersRepository(mDbHelper, list, mCurrentUserId, this::onMemberAddedOrDeletedEvent, this::onLoadError);
     }
 
-    /** Attach listener to get user IDs for collaborators of the specified list, emitting added/deleted events for MemberInfo objects which are then passed to
-     *  the view (if still attached) to add or remove the member from the displayed list. **/
-    private Disposable subscribeToMemberAddedDeletedEvents(PineTaskList pineTaskList)
+    private void onMemberAddedOrDeletedEvent(ChildEventBase<MemberInfo> event)
     {
-        return mDbHelper.getMembersAddedOrDeletedEvents(pineTaskList.getId())
-            .flatMapSingle(addedOrDeletedEvent -> getMemberInfoForUserId(addedOrDeletedEvent, mCurrentUserId, pineTaskList.getOwnerId()))
-            .subscribe(memberAddedOrDeletedEvent ->
-            {
-                if (memberAddedOrDeletedEvent instanceof AddedEvent)
-                {
-                    mCurrentListMembers.add(memberAddedOrDeletedEvent.Item);
-                    if (mView != null) mView.addListMember(memberAddedOrDeletedEvent.Item);
-                }
-                else
-                {
-                    mCurrentListMembers.remove(memberAddedOrDeletedEvent.Item);
-                    if (mView != null) mView.removeListMember(memberAddedOrDeletedEvent.Item.UserId);
-                }
-            }, ex ->
-            {
-                logError("subscribeToMemberAddedDeletedEvents: error getting member added/deleted events");
-                logException(ex);
-            });
-    }
-
-    /** Look up username for the specified userId, and convert the "user ID added or deleted" event into a "MemberInfo added or deleted" event. **/
-    private Single<ChildEventBase<MemberInfo>> getMemberInfoForUserId(ChildEventBase<String> userAddedOrDeletedEvent, String currentUserId, String currentListOwnerId)
-    {
-        String userId = userAddedOrDeletedEvent.Item;
-        return mDbHelper.getUserNameSingle(userId).map(userName ->
+        if (event instanceof AddedEvent)
         {
-            // The member can only be deleted if the current user is the list owner.  Owner can never be deleted.
-            boolean canBeDeleted = (currentListOwnerId.equals(currentUserId)) && (!userId.equals(currentListOwnerId));
-            MemberInfo memberInfo = new MemberInfo(userName, userId, (userId.equals(currentListOwnerId)), canBeDeleted);
-            if (userAddedOrDeletedEvent instanceof AddedEvent) return new AddedEvent<>(memberInfo);
-            else return new DeletedEvent<>(memberInfo);
-        });
+            if (mView != null) mView.addListMember(event.Item);
+        }
+        else
+        {
+            if (mView != null) mView.removeListMember(event.Item.UserId);
+        }
+    }
+
+    private void onLoadError(Throwable ex)
+    {
+        logError("Error loading list members");
+        logException(ex);
     }
 
     @Override

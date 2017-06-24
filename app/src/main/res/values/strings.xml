@@ -37,7 +37,6 @@
     <string name="error_getting_connection_state">Error getting connection state.</string>
 
     <!-- Other -->
-    <string name="add_item">Add Item</string>
     <string name="share_list">Share List</string>
     <string name="add_list">Add List</string>
     <string name="rename_list">Rename List</string>
@@ -54,10 +53,6 @@
     <string name="confirm_delete">Confirm Delete</string>
     <string name="really_revoke_access_to_list_x_for_user_y">Do you really want to revoke access to the list \'%1$s\' for member %2$s?</string>
     <string name="really_purge_completed_items_in_list_x">Do you really want to delete all completed items in the list \'%1$s\'?</string>
-    <string name="unclaim">Unclaim</string>
-    <string name="uncomplete">Uncomplete</string>
-    <string name="edit">Edit</string>
-    <string name="description">Description</string>
     <string name="ok">Ok</string>
     <string name="cancel">Cancel</string>
     <string name="groceries">Groceries</string>
@@ -84,9 +79,7 @@
     <string name="access_granted_to_list_x">You\'ve been granted access to the list \'%1$s\'.</string>
     <string name="invite_already_used">Sorry, this invitation has already been used. Please ask the list owner to send you a new invitation.</string>
     <string name="error_deleting_list_x">Error deleting list: %1$s</string>
-    <string name="error_deleting_item">Error deleting item</string>
-    <string name="current_list_x_deleted_switching_to_first_available">The current list \'%1$s\' was deleted. Switching to first available list.</string>
-    <string name="list_items">List Items</string>
+    <string name="current_list_x_deleted_switching_to_first_available">The current list \'%1$s\' was deleted or access was revoked. Switching to first available list.</string>
     <string name="chat_messages">Chat</string>
     <string name="no_lists_found_please_use_the_add_button_to_create_one">No lists found.\nPlease use the \'add\' button to create one.</string>
     <string name="no_items_found_please_use_the_add_button_to_create_one">No items found.\nPlease use the \'add\' button to create one.</string>
@@ -95,7 +88,17 @@
     <string name="drawer_open">Open Navigation Drawer</string>
     <string name="drawer_close">Close Navigation Drawer</string>
     <string name="message_from_x">Message from %1$s</string>
+
+    <!-- List Items -->
+    <string name="add_item">Add Item</string>
+    <string name="list_items">List Items</string>
+    <string name="error_adding_item_x">Error adding item \'%1$s\'</string>
     <string name="x_has_been_added">\'%1$s\' has been added</string>
+    <string name="error_deleting_item">Error deleting item</string>
+    <string name="unclaim">Unclaim</string>
+    <string name="uncomplete">Uncomplete</string>
+    <string name="edit">Edit</string>
+    <string name="description">Description</string>
 
     <!-- Settings activity -->
     <string name="username">Name</string>

@@ -24,6 +24,7 @@ import com.pinetask.app.db.DbHelper;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
 import com.pinetask.app.manage_lists.StartupMessage;
 
+import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 
 public class MainActivityPresenterImpl extends BasePresenter implements MainActivityPresenter
@@ -176,18 +177,22 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         if (mUserNameSubscription != null) mUserNameSubscription.dispose();
     }
 
-    /** Load info for all lists that the user has access to, and display them in selector dialog for user to switch lists. **/
+    /** Load info for all lists that the user has access to, and display them in selector dialog for user to switch lists.
+     *  If any particular list fails to load, log exception detail but proceed loading the other lists. **/
     @Override
     public void onListSelectorClicked()
     {
-        mDbHelper.getListIdsForUser(mUserId).flatMapSingle(mDbHelper::getPineTaskList).toList().subscribe(lists ->
-        {
-            logMsg("onListSelectorClicked: loaded %s lists", lists.size());
-            if ((lists.size() > 0) && (mView != null)) mView.showListChooser(lists);
-        }, ex ->
-        {
-            logAndShowError(ex, "Error loading lists");
-        });
+        mDbHelper.getListIdsForUser(mUserId)
+                .flatMap(mDbHelper::tryGetPineTaskList)
+                .toList()
+                .subscribe(lists ->
+                {
+                    logMsg("onListSelectorClicked: loaded %s lists", lists.size());
+                    if ((lists.size() > 0) && (mView != null)) mView.showListChooser(lists);
+                }, ex ->
+                {
+                    logAndShowError(ex, "Error loading lists");
+                });
     }
 
     @Override

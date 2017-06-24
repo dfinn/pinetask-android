@@ -60,13 +60,9 @@ public class DeleteListDialogFragment extends PineTaskDialogFragment
     {
         super.onStart();
 
-        // Make sure network connection is online. If not, show error message.
-        mDbHelper.isConnected().observeOn(AndroidSchedulers.mainThread()).subscribe(isConnected -> {
-            if (isConnected) showDeletePrompt();
-            else showError(R.string.no_network_connection_try_again_later);
-        }, ex -> {
-            showError(R.string.no_network_connection_try_again_later);
-        });
+        mOkButton.setVisibility(View.VISIBLE);
+        final String listName = getArguments().getString(LIST_NAME_KEY);
+        mTitleTextView.setText(String.format(getString(R.string.really_delete_list_x), listName));
     }
 
     @OnClick(R.id.cancelButton)
@@ -84,17 +80,5 @@ public class DeleteListDialogFragment extends PineTaskDialogFragment
         logMsg("Deleting list '%s' (%s)", listName, listId);
         mDbHelper.deleteList(listId).subscribe(activityObserver("delete list", () -> logMsg("Delete completed")));
         dismiss();
-    }
-
-    private void showDeletePrompt()
-    {
-        mOkButton.setVisibility(View.VISIBLE);
-        final String listName = getArguments().getString(LIST_NAME_KEY);
-        mTitleTextView.setText(String.format(getString(R.string.really_delete_list_x), listName));
-    }
-
-    private void showError(int stringResId)
-    {
-        mTitleTextView.setText(stringResId);
     }
 }

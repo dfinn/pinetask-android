@@ -85,13 +85,28 @@ public class AddOrRenameListDialogFragment extends PineTaskDialogFragment
     {
         super.onStart();
 
-        // Make sure network connection is online. If not, show error message.
-        mDbHelper.isConnected().observeOn(AndroidSchedulers.mainThread()).subscribe(isConnected -> {
-            if (isConnected) showCreateOrRenamePrompt();
-            else showError(R.string.no_network_connection_try_again_later);
-        }, ex -> {
-            showError(R.string.no_network_connection_try_again_later);
-        });
+        mListNameEditText.setVisibility(View.VISIBLE);
+        mOkButton.setVisibility(View.VISIBLE);
+
+        // If renaming an existing list, populate the old name.
+        final String oldName = getArguments().getString(OLD_NAME_KEY);
+        if (oldName != null) mListNameEditText.setText(oldName);
+
+        if (getArguments().getBoolean(IS_FIRST_LIST_KEY))
+        {
+            // If dialog was launched automatically for user to create their first list, show a helpful title message.
+            mTitleTextView.setText(R.string.please_create_first_list);
+        }
+        else
+        {
+            // Show title as either "Add List" or "Rename List"
+            mTitleTextView.setText(oldName == null ? R.string.add_list : R.string.rename_list);
+        }
+
+        // Show soft keyboard when dialog opens.
+        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT,0);
+        mListNameEditText.requestFocus();
     }
 
     @OnClick(R.id.cancelButton)
@@ -120,37 +135,5 @@ public class AddOrRenameListDialogFragment extends PineTaskDialogFragment
         }
         hideSoftKeyboard();
         dismiss();
-    }
-
-    private void showCreateOrRenamePrompt()
-    {
-        mListNameEditText.setVisibility(View.VISIBLE);
-        mOkButton.setVisibility(View.VISIBLE);
-
-        // If renaming an existing list, populate the old name.
-        final String oldName = getArguments().getString(OLD_NAME_KEY);
-        if (oldName != null) mListNameEditText.setText(oldName);
-
-        if (getArguments().getBoolean(IS_FIRST_LIST_KEY))
-        {
-            // If dialog was launched automatically for user to create their first list, show a helpful title message.
-            mTitleTextView.setText(R.string.please_create_first_list);
-        }
-        else
-        {
-            // Show title as either "Add List" or "Rename List"
-            mTitleTextView.setText(oldName == null ? R.string.add_list : R.string.rename_list);
-        }
-
-        // Show soft keyboard when dialog opens.
-        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT,0);
-        mListNameEditText.requestFocus();
-    }
-
-    private void showError(int stringResId)
-    {
-        mListNameEditText.setVisibility(View.INVISIBLE);
-        mTitleTextView.setText(stringResId);
     }
 }

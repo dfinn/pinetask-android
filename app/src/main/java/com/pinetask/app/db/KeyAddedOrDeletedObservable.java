@@ -20,7 +20,7 @@ public class KeyAddedOrDeletedObservable extends LoggingBase
     DatabaseReference mDbRef;
     String mOperationDescription;
 
-    public static Observable<ChildEventBase<String>> getKeyAddedOrDeletedEventsAt(DatabaseReference ref, String operationDescription)
+    public static Observable<ChildEventBase<String>> subscribeKeyAddedOrDeletedEventsAt(DatabaseReference ref, String operationDescription)
     {
         KeyAddedOrDeletedObservable keyAddedOrDeletedObservable = new KeyAddedOrDeletedObservable(ref, operationDescription);
         return keyAddedOrDeletedObservable.attachListener();

@@ -24,7 +24,7 @@ public abstract class BasePresenter
 
     protected void logAndShowError(Throwable ex, String message, Object... args)
     {
-        logError(message);
+        logError(message, args);
         logException(ex);
         showErrorMessage(message, args);
     }
