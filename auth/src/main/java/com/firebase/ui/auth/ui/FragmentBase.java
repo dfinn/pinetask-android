@@ -6,7 +6,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
 import android.support.v4.app.Fragment;
 
-import com.pinetask.common.Logger;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FragmentBase extends Fragment {
@@ -26,16 +25,6 @@ public class FragmentBase extends Fragment {
 
     public void finish(int resultCode, Intent resultIntent) {
         mHelper.finish(resultCode, resultIntent);
-    }
-
-    protected void logMsg(String msg, Object...args)
-    {
-        Logger.logMsg(getClass(), msg, args);
-    }
-
-    protected void logError(String msg, Object...args)
-    {
-        Logger.logError(getClass(), msg, args);
     }
 
 }

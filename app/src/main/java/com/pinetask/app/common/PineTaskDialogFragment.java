@@ -7,7 +7,6 @@ import android.support.v4.app.DialogFragment;
 import android.view.inputmethod.InputMethodManager;
 
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.Logger;
 
 import javax.inject.Inject;
 

@@ -4,7 +4,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;

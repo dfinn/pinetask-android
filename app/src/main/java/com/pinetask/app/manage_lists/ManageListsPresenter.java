@@ -4,7 +4,7 @@ import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.R;
 import com.pinetask.app.db.RxListLoader;
 import com.pinetask.app.db.RxListLoaderCallbacks;
-import com.pinetask.common.LoggingBase;
+import com.pinetask.app.common.LoggingBase;
 
 import java.util.List;
 

@@ -5,7 +5,7 @@ import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.LoggingBase;
+import com.pinetask.app.common.LoggingBase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +28,7 @@ public class ListMembersRepository extends LoggingBase
 
         mSubscription = dbHelper.subscribeMembersAddedOrDeletedEvents(pineTaskList.getId())
                 .flatMapSingle(addedOrDeletedEvent -> getMemberInfoForUserId(dbHelper, addedOrDeletedEvent, currentUserId, pineTaskList.getOwnerId()))
+                .filter(event -> !mCurrentListMembers.contains(event.Item))
                 .doOnNext(event ->
                 {
                     if (event instanceof AddedEvent)

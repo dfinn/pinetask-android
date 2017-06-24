@@ -1,4 +1,4 @@
-package com.pinetask.common;
+package com.pinetask.app.common;
 
 /** Helper class to extend from that provides logging convenience helpers. **/
 public class LoggingBase

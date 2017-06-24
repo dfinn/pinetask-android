@@ -6,21 +6,16 @@ import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.UpdatedEvent;
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.LoggingBase;
+import com.pinetask.app.common.LoggingBase;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
 
 public class ListItemsRepository extends LoggingBase
 {
@@ -37,6 +32,7 @@ public class ListItemsRepository extends LoggingBase
                 .doOnSuccess(lastOpenTimestamp -> mLastItemTimestamp = lastOpenTimestamp)
                 .flatMapObservable(__ -> dbHelper.subscribeListItems(list.getId()))
                 .doOnNext(childEvent -> childEvent.Item.setListId(list.getId()))
+                .filter(event -> !((event instanceof AddedEvent) && (mItems.contains(event.Item))))
                 .doOnNext(this::updateCache)
                 .doOnNext(childEvent -> childEvent.Item.setIsNewItem(childEvent.Item.getCreatedAtMs() > mLastItemTimestamp))
                 .doOnNext(childEvent -> logMsg("Loaded item %s, createdAt=%s, isNew=%b", childEvent.Item.getId(), getTimestamp(childEvent.Item.getCreatedAtMs()), childEvent.Item.getIsNewItem()))

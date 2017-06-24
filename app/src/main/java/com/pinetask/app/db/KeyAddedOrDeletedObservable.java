@@ -7,7 +7,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
-import com.pinetask.common.LoggingBase;
+import com.pinetask.app.common.LoggingBase;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;

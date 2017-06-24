@@ -9,7 +9,6 @@ import android.view.inputmethod.InputMethodManager;
 
 import com.pinetask.app.db.DbCallback;
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.Logger;
 
 import java.util.ArrayList;
 import java.util.List;

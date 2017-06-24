@@ -6,7 +6,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 
 import com.google.firebase.database.FirebaseDatabase;
-import com.pinetask.common.Logger;
 
 import javax.inject.Inject;
 

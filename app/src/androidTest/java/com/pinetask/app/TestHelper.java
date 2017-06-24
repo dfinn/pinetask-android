@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

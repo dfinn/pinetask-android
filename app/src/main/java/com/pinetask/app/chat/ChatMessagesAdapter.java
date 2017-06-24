@@ -2,8 +2,6 @@ package com.pinetask.app.chat;
 
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -15,8 +13,7 @@ import android.widget.TextView;
 
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskApplication;
-import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import org.joda.time.DateTime;
 import org.joda.time.Duration;

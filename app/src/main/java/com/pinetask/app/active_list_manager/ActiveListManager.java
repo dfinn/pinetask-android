@@ -8,7 +8,7 @@ import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.LoggingBase;
+import com.pinetask.app.common.LoggingBase;
 
 import javax.inject.Named;
 

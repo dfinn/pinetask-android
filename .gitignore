@@ -7,6 +7,7 @@
 /build
 /captures
 app/fabric.properties
+common/fabric.properties
 app/src/development/google-services.json
 app/src/production/google-services.json
 app/*.apk

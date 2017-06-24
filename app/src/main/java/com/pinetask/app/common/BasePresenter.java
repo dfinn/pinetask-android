@@ -1,7 +1,5 @@
 package com.pinetask.app.common;
 
-import com.pinetask.common.Logger;
-
 /** Base class for presenters to provide utility methods. **/
 public abstract class BasePresenter
 {

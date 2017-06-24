@@ -3,7 +3,7 @@ package com.pinetask.app.chat;
 import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.LoggingBase;
+import com.pinetask.app.common.LoggingBase;
 
 import org.joda.time.DateTime;
 
@@ -34,6 +34,7 @@ class ChatMessagesRepository extends LoggingBase
                 .map(event -> (AddedEvent<ChatMessage>) event)
                 .map(addedEvent -> addedEvent.Item)
                 .flatMap(dbHelper::populateUserName)
+                .filter(chatMessage -> { boolean dup = mChatMessages.contains(chatMessage); if (dup) logMsg("Duplicate message %s received", chatMessage.getId()); return !dup; })
                 .map(chatMessage ->
                 {
                     mChatMessages.add(chatMessage);

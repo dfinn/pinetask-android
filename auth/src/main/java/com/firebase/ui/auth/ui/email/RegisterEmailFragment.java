@@ -237,7 +237,6 @@ public class RegisterEmailFragment extends FragmentBase implements
                 mHelper.showLoadingDialog(R.string.progress_dialog_signing_up);
                 if (firebaseAuth.getCurrentUser() != null)
                 {
-                    logMsg("Linking existing anonymous user %s with email account %s", firebaseAuth.getCurrentUser().getUid(), email);
                     AuthCredential authCredential = EmailAuthProvider.getCredential(email, password);
                     IdpResponse idpResponse = new IdpResponse(EmailAuthProvider.PROVIDER_ID, email);
                     HelperActivityBase activity = (HelperActivityBase) getActivity();

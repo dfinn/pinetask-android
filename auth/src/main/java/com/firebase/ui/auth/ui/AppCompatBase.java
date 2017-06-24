@@ -17,8 +17,6 @@ package com.firebase.ui.auth.ui;
 import android.os.Bundle;
 import android.support.annotation.RestrictTo;
 
-import com.pinetask.common.Logger;
-
 @SuppressWarnings("Registered")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AppCompatBase extends HelperActivityBase {
@@ -28,16 +26,5 @@ public class AppCompatBase extends HelperActivityBase {
         super.onCreate(savedInstance);
         mActivityHelper.configureTheme();
     }
-
-    protected void logMsg(String msg, Object...args)
-    {
-        Logger.logMsg(getClass(), msg, args);
-    }
-
-    protected void logError(String msg, Object...args)
-    {
-        Logger.logError(getClass(), msg, args);
-    }
-
 
 }

@@ -6,7 +6,7 @@ import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
-import com.pinetask.common.LoggingBase;
+import com.pinetask.app.common.LoggingBase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +15,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.observables.ConnectableObservable;

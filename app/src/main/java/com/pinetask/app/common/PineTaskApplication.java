@@ -5,7 +5,6 @@ import android.support.multidex.MultiDexApplication;
 import com.crashlytics.android.Crashlytics;
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.BuildConfig;
-import com.pinetask.common.Logger;
 
 import io.fabric.sdk.android.Fabric;
 import io.reactivex.plugins.RxJavaPlugins;
@@ -73,7 +72,7 @@ public class PineTaskApplication extends MultiDexApplication
         super.onCreate();
 
         // Only enable logging in debug builds
-        Logger.setLoggingEnabled(BuildConfig.DEBUG);
+        Logger.setIsDebugBuild(BuildConfig.DEBUG);
 
         // Store reference to app instance
         mApplicationInstance = this;

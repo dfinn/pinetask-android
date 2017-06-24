@@ -10,7 +10,7 @@ import android.widget.TextView;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.R;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import java.util.Collection;
 import java.util.List;

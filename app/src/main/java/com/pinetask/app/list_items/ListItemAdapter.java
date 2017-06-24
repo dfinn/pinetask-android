@@ -5,7 +5,6 @@ import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -14,7 +13,7 @@ import android.widget.TextView;
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.db.DbHelper;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import java.util.List;
 

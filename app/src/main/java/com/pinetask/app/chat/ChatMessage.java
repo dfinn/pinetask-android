@@ -55,4 +55,18 @@ public class ChatMessage implements UsesKeyIdentifier
         mMessage = message;
         mSenderId = senderId;
     }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof ChatMessage)
+        {
+            ChatMessage other = (ChatMessage) obj;
+            return mKey.equals(other.getId());
+        }
+        else
+        {
+            return false;
+        }
+    }
 }

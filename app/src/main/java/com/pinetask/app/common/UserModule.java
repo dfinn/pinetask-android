@@ -12,8 +12,6 @@ import com.pinetask.app.list_members.MembersPresenter;
 import com.pinetask.app.list_members.MembersPresenterImpl;
 import com.pinetask.app.main.MainActivityPresenter;
 import com.pinetask.app.main.MainActivityPresenterImpl;
-import com.pinetask.common.Logger;
-import com.pinetask.common.LoggingBase;
 
 import javax.inject.Named;
 

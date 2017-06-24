@@ -233,4 +233,14 @@
         <item name="android:textColor">@color/tw__solid_white</item>
     </style>
 
+    <style name="FlatButton" parent="Base.Widget.AppCompat.Button.Borderless.Colored">
+        <item name="android:gravity">center</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">?attr/colorAccent</item>
+        <item name="android:background">@drawable/flat_button_selector</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
 </resources>

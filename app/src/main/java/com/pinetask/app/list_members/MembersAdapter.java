@@ -10,12 +10,10 @@ import android.widget.TextView;
 
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.common.PineTaskApplication;
-import com.pinetask.app.common.PineTaskException;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.main.MainActivity;
-import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.R;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import java.util.ArrayList;
 import java.util.List;

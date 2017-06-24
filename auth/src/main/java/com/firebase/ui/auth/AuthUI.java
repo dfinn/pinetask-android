@@ -54,7 +54,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.TwitterAuthProvider;
-import com.pinetask.common.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -554,23 +553,12 @@ public class AuthUI {
                 .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
                     @Override
                     public void onSuccess(AuthResult authResult) {
-                        logMsg("linkCredentials: onSuccess - user=%s", authResult.getUser().getUid());
                         activityHelper.saveCredentialsOrFinish(
                                 activityHelper.getSaveSmartLockInstance(),
                                 authResult.getUser(),
                                 idpResponse);
                     }
                 });
-    }
-
-    protected void logMsg(String msg, Object...args)
-    {
-        Logger.logMsg(getClass(), msg, args);
-    }
-
-    protected void logError(String msg, Object...args)
-    {
-        Logger.logError(getClass(), msg, args);
     }
 
 }

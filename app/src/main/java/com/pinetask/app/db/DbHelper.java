@@ -19,10 +19,9 @@ import com.pinetask.app.common.PineTaskListWithCollaborators;
 import com.pinetask.app.common.UserMessageListener;
 import com.pinetask.app.list_items.PineTaskItem;
 import com.pinetask.app.list_items.PineTaskItemExt;
-import com.pinetask.app.list_members.MemberInfo;
 import com.pinetask.app.main.InviteInfo;
 import com.pinetask.app.manage_lists.StartupMessage;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import org.joda.time.DateTime;
 

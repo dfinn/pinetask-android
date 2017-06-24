@@ -8,4 +8,5 @@
 
     <color name="errorColor">#DD2C00</color>
     <color name="linkColor">#4285F4</color>
+    <color name="colorAccent40Percent">#66304FFE</color>
 </resources>

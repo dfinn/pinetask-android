@@ -10,7 +10,7 @@ import android.support.test.runner.AndroidJUnit4;
 import android.support.test.runner.lifecycle.ActivityLifecycleMonitorRegistry;
 
 import com.pinetask.app.launch.LaunchActivity;
-import com.pinetask.common.Logger;
+import com.pinetask.app.common.Logger;
 
 import org.junit.After;
 import org.junit.Before;
