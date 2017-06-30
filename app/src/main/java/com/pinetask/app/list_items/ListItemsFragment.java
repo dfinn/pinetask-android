@@ -13,9 +13,9 @@ import android.widget.Toast;
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskFragment;
+import com.pinetask.app.main.MainActivity;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.inject.Inject;
 
@@ -89,11 +89,14 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     public void addItem(PineTaskItemExt item)
     {
         mItemsListAdapter.add(item);
-        if (item.getIsNewItem())
-        {
-            Toast.makeText(getActivity(), String.format(getString(R.string.x_has_been_added), item.getItemDescription()), Toast.LENGTH_SHORT).show();
-            item.setIsNewItem(false);
-        }
+    }
+
+    @Override
+    public void notifyNewItemAdded(PineTaskItemExt item)
+    {
+        String msg = String.format(getString(R.string.x_has_been_added), item.getItemDescription());
+        MainActivity mainActivity = (MainActivity) getActivity();
+        mainActivity.showNotificationText(msg, 1000);
     }
 
     @Override

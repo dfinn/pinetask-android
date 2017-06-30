@@ -11,6 +11,7 @@ import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
+import com.pinetask.app.common.SoundManager;
 import com.pinetask.app.common.UpdatedEvent;
 import com.pinetask.app.db.DbHelper;
 
@@ -27,13 +28,15 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     private ListItemsRepository mListItemsRepository;
     private PineTaskApplication mApplication;
     private ActiveListManager mActiveListManager;
+    private SoundManager mSoundManager;
 
-    public ListItemsPresenterImpl(PineTaskApplication application, DbHelper dbHelper, ActiveListManager activeListManager, String userId)
+    public ListItemsPresenterImpl(PineTaskApplication application, DbHelper dbHelper, ActiveListManager activeListManager, String userId, SoundManager soundManager)
     {
         mApplication = application;
         mDbHelper = dbHelper;
         mUserId = userId;
         mActiveListManager = activeListManager;
+        mSoundManager = soundManager;
         mActiveListSubscription = activeListManager.subscribe(this::onActiveListEvent, ex -> logError("Error getting event from ActiveListManager"));
     }
 
@@ -61,7 +64,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         {
             mView.showListItemsLayouts();
             mView.clearListItems();
-            for (PineTaskItemExt item : mListItemsRepository.getItems()) mView.addItem(item);
+            for (PineTaskItemExt item : mListItemsRepository.getItems()) addItemToViewAndNotifyIfNewItem(item);
         }
     }
 
@@ -97,7 +100,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
             if (childEvent instanceof AddedEvent)
             {
                 AddedEvent<PineTaskItemExt> addedEvent = (AddedEvent<PineTaskItemExt>) childEvent;
-                mView.addItem(addedEvent.Item);
+                addItemToViewAndNotifyIfNewItem(addedEvent.Item);
             }
             else if (childEvent instanceof DeletedEvent)
             {
@@ -126,7 +129,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         if (activeList != null)
         {
             PineTaskItemExt item = new PineTaskItemExt(null, description, true, activeList.getId());
-            if (mView != null) mView.addItem(item);
+            addItemToViewAndNotifyIfNewItem(item);
             mDbHelper.addPineTaskItem(item).subscribe(() ->
             {
                 logMsg("addItem: item %s added successfully", item.getId());
@@ -139,6 +142,20 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         else
         {
             showErrorMessage(mApplication.getString(R.string.error_no_current_list));
+        }
+    }
+
+    private void addItemToViewAndNotifyIfNewItem(PineTaskItemExt item)
+    {
+        if (mView != null)
+        {
+            mView.addItem(item);
+            if (item.getIsNewItem())
+            {
+                mView.notifyNewItemAdded(item);
+                item.setIsNewItem(false);
+                mSoundManager.playItemAddedSound();
+            }
         }
     }
 
@@ -155,7 +172,11 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     public void setCompletedStatus(PineTaskItemExt item, boolean isCompleted)
     {
         logMsg("Setting completion status for '%s' to %b", item.getItemDescription(), isCompleted);
-        if (isCompleted) item.setClaimedBy(mUserId);
+        if (isCompleted)
+        {
+            item.setClaimedBy(mUserId);
+            mSoundManager.playItemCompletedSound();
+        }
         item.setIsCompleted(isCompleted);
         updateItem(item);
     }

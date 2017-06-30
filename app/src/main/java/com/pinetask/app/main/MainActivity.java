@@ -1,5 +1,6 @@
 package com.pinetask.app.main;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -19,6 +20,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -58,6 +61,8 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     ActionBarDrawerToggle mDrawerToggle;
     private boolean mIsActivityActive;
     ChatFragment mChatFragment;
+    int mNotificationHeightPx;
+    Runnable mHideNotificationRunnable;
 
     /** Identifies the active menu item from the bottom navigation drawer. **/
     int mActiveMenuItem=-1;
@@ -74,6 +79,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     @BindView(R.id.leftDrawerLayout) LinearLayout mLeftDrawerLayout;
     @BindView(R.id.userNameTextView) TextView mUserNameTextView;
     @BindView(R.id.settingsTextView) TextView mSettingsTextView;
+    @BindView(R.id.notificationTextView) TextView mNotificationTextView;
 
     /** Indices of the list items, chat, and members fragments within the viewpager. **/
     final int LIST_ITEMS_INDEX = 0;
@@ -152,6 +158,10 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 
         // Attach presenter
         mPresenter.attach(this);
+
+        // Store the max height that the notification bar will animate to when expanding. Create runnable that will hide notification text after a delay.
+        mNotificationHeightPx = (int) getResources().getDimension(R.dimen.notification_bar_height);
+        mHideNotificationRunnable = this::hideNotificationText;
     }
 
     private void checkForInvites()
@@ -614,6 +624,44 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     public boolean isVisible()
     {
         return mActivityActive;
+    }
+
+    /** Show notification bar on the screen, animating the expansion if it's not already showing.  Set callback so that after durationMs the notification will be hidden. **/
+    public void showNotificationText(String message, int durationMs)
+    {
+        logMsg("showNotificationText(%s)", message);
+        mNotificationTextView.setText(message);
+
+        // If notification bar is not already expanded to full height, start animation to expand it.
+        if (mNotificationTextView.getHeight() != mNotificationHeightPx)
+        {
+            resizeNotification(0, mNotificationHeightPx);
+        }
+
+        // Remove any pending callbacks and post a new delayed runnable to hide the notification after the specified timeout.
+        mNotificationTextView.removeCallbacks(mHideNotificationRunnable);
+        mNotificationTextView.postDelayed(mHideNotificationRunnable, durationMs);
+    }
+
+    private void resizeNotification(int startHeight, int endHeight)
+    {
+        ValueAnimator anim = ValueAnimator.ofInt(startHeight, endHeight).setDuration(300);
+        anim.addUpdateListener(a ->
+        {
+            int height = (int) a.getAnimatedValue();
+            mNotificationTextView.getLayoutParams().height = height;
+            mNotificationTextView.requestLayout();
+        });
+        anim.start();
+    }
+
+    public void hideNotificationText()
+    {
+        logMsg("hideNotificationText");
+        if (mNotificationTextView.getLayoutParams().height != 0)
+        {
+            resizeNotification(mNotificationTextView.getLayoutParams().height, 0);
+        }
     }
 }
 

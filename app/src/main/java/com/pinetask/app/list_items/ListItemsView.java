@@ -7,6 +7,9 @@ public interface ListItemsView
     /** Adds the specified item to the bottom of the list. **/
     void addItem(PineTaskItemExt item);
 
+    /** Show pop-up message to notify a new item was added. **/
+    void notifyNewItemAdded(PineTaskItemExt item);
+
     /** Update the item in the list. **/
     void updateItem(PineTaskItemExt item);
 

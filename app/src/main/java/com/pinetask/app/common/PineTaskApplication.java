@@ -26,6 +26,7 @@ public class PineTaskApplication extends MultiDexApplication
         mUserComponent.listItemsPresenter().shutdown();
         mUserComponent.chatPresenter().shutdown();
         mUserComponent.membersPresenter().shutdown();
+        mUserComponent.soundManager().shutdown();
         mUserComponent = null;
     }
 

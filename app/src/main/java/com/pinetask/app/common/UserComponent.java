@@ -26,6 +26,7 @@ public interface UserComponent
     ListItemsPresenter listItemsPresenter();
     ChatPresenter chatPresenter();
     MembersPresenter membersPresenter();
+    SoundManager soundManager();
 
     void inject(MainActivity target);
     void inject(PurgeCompletedItemsDialogFragment target);

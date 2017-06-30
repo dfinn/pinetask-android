@@ -70,8 +70,20 @@
 
         </android.support.v4.view.ViewPager>
 
+        <TextView
+            android:id="@+id/notificationTextView"
+            android:layout_above="@id/bottomNavigationView"
+            android:background="@color/black_67percent"
+            android:textColor="@color/white"
+            android:lines="1"
+            android:ellipsize="end"
+            android:padding="5dp"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"/>
+
     </RelativeLayout>
-    
+
     <LinearLayout
         android:id="@+id/leftDrawerLayout"
         android:background="@color/white"
