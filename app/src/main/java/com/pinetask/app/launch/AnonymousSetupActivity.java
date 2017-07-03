@@ -24,6 +24,7 @@ public class AnonymousSetupActivity extends PineTaskActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.anonymous_setup_activity);
         ButterKnife.bind(this);
+        showSoftKeyboard(mNameEditText);
     }
 
     @OnClick(R.id.nextButton)

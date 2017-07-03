@@ -123,13 +123,6 @@
         \nSubject to the terms and conditions of the Apache 2.0 license
         \nhttp://www.apache.org/licenses/LICENSE-2.0
         \n\n-----------------------------------------
-        \n\nAppIntro library
-        \nhttps://github.com/apl-devs/AppIntro
-        \nCopyright 2015 Paolo Rotolo
-        \nCopyright 2016 Maximilian Narr
-        \nSubject to the terms and conditions of the Apache 2.0 license
-        \nhttp://www.apache.org/licenses/LICENSE-2.0
-        \n\n------------------------------------------
         \n\nJoda Time
         \nhttp://www.joda.org/joda-time/
         \nSubject to the terms and conditions of the Apache 2.0 license
@@ -139,12 +132,6 @@
         \nhttps://try.crashlytics.com/
         \nhttp://try.crashlytics.com/terms/
         \n\n------------------------------------------
-        \n\nOtto
-        \nhttp://square.github.io/otto/
-        \nCopyright 2013 Square, Inc.
-        \nSubject to the terms and conditions of the Apache 2.0 license
-        \nhttp://www.apache.org/licenses/LICENSE-2.0
-        \n\n------------------------------------------
         \n\nFirebase
         \nhttps://firebase.google.com/
         \n\n------------------------------------------
@@ -152,10 +139,6 @@
         \nhttps://github.com/firebase/FirebaseUI-Android
         \nSubject to the terms and conditions of the Apache 2.0 license
         \nhttps://github.com/firebase/FirebaseUI/blob/master/LICENSE
-        \n\n------------------------------------------
-        \n\nGlide
-        \nhttps://github.com/bumptech/glide
-        \nhttps://github.com/bumptech/glide/blob/master/LICENSE
         \n\n------------------------------------------
         \n\nRxJava
         \nCopyright (c) 2016-present, RxJava Contributors.
@@ -175,6 +158,11 @@
         \nSubject to the terms and conditions of the Apache 2.0 license
         \nhttp://www.apache.org/licenses/LICENSE-2.0
         \n\n------------------------------------------
+        \n\nHintCase
+        \nhttps://github.com/Nescafemix/hintcase
+        \nCopyright Joan Fuentes 2016
+        \nSubject to the terms and conditions of the Apache 2.0 license
+        \nhttp://www.apache.org/licenses/LICENSE-2.0
     </string>
 
 
@@ -184,5 +172,7 @@
     <string name="item_checkbox_icon_hint">Click the checkbox to mark the item as completed</string>
     <string name="item_other_options_hint">Click the description for additional options:\nEdit, Delete, Unclaim, Uncomplete</string>
     <string name="list_options_hint">List options: purge completed items, export list</string>
+    <string name="list_selector_hint">Click here to change lists</string>
+    <string name="side_menu_hint">Open the side menu to manage your lists and change app settings</string>
 
 </resources>

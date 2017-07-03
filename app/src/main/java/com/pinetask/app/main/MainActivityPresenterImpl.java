@@ -21,6 +21,7 @@ import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.hints.HintManager;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
 import com.pinetask.app.manage_lists.StartupMessage;
 
@@ -29,16 +30,16 @@ import io.reactivex.disposables.Disposable;
 
 public class MainActivityPresenterImpl extends BasePresenter implements MainActivityPresenter
 {
-    MainActivityView mView;
-    DbHelper mDbHelper;
-    String mUserId;
-    String mUserName;
-    PineTaskApplication mApplication;
-    PrefsManager mPrefsManager;
-    ActiveListManager mActiveListManager;
-    Disposable mActiveListManagerSubscription;
-    Disposable mUserNameSubscription;
-    StartupMessage mStartupMessage;
+    private MainActivityView mView;
+    private DbHelper mDbHelper;
+    private String mUserId;
+    private String mUserName;
+    private PineTaskApplication mApplication;
+    private PrefsManager mPrefsManager;
+    private ActiveListManager mActiveListManager;
+    private Disposable mActiveListManagerSubscription;
+    private Disposable mUserNameSubscription;
+    private StartupMessage mStartupMessage;
 
     public MainActivityPresenterImpl(DbHelper dbHelper, String userId, PrefsManager prefsManager, PineTaskApplication application, ActiveListManager activeListManager)
     {
@@ -135,8 +136,11 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         mDbHelper.getStartupMessageIfUnread(mUserId)
                 .subscribe(startupMessage ->
                 {
-                    mStartupMessage = startupMessage;
-                    showStartupMessage();
+                    if (startupMessage.version > 0)
+                    {
+                        mStartupMessage = startupMessage;
+                        showStartupMessage();
+                    }
                 }, ex ->
                 {
                     logAndShowError(ex, mApplication.getString(R.string.error_loading_startup_message));

@@ -33,8 +33,6 @@ public class PrefsManager
     public void setIsFirstLaunch(boolean isFirstLaunch) { mSharedPreferences.edit().putBoolean(IS_FIRST_LAUNCH_KEY, isFirstLaunch).apply(); }
 
     /** Boolean values indicating whether the first launch tooltips have been shown for various app features. **/
-    public static String FIRST_LIST_ADDED_HINT_SHOWN_KEY = "FirstListAddedHintShown";
-    public static String FIRST_ITEM_ADDED_HINT_SHOWN_KEY = "FirstListItemAddedHintShown";
     public boolean isTipShown(String key) { return mSharedPreferences.getBoolean(key, false); }
     public void setTipShown(String key) { mSharedPreferences.edit().putBoolean(key, true).apply(); }
 }

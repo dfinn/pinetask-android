@@ -61,6 +61,7 @@
 
             <Button
                 android:id="@+id/signUpOrLoginButton"
+                style="@style/FlatButton"
                 android:text="@string/login_or_signup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>

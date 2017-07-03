@@ -12,7 +12,6 @@ import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.ChildEventBase;
-import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PineTaskListWithCollaborators;
@@ -51,70 +50,68 @@ import static com.pinetask.app.db.KeyAddedOrDeletedObservable.subscribeKeyAddedO
 public class DbHelper
 {
     /** Name of node in the Firebase DB where list info is stored **/
-    public static String LIST_INFO_NODE_NAME = "list_info";
+    private final String LIST_INFO_NODE_NAME = "list_info";
 
     /** Name of node in the Firebase DB where list collaborators are stored **/
-    final String LIST_COLLABORATORS_NODE_NAME = "list_collaborators";
+    private final String LIST_COLLABORATORS_NODE_NAME = "list_collaborators";
 
     /** Key name under /list_collaborators/<listid>/<userid> that stores the ID of the invite from which the user got access to the list. **/
-    final String INVITE_ID_KEY = "invite_id";
+    private final String INVITE_ID_KEY = "invite_id";
 
     /** Name of node in the Firebase DB where all list items are stored **/
-    public static String LIST_ITEMS_NODE_NAME = "list_items";
+    private final String LIST_ITEMS_NODE_NAME = "list_items";
 
     /** Name of node in the Firebase DB where all chat messages are stored. **/
-    public static String CHAT_MESSAGES_NODE_NAME = "chat_messages";
+    private final String CHAT_MESSAGES_NODE_NAME = "chat_messages";
 
     /** Name of node in the Firebase DB where all users are stored  **/
-    public static String USERS_NODE_NAME = "users";
+    private static String USERS_NODE_NAME = "users";
 
     /** Name of node in the Firebase DB where startup message is stored. **/
-    final String STARTUP_MESSAGE_NODE = "startup_message";
+    private final String STARTUP_MESSAGE_NODE = "startup_message";
 
     /** Name of a node in the FireBase DB where the user's name is stored. **/
-    final String USERNAME_NODE_NAME = "userName";
+    private final String USERNAME_NODE_NAME = "userName";
 
     /** Name of a node in the Firebase DB under /users/$userId which stores a value indicating if the user is anonymous or not. **/
-    final String IS_ANONYMOUS_NODE_NAME = "is_anonymous";
+    private final String IS_ANONYMOUS_NODE_NAME = "is_anonymous";
 
     /** Name of a node in the Firebase DB under /users/$userId which stores a value indicating the version of the last startup message the user read. **/
-    final String USER_STARTUP_MESSAGE_VERSION = "startup_message_version";
+    private final String USER_STARTUP_MESSAGE_VERSION = "startup_message_version";
 
     /** Name of the node where all list invites are stored. **/
-    final String LIST_INVITES_NODE_NAME = "list_invites";
+    private final String LIST_INVITES_NODE_NAME = "list_invites";
 
     /** Name of node in the Firebase DB where lists accessible to a certain user are stored (/users/<userid>/lists) **/
-    public static String LISTS_NODE_NAME = "lists";
+    private final String LISTS_NODE_NAME = "lists";
 
     /** Name of node where last access timestamp for each of a user's lists is stored (/users/$userId/lists/last_opened_at) **/
-    public static String LAST_OPENED_AT_KEY = "last_opened_at";
+    private final String LAST_OPENED_AT_KEY = "last_opened_at";
 
     /** Value for a list entry indicating the user is the owner of the list. **/
-    final String OWNER = "owner";
+    private final String OWNER = "owner";
 
     /** Value for a list entry indicating the user has write access to it. **/
-    public static String WRITE = "write";
+    private final String WRITE = "write";
 
     /** Key name under /list_info/<listid>/ where the list name is stored. **/
-    final String LIST_NAME_KEY = "name";
+    private final String LIST_NAME_KEY = "name";
 
     /** Key name under /list_info/<listid>/ where the user ID of the list owner is stored. **/
-    final String OWNER_ID_KEY = "ownerId";
+    private final String OWNER_ID_KEY = "ownerId";
 
     /** Key name under /list_invites/<listid>/<inviteid>/ that stores the timestamp when the invite was created. **/
-    final String INVITE_CREATED_AT_KEY = "created_at";
+    private final String INVITE_CREATED_AT_KEY = "created_at";
 
     /** Key name under /list_items/<listid>/<itemid> which specifies if the item has been marked completed or not. **/
-    final String IS_COMPLETED_KEY_NAME = "isCompleted";
+    private final String IS_COMPLETED_KEY_NAME = "isCompleted";
 
-    private PineTaskApplication mPineTaskApplication;
     private FirebaseDatabase mDb;
 
     @Inject
-    public DbHelper(PineTaskApplication appContext, FirebaseDatabase db)
+    public DbHelper(FirebaseDatabase db)
     {
         logMsg("Creating DbHelper");
-        mPineTaskApplication = appContext;
         mDb = db;
     }
 
@@ -760,21 +757,22 @@ public class DbHelper
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot)
                     {
-                        T obj = getValueFromSnapshot(dataSnapshot, cl);
-                        logMsg("getItem(%s) onDataChange: %s", ref, obj);
-                        if (obj != null)
+                        if (! emitter.isDisposed())
                         {
-                            emitter.onSuccess((T) obj);
-                        }
-                        else if (defaultValue != null)
-                        {
-                            // Return value was null but default value was provided: return defaultValue
-                            emitter.onSuccess(defaultValue);
-                        }
-                        else
-                        {
-                            // Return value was null, and no default value -- error -- rxJava2 does not allow emitting null values.
-                            emitter.onError(new DbException(ref, operationDescription, "Value is null"));
+                            T obj = getValueFromSnapshot(dataSnapshot, cl);
+                            logMsg("getItem(%s) onDataChange: %s", ref, obj);
+                            if (obj != null)
+                            {
+                                emitter.onSuccess((T) obj);
+                            } else if (defaultValue != null)
+                            {
+                                // Return value was null but default value was provided: return defaultValue
+                                emitter.onSuccess(defaultValue);
+                            } else
+                            {
+                                // Return value was null, and no default value -- error -- rxJava2 does not allow emitting null values.
+                                emitter.onError(new DbException(ref, operationDescription, "Value is null"));
+                            }
                         }
                     }
 
@@ -782,7 +780,7 @@ public class DbHelper
                     public void onCancelled(DatabaseError databaseError)
                     {
                         logMsg("getItem(%s) onCancelled", ref);
-                        emitter.onError(new DbOperationCanceledException(ref, databaseError, operationDescription));
+                        if (!emitter.isDisposed()) emitter.onError(new DbOperationCanceledException(ref, databaseError, operationDescription));
                     }
                 });
             }
@@ -970,7 +968,7 @@ public class DbHelper
         return verifyInviteExists(inviteInfo)
                 .andThen(addUserAsCollaboratorToList(inviteInfo, userId))
                 .andThen(deleteInvite(inviteInfo))
-                .andThen(addListToUserLists(inviteInfo.ListId, userId, DbHelper.WRITE))
+                .andThen(addListToUserLists(inviteInfo.ListId, userId, WRITE))
                 .andThen(getPineTaskList(inviteInfo.ListId));
     }
 

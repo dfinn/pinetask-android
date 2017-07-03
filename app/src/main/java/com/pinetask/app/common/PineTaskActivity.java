@@ -5,10 +5,13 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 
 import com.pinetask.app.db.DbCallback;
 import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.hints.HintManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,6 +172,18 @@ public abstract class PineTaskActivity extends AppCompatActivity
             ErrorDialogFragment dialog = ErrorDialogFragment.newInstance(text, finishActivity);
             getSupportFragmentManager().beginTransaction().add(dialog, ErrorDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
         }
+    }
+
+    public void showSoftKeyboard(EditText editText)
+    {
+        editText.setOnFocusChangeListener((View v, boolean hasFocus) ->
+        {
+            if (hasFocus)
+            {
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                editText.selectAll();
+            }
+        });
     }
 
     public void hideSoftKeyboard()

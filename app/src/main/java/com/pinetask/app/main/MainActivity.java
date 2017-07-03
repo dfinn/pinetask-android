@@ -33,11 +33,12 @@ import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatFragment;
 import com.pinetask.app.chat.ChatMessage;
-import com.pinetask.app.common.HintHelper;
+import com.pinetask.app.hints.HintManager;
 import com.pinetask.app.common.PineTaskActivity;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
 import com.pinetask.app.common.PineTaskList;
+import com.pinetask.app.hints.HintType;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
 import com.pinetask.app.list_items.ListItemsFragment;
 import com.pinetask.app.list_members.MembersFragment;
@@ -58,7 +59,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
 {
     GoogleApiClient mGoogleApiClient;
     ActionBarDrawerToggle mDrawerToggle;
-    private boolean mIsActivityActive;
     ChatFragment mChatFragment;
     int mNotificationHeightPx;
     Runnable mHideNotificationRunnable;
@@ -104,6 +104,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     @Inject @Named("user_id") String mUserId;
     @Inject MainActivityPresenter mPresenter;
     @Inject ActiveListManager mActiveListManager;
+    @Inject protected HintManager mHintManager;
 
     /** Launch the main activity, and create the Dagger components in the UserScope. **/
     public static Intent buildLaunchIntent(Context context, String userId, String chatMessageId)
@@ -224,19 +225,11 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     protected void onPause()
     {
         super.onPause();
-        mIsActivityActive = false;
 
         if(mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START))
         {
             mDrawerLayout.closeDrawer(Gravity.LEFT);
         }
-    }
-
-    @Override
-    protected void onResume()
-    {
-        super.onResume();
-        mIsActivityActive = true;
     }
 
     @Override
@@ -657,23 +650,34 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         }
     }
 
-    public View getToolbarActionMenuView()
+    public View getToolbarChildOfType(Class cl)
     {
         int size = mToolBar.getChildCount();
         for (int i = 0; i < size; i++)
         {
             View child = mToolBar.getChildAt(i);
-            if (child instanceof ActionMenuView) return child;
+            if (cl.isAssignableFrom(child.getClass())) return child;
         }
         return null;
     }
 
     public void showNewUserHints()
     {
-        View toolbarActionMenuView = getToolbarActionMenuView();
-        if (toolbarActionMenuView != null)
+        View toolbarActionMenuView = getToolbarChildOfType(ActionMenuView.class);
+        View listSelectorView = getToolbarChildOfType(TextView.class);
+        View toolbarSideMenuView = getToolbarChildOfType(ImageButton.class);
+        if (toolbarActionMenuView != null && toolbarSideMenuView != null)
         {
-            HintHelper.showTip(this, R.string.list_options_hint, toolbarActionMenuView, toolbarActionMenuView.getRootView(), true);
+            mHintManager.showTip(this, R.string.list_options_hint, toolbarActionMenuView, toolbarActionMenuView.getRootView(), true, () ->
+            {
+                mHintManager.showTip(this, R.string.list_selector_hint, listSelectorView, listSelectorView.getRootView(), false, () ->
+                {
+                    mHintManager.showTip(this, R.string.side_menu_hint, toolbarSideMenuView, toolbarSideMenuView.getRootView(), true, () ->
+                    {
+                        mHintManager.setHintDisplayed(HintType.FIRST_LIST_ADDED);
+                    });
+                });
+            });
         }
     }
 }

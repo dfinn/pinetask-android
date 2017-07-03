@@ -4,7 +4,10 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
+import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 
 import com.pinetask.app.db.DbHelper;
 
@@ -44,6 +47,18 @@ public class PineTaskDialogFragment extends DialogFragment
     {
         PineTaskActivity activity = (PineTaskActivity) getActivity();
         return activity.activityObserver(operationDescription, null);
+    }
+
+    public void showSoftKeyboard(EditText editText)
+    {
+        editText.setOnFocusChangeListener((View v, boolean hasFocus) ->
+        {
+            if (hasFocus)
+            {
+                getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                editText.selectAll();
+            }
+        });
     }
 
     public void hideSoftKeyboard()

@@ -11,17 +11,16 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.pinetask.app.R;
-import com.pinetask.app.common.HintHelper;
+import com.pinetask.app.hints.HintManager;
 import com.pinetask.app.common.Logger;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.hints.HintType;
 
 import java.util.List;
 
 import javax.inject.Inject;
-
-import static com.pinetask.app.common.PrefsManager.FIRST_ITEM_ADDED_HINT_SHOWN_KEY;
 
 public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemViewHolder>
 {
@@ -30,7 +29,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
     @Inject DbHelper mDbHelper;
     @Inject ListItemsPresenter mListItemsPresenter;
     @Inject PrefsManager mPrefsManager;
-    private boolean mHintShown;
+    @Inject HintManager mHintManager;
 
     // IDs for pop-up menu items
     private final int MENU_ITEM_DELETE = 0;
@@ -43,7 +42,6 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         mListItemsFragment = listItemsFragment;
         mItems = items;
         PineTaskApplication.getInstance().getUserComponent().inject(this);
-        // mHintShown = mPrefsManager.isTipShown(FIRST_ITEM_ADDED_HINT_SHOWN_KEY);
     }
 
     public static class ItemViewHolder extends RecyclerView.ViewHolder
@@ -124,25 +122,28 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         }
 
         // Show pop-up hints if this is the first list item that has been added.
-        if (!mHintShown) showFirstListItemHints(holder);
+        if (!mHintManager.isHintDisplayed(HintType.FIRST_LIST_ITEM_ADDED) && mHintManager.isHintDisplayed(HintType.FIRST_LIST_ADDED)) showFirstListItemHints(holder);
     }
 
     /** If this is the first time an item has been added, show tips popup. **/
     private void showFirstListItemHints(ItemViewHolder holder)
     {
+        if ( (holder.mClaimImageButton.getVisibility() != View.VISIBLE) || (holder.mCompletedImageButton.getVisibility() != View.VISIBLE) ) return;
+
         holder.mMainLayout.postDelayed(() ->
         {
             View rootView = holder.mMainLayout.getRootView();
-            HintHelper.showTip(mListItemsFragment.getActivity(), R.string.item_hand_icon_hint, holder.mClaimImageButton, rootView, true, () ->
+            mHintManager.showTip(mListItemsFragment.getActivity(), R.string.item_hand_icon_hint, holder.mClaimImageButton, rootView, true, () ->
             {
-                HintHelper.showTip(mListItemsFragment.getActivity(), R.string.item_checkbox_icon_hint, holder.mCompletedImageButton, rootView, true, () ->
+                mHintManager.showTip(mListItemsFragment.getActivity(), R.string.item_checkbox_icon_hint, holder.mCompletedImageButton, rootView, true, () ->
                 {
-                    HintHelper.showTip(mListItemsFragment.getActivity(), R.string.item_other_options_hint, holder.mItemDescriptionTextView, rootView, false);
+                    mHintManager.showTip(mListItemsFragment.getActivity(), R.string.item_other_options_hint, holder.mItemDescriptionTextView, rootView, false, () ->
+                    {
+                        mHintManager.setHintDisplayed(HintType.FIRST_LIST_ITEM_ADDED);
+                    });
                 });
             });
         }, 300);
-        mHintShown = true;
-        //mPrefsManager.setTipShown(FIRST_ITEM_ADDED_HINT_SHOWN_KEY);
     }
 
     /** Initiate async query to find out the name of the user with the specified username.  When query returns, populates the "claimed by" textview in the holder provided. **/

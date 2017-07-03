@@ -121,13 +121,6 @@ public class TestHelper
         onView(withText("SKIP")).perform(click());
     }
 
-    /** Verifies the "Welcome" message shows on the first tutorial slide, clicks the right arrow 7 times to view all slides, then clicks Done. **/
-    public void viewAllTutorialSlides()
-    {
-        for (int i=0; i<8; i++) onView(withId(R.id.next)).perform(click());
-        onView(withId(R.id.done)).perform(click());
-    }
-
     /** Perform screen rotation to the right, then back to normal. **/
     public void rotateScreenRightAndBack() throws RemoteException
     {

@@ -62,7 +62,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         mView = view;
         if (mListItemsRepository != null)
         {
-            mView.showListItemsLayouts();
+            showListItemLayouts();
             mView.clearListItems();
             for (PineTaskItemExt item : mListItemsRepository.getItems()) addItemToViewAndNotifyIfNewItem(item);
         }
@@ -79,6 +79,15 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     {
         if (mActiveListSubscription != null) mActiveListSubscription.dispose();
         if (mListItemsRepository != null) mListItemsRepository.shutdown();
+    }
+
+    private void showListItemLayouts()
+    {
+        if (mView != null)
+        {
+            mView.showListItemsLayouts();
+
+        }
     }
 
     private void loadItemsForList(PineTaskList list)

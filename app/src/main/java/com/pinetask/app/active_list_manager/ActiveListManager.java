@@ -9,6 +9,7 @@ import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.app.common.LoggingBase;
+import com.pinetask.app.hints.HintManager;
 
 import javax.inject.Named;
 
@@ -26,16 +27,18 @@ public class ActiveListManager extends LoggingBase
     DbHelper mDbHelper;
     String mUserId;
     Disposable mListsAddedOrDeletedSubscription;
+    private HintManager mHintManager;
 
     /** Use a BehaviorSubject so that subscribers will get the most recent event, plus all subsequent events. **/
     BehaviorSubject<ActiveListEvent> mSubject;
 
-    public ActiveListManager(PrefsManager prefsManager, DbHelper dbHelper, @Named("user_id") String userId)
+    public ActiveListManager(PrefsManager prefsManager, DbHelper dbHelper, @Named("user_id") String userId, HintManager hintManager)
     {
         mPrefsManager = prefsManager;
         mDbHelper = dbHelper;
         mUserId = userId;
         mSubject = BehaviorSubject.create();
+        mHintManager = hintManager;
         determineListToUse();
     }
 
@@ -98,6 +101,15 @@ public class ActiveListManager extends LoggingBase
     public void setActiveList(PineTaskList list)
     {
         logMsg("onListSelected: setting current list to %s (%s)", list.getKey(), list.getName());
+
+        // If this is the first app launch, and the user has at least one existing list, assume it's a returning user, so they won't want to see any of the startup hints again.
+        if (mPrefsManager.getIsFirstLaunch())
+        {
+            logMsg("onListSelected: first app launch, assuming existing user and setting all 'hint shown' flags");
+            mHintManager.setAllHintsDisplayed();
+            mPrefsManager.setIsFirstLaunch(false);
+        }
+
         mListLoadInProgress = false;
         mCurrentList = list;
         mPrefsManager.setCurrentListId(list.getKey());

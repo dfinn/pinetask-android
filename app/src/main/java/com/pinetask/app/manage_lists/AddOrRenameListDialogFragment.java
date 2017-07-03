@@ -104,9 +104,7 @@ public class AddOrRenameListDialogFragment extends PineTaskDialogFragment
         }
 
         // Show soft keyboard when dialog opens.
-        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT,0);
-        mListNameEditText.requestFocus();
+        showSoftKeyboard(mListNameEditText);
     }
 
     @OnClick(R.id.cancelButton)

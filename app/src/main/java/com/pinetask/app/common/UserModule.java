@@ -7,6 +7,7 @@ import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatPresenter;
 import com.pinetask.app.chat.ChatPresenterImpl;
 import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.hints.HintManager;
 import com.pinetask.app.list_items.ListItemsPresenter;
 import com.pinetask.app.list_items.ListItemsPresenterImpl;
 import com.pinetask.app.list_members.MembersPresenter;
@@ -45,10 +46,10 @@ public class UserModule extends LoggingBase
 
     @Provides
     @UserScope
-    public ActiveListManager providesActiveListManager(PrefsManager prefsManager, DbHelper dbHelper, @Named("user_id") String userId)
+    public ActiveListManager providesActiveListManager(PrefsManager prefsManager, DbHelper dbHelper, @Named("user_id") String userId, HintManager hintManager)
     {
         logMsg("creating ActiveListManager");
-        return new ActiveListManager(prefsManager, dbHelper, userId);
+        return new ActiveListManager(prefsManager, dbHelper, userId, hintManager);
     }
 
     @Provides

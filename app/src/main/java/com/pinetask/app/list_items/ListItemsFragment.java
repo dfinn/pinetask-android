@@ -9,12 +9,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.github.florent37.viewtooltip.ViewTooltip;
 import com.pinetask.app.R;
-import com.pinetask.app.common.HintHelper;
+import com.pinetask.app.hints.HintManager;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskFragment;
 import com.pinetask.app.common.PrefsManager;
+import com.pinetask.app.hints.HintType;
 import com.pinetask.app.main.MainActivity;
 
 import java.util.ArrayList;
@@ -25,8 +25,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-import static com.pinetask.app.common.PrefsManager.FIRST_ITEM_ADDED_HINT_SHOWN_KEY;
-
 /** Fragment for the "list items" tab: shows a list of items in the currently selected list. **/
 public class ListItemsFragment extends PineTaskFragment implements ListItemsView
 {
@@ -36,6 +34,7 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     @BindView(R.id.addItemButton) FloatingActionButton mAddItemButton;
 
     @Inject ListItemsPresenter mPresenter;
+    @Inject protected HintManager mHintManager;
 
     public static ListItemsFragment newInstance()
     {
@@ -126,14 +125,15 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     {
         mItemsRecyclerView.setVisibility(View.VISIBLE);
         mAddItemButton.setVisibility(View.VISIBLE);
-        if (! mPrefsManager.isTipShown(PrefsManager.FIRST_LIST_ADDED_HINT_SHOWN_KEY))
+
+        // If the user hasn't viewed the "first list added" hint, show it now.
+        if (! mHintManager.isHintDisplayed(HintType.FIRST_LIST_ADDED))
         {
             MainActivity mainActivity = (MainActivity) getActivity();
             mAddItemButton.postDelayed(() ->
             {
-                HintHelper.showTip(getActivity(), R.string.add_item_hint, mAddItemButton, mAddItemButton.getRootView(), true, mainActivity::showNewUserHints);
+                mHintManager.showTip(getActivity(), R.string.add_item_hint, mAddItemButton, mAddItemButton.getRootView(), true, mainActivity::showNewUserHints);
             }, 300);
-            //mPrefsManager.setTipShown(PrefsManager.FIRST_LIST_ADDED_HINT_SHOWN_KEY);
         }
     }
 

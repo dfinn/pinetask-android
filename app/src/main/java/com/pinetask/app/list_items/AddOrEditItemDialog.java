@@ -86,14 +86,7 @@ public class AddOrEditItemDialog extends PineTaskDialogFragment
         });
 
         // Show soft keyboard when dialog opens.
-        descriptionEditText.setOnFocusChangeListener((View v, boolean hasFocus) ->
-        {
-            if (hasFocus)
-            {
-                getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-                descriptionEditText.selectAll();
-            }
-        });
+        showSoftKeyboard(descriptionEditText);
 
         return view;
     }
