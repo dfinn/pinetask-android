@@ -78,8 +78,8 @@ public class PineTaskApplication extends MultiDexApplication
         // Store reference to app instance
         mApplicationInstance = this;
 
-        // Initialize Crashlytics
-        Fabric.with(this, new Crashlytics());
+        // Initialize Crashlytics if this is a release build
+        if (! BuildConfig.DEBUG) Fabric.with(this, new Crashlytics());
 
         // Instantiate Dagger2 dependency injection component, and inject dependencies.
         logMsg("Creating AppModule");

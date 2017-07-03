@@ -85,12 +85,6 @@ dependencies {
     compile 'com.jakewharton:butterknife:8.4.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'
 
-    // AppIntro library for first-launch tutorial
-    compile 'com.github.paolorotolo:appintro:4.1.0'
-
-    // Glide is used for playing animated GIFs in the tutorial.
-    compile 'com.github.bumptech.glide:glide:3.7.0'
-
     // RxJava 2.0
     compile 'io.reactivex.rxjava2:rxjava:2.0.6'
     compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
@@ -109,6 +103,12 @@ dependencies {
     compile('com.crashlytics.sdk.android:crashlytics:2.6.8@aar') {
         transitive = true;
     }
+
+    // For displaying help tips to new users
+    compile 'com.joanfuentes:HintCaseAssets:1.0.4'
+    compile 'com.github.florent37:viewtooltip:1.0.6'
+    compile 'com.github.vihtarb:tooltip:0.1.9'
+
 }
 
 apply plugin: 'com.google.gms.google-services'

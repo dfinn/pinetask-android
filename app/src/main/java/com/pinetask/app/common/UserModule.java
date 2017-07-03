@@ -2,6 +2,7 @@ package com.pinetask.app.common;
 
 import com.crashlytics.android.Crashlytics;
 import com.google.firebase.database.FirebaseDatabase;
+import com.pinetask.app.BuildConfig;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatPresenter;
 import com.pinetask.app.chat.ChatPresenterImpl;
@@ -30,7 +31,7 @@ public class UserModule extends LoggingBase
         mUserId = userId;
 
         // Set user information for Crashlytics
-        Crashlytics.setUserIdentifier(mUserId);
+        if (! BuildConfig.DEBUG) Crashlytics.setUserIdentifier(mUserId);
     }
 
     /** Provides the ID of the currently logged in user. **/

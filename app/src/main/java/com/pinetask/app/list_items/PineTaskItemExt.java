@@ -1,5 +1,7 @@
 package com.pinetask.app.list_items;
 
+import android.text.TextUtils;
+
 import com.google.firebase.database.Exclude;
 import com.pinetask.app.db.UsesKeyIdentifier;
 
@@ -51,6 +53,11 @@ public class PineTaskItemExt extends PineTaskItem implements Serializable, UsesK
         {
             return false;
         }
+    }
+
+    public boolean exactlyEqual(PineTaskItemExt other)
+    {
+        return TextUtils.equals(getId(), other.getId()) && TextUtils.equals(getListId(), other.getListId()) && (getIsNewItem() == other.getIsNewItem()) && super.exactlyEqual(other);
     }
 
 }

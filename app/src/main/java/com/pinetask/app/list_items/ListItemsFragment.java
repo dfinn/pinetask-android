@@ -8,11 +8,13 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
+import com.github.florent37.viewtooltip.ViewTooltip;
 import com.pinetask.app.R;
+import com.pinetask.app.common.HintHelper;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskFragment;
+import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.main.MainActivity;
 
 import java.util.ArrayList;
@@ -22,6 +24,8 @@ import javax.inject.Inject;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+
+import static com.pinetask.app.common.PrefsManager.FIRST_ITEM_ADDED_HINT_SHOWN_KEY;
 
 /** Fragment for the "list items" tab: shows a list of items in the currently selected list. **/
 public class ListItemsFragment extends PineTaskFragment implements ListItemsView
@@ -122,6 +126,15 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     {
         mItemsRecyclerView.setVisibility(View.VISIBLE);
         mAddItemButton.setVisibility(View.VISIBLE);
+        if (! mPrefsManager.isTipShown(PrefsManager.FIRST_LIST_ADDED_HINT_SHOWN_KEY))
+        {
+            MainActivity mainActivity = (MainActivity) getActivity();
+            mAddItemButton.postDelayed(() ->
+            {
+                HintHelper.showTip(getActivity(), R.string.add_item_hint, mAddItemButton, mAddItemButton.getRootView(), true, mainActivity::showNewUserHints);
+            }, 300);
+            //mPrefsManager.setTipShown(PrefsManager.FIRST_LIST_ADDED_HINT_SHOWN_KEY);
+        }
     }
 
     @Override

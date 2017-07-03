@@ -22,18 +22,19 @@ public class PrefsManager
         mSharedPreferences = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
     }
 
-    /** Indicates if startup tutorial has been completed. **/
-    private static String TUTORIAL_COMPLETED_KEY = "TutorialCompleted";
-    public boolean getTutorialCompleted() { return mSharedPreferences.getBoolean(TUTORIAL_COMPLETED_KEY, false); }
-    public void setTutorialCompleted(boolean completed) { mSharedPreferences.edit().putBoolean(TUTORIAL_COMPLETED_KEY, completed).commit(); }
-
     /** ID of the currently displayed list (string). **/
-    private static String CURRENT_LIST_ID_KEY = "CurrentListId";
+    private final String CURRENT_LIST_ID_KEY = "CurrentListId";
     public String getCurrentListId() { return mSharedPreferences.getString(CURRENT_LIST_ID_KEY, null); }
-    public void setCurrentListId(String listId) { mSharedPreferences.edit().putString(CURRENT_LIST_ID_KEY, listId).commit(); }
+    public void setCurrentListId(String listId) { mSharedPreferences.edit().putString(CURRENT_LIST_ID_KEY, listId).apply(); }
 
     /** Boolean value indicating if this is the first app launch. **/
-    private static String IS_FIRST_LAUNCH_KEY = "IsFirstLaunch";
+    private final String IS_FIRST_LAUNCH_KEY = "IsFirstLaunch";
     public boolean getIsFirstLaunch() { return mSharedPreferences.getBoolean(IS_FIRST_LAUNCH_KEY, true); }
-    public void setIsFirstLaunch(boolean isFirstLaunch) { mSharedPreferences.edit().putBoolean(IS_FIRST_LAUNCH_KEY, isFirstLaunch).commit(); }
+    public void setIsFirstLaunch(boolean isFirstLaunch) { mSharedPreferences.edit().putBoolean(IS_FIRST_LAUNCH_KEY, isFirstLaunch).apply(); }
+
+    /** Boolean values indicating whether the first launch tooltips have been shown for various app features. **/
+    public static String FIRST_LIST_ADDED_HINT_SHOWN_KEY = "FirstListAddedHintShown";
+    public static String FIRST_ITEM_ADDED_HINT_SHOWN_KEY = "FirstListItemAddedHintShown";
+    public boolean isTipShown(String key) { return mSharedPreferences.getBoolean(key, false); }
+    public void setTipShown(String key) { mSharedPreferences.edit().putBoolean(key, true).apply(); }
 }

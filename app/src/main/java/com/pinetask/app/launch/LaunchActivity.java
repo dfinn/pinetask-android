@@ -8,13 +8,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.pinetask.app.main.MainActivity;
 import com.pinetask.app.R;
 import com.pinetask.app.common.PineTaskActivity;
-import com.pinetask.app.db.DbHelper;
 
 public class LaunchActivity extends PineTaskActivity
 {
-    /** Request code for luanching tutorial activity. **/
-    public static int TUTORIAL_REQUEST_CODE = 0;
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -32,14 +28,7 @@ public class LaunchActivity extends PineTaskActivity
     {
         FirebaseAuth auth = FirebaseAuth.getInstance();
 
-        if (! mPrefsManager.getTutorialCompleted())
-        {
-            // User hasn't completed the startup tutorial yet: launch tutorial activity.
-            logMsg("Starting first-launch tutorial");
-            Intent tutorialIntent = new Intent(this, TutorialActivity.class);
-            startActivityForResult(tutorialIntent, TUTORIAL_REQUEST_CODE);
-        }
-        else if (auth.getCurrentUser() == null)
+        if (auth.getCurrentUser() == null)
         {
             // First launch: start activity prompting to setup an account or choose anonymous login.
             logMsg("onCreate: FirebaseAuth reports user is not signed in. Starting sign up / anonymous chooser activity.");
@@ -72,16 +61,5 @@ public class LaunchActivity extends PineTaskActivity
         Intent intent = new Intent(this, SignupOrAnonymousLoginActivity.class);
         startActivity(intent);
         finish();
-    }
-
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == TUTORIAL_REQUEST_CODE)
-        {
-            logMsg("Launch tutorial has finished, setting 'tutorial completed' flag in shared prefs");
-            mPrefsManager.setTutorialCompleted(true);
-            launchNextStep();
-        }
     }
 }

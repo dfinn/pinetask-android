@@ -142,23 +142,6 @@
             android:layout_height="1dp" />
 
         <TextView
-            android:id="@+id/helpTextView"
-            android:text="@string/help"
-            android:textColor="@color/black"
-            android:drawableLeft="@drawable/ic_help_outline_black_24dp"
-            android:drawablePadding="10dp"
-            android:background="@drawable/highlight_selector"
-            android:textSize="20dp"
-            android:padding="20dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <View
-            android:background="@color/black_30percent"
-            android:layout_width="match_parent"
-            android:layout_height="1dp" />
-
-        <TextView
             android:id="@+id/aboutTextView"
             android:text="@string/about"
             android:textColor="@color/black"
@@ -174,8 +157,6 @@
             android:background="@color/black_30percent"
             android:layout_width="match_parent"
             android:layout_height="1dp" />
-
-
 
     </LinearLayout>
 

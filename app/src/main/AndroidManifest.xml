@@ -44,9 +44,6 @@
         <activity android:name="com.pinetask.app.manage_lists.ManageListsActivity">
         </activity>
 
-        <activity android:name="com.pinetask.app.launch.TutorialActivity">
-        </activity>
-
         <activity android:name="com.pinetask.app.main.AboutActivity">
         </activity>
 

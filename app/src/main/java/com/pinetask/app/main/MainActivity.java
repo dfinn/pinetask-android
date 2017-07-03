@@ -14,18 +14,17 @@ import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.ActionMenuView;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.ScaleAnimation;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.appinvite.AppInvite;
 import com.google.android.gms.common.ConnectionResult;
@@ -34,12 +33,12 @@ import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatFragment;
 import com.pinetask.app.chat.ChatMessage;
+import com.pinetask.app.common.HintHelper;
 import com.pinetask.app.common.PineTaskActivity;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskInviteAlreadyUsedException;
 import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
-import com.pinetask.app.launch.TutorialActivity;
 import com.pinetask.app.list_items.ListItemsFragment;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.manage_lists.AddOrRenameListDialogFragment;
@@ -365,12 +364,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         }
     }
 
-    @OnClick(R.id.helpTextView)
-    public void helpOnClick(View view)
-    {
-        TutorialActivity.launch(this);
-    }
-
     // User clicked "Manage Lists" from navigation drawer: Go to 'manage lists' activity.  It can return (via onActivityResult) a new list that was selected by the user.
     @OnClick(R.id.manageListsTextView)
     public void manageListsTextViewOnClick(View view)
@@ -530,7 +523,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         if (mViewPager.getCurrentItem() != CHAT_INDEX)
         {
             // Show pop-up message and play sound
-            Toast.makeText(this, chatMessage.getSenderName() + ": " + chatMessage.getMessage(), Toast.LENGTH_SHORT).show();
+            showNotificationText(chatMessage.getSenderName() + ": " + chatMessage.getMessage(), 1000);
             mNumUnreadChatMessages++;
             updateUnreadChatMessageCount();
         }
@@ -661,6 +654,26 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         if (mNotificationTextView.getLayoutParams().height != 0)
         {
             resizeNotification(mNotificationTextView.getLayoutParams().height, 0);
+        }
+    }
+
+    public View getToolbarActionMenuView()
+    {
+        int size = mToolBar.getChildCount();
+        for (int i = 0; i < size; i++)
+        {
+            View child = mToolBar.getChildAt(i);
+            if (child instanceof ActionMenuView) return child;
+        }
+        return null;
+    }
+
+    public void showNewUserHints()
+    {
+        View toolbarActionMenuView = getToolbarActionMenuView();
+        if (toolbarActionMenuView != null)
+        {
+            HintHelper.showTip(this, R.string.list_options_hint, toolbarActionMenuView, toolbarActionMenuView.getRootView(), true);
         }
     }
 }

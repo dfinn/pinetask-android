@@ -177,4 +177,12 @@
         \n\n------------------------------------------
     </string>
 
+
+    <!-- Pop up tips that show to new users -->
+    <string name="add_item_hint">Click here to add items</string>
+    <string name="item_hand_icon_hint">Click the hand icon to claim the item (\"I\'ll get this one!\")</string>
+    <string name="item_checkbox_icon_hint">Click the checkbox to mark the item as completed</string>
+    <string name="item_other_options_hint">Click the description for additional options:\nEdit, Delete, Unclaim, Uncomplete</string>
+    <string name="list_options_hint">List options: purge completed items, export list</string>
+
 </resources>

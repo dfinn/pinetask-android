@@ -1,5 +1,7 @@
 package com.pinetask.app.list_items;
 
+import android.text.TextUtils;
+
 import com.google.firebase.database.Exclude;
 import com.google.firebase.database.ServerValue;
 
@@ -56,5 +58,10 @@ public class PineTaskItem implements Serializable
     public String toString()
     {
         return String.format("[%s] %s", mIsCompleted ? "X" : " ", mItemDescription);
+    }
+
+    public boolean exactlyEqual(PineTaskItemExt other)
+    {
+        return TextUtils.equals(getItemDescription(), other.getItemDescription()) && TextUtils.equals(getClaimedBy(), other.getClaimedBy()) && (getIsCompleted() == other.getIsCompleted());
     }
 }
