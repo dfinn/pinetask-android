@@ -41,6 +41,7 @@ import com.pinetask.app.common.PineTaskList;
 import com.pinetask.app.hints.HintType;
 import com.pinetask.app.launch.StartupMessageDialogFragment;
 import com.pinetask.app.list_items.ListItemsFragment;
+import com.pinetask.app.list_items.PineTaskItemExt;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.manage_lists.AddOrRenameListDialogFragment;
 import com.pinetask.app.manage_lists.ManageListsActivity;
@@ -351,6 +352,9 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 {
                     showError(getString(R.string.error_no_current_list));
                 }
+                return true;
+            case R.id.startShoppingTrip:
+                startShoppingTrip();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -679,6 +683,12 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 });
             });
         }
+    }
+
+    public void showCostInputDialog(PineTaskItemExt item)
+    {
+        CostInputDialogFragment dialog = CostInputDialogFragment.Factory.newInstance(item);
+        safeShowDialog(dialog);
     }
 }
 

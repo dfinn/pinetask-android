@@ -114,13 +114,6 @@ public class TestHelper
         onView(withId(R.id.nextButton)).perform(click());
     }
 
-    /** Verifies the "Welcome" message shows on the first tutorial slide, and presses "Skip" **/
-    public void skipIntroTutorial()
-    {
-        onView(withText(R.string.welcome_title)).check(matches(isDisplayed()));
-        onView(withText("SKIP")).perform(click());
-    }
-
     /** Perform screen rotation to the right, then back to normal. **/
     public void rotateScreenRightAndBack() throws RemoteException
     {

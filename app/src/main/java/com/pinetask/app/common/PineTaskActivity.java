@@ -3,6 +3,7 @@ package com.pinetask.app.common;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.WindowManager;
@@ -170,7 +171,7 @@ public abstract class PineTaskActivity extends AppCompatActivity
             String text = String.format(message, args);
             logMsg("Showing user message: %s", text.replace("%", "%%"));
             ErrorDialogFragment dialog = ErrorDialogFragment.newInstance(text, finishActivity);
-            getSupportFragmentManager().beginTransaction().add(dialog, ErrorDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
+            safeShowDialog(dialog);
         }
     }
 
@@ -193,6 +194,11 @@ public abstract class PineTaskActivity extends AppCompatActivity
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
         }
+    }
+
+    public void safeShowDialog(DialogFragment dialog)
+    {
+        getSupportFragmentManager().beginTransaction().add(dialog, dialog.getClass().getSimpleName()).commitAllowingStateLoss();
     }
 
 }

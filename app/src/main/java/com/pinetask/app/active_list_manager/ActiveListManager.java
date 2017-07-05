@@ -28,6 +28,7 @@ public class ActiveListManager extends LoggingBase
     String mUserId;
     Disposable mListsAddedOrDeletedSubscription;
     private HintManager mHintManager;
+    private Disposable mShoppingTripActiveSubscription;
 
     /** Use a BehaviorSubject so that subscribers will get the most recent event, plus all subsequent events. **/
     BehaviorSubject<ActiveListEvent> mSubject;
@@ -174,6 +175,22 @@ public class ActiveListManager extends LoggingBase
         {
             if (listIds != null && listIds.size() > 0) return Maybe.just(listIds.get(0));
             return Maybe.empty();
+        });
+    }
+
+    /** Set the "shopping trip active" flag in the database for the list specified.  Then, publish an event to let listeners know that shopping mode is active. **/
+    public void startShoppingTripForList(PineTaskList list)
+    {
+        logMsg("startShoppingTripForList: setting 'shopping trip active' flag for list %s (%s)", list.getId(), list.getName());
+        mDbHelper.setShoppingTripForActiveList(list.getId(), true);
+        mShoppingTripActiveSubscription = mDbHelper.subscribeToShoppingTripActiveEventsForList(list.getId()).subscribe(shoppingTripActive ->
+        {
+            logMsg("subscribeToShoppingTripActiveEventsForList: shoppingTripActive=%b", shoppingTripActive);
+            mSubject.onNext(new ShoppingTripStartedEvent());
+        }, ex ->
+        {
+            logError("Error in subscription for shopping trip active events for list %s", list.getId());
+            logException(ex);
         });
     }
 

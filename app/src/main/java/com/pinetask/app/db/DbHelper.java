@@ -100,6 +100,9 @@ public class DbHelper
     /** Key name under /list_info/<listid>/ where the user ID of the list owner is stored. **/
     private final String OWNER_ID_KEY = "ownerId";
 
+    /** Key name under /list_info/$listId where boolean flag is stored indicating a shopping trip is active for the list. **/
+    private final String SHOPPING_TRIP_ACTIVE_KEY = "shopping_trip_active";
+
     /** Key name under /list_invites/<listid>/<inviteid>/ that stores the timestamp when the invite was created. **/
     private final String INVITE_CREATED_AT_KEY = "created_at";
 
@@ -163,6 +166,12 @@ public class DbHelper
         return getListInfoReference(listId).child(LIST_NAME_KEY);
     }
 
+    /** Returns a reference to /list_info/$listId/shopping_trip_active **/
+    private DatabaseReference getShoppingTripActiveReference(String listId)
+    {
+        return getListInfoReference(listId).child(SHOPPING_TRIP_ACTIVE_KEY);
+    }
+
     /** Returns a reference to /list_collaborators/$listId **/
     private DatabaseReference getListCollaboratorsReference(String listId)
     {
@@ -185,12 +194,6 @@ public class DbHelper
     private DatabaseReference getChatMessagesRef(String listId)
     {
         return mDb.getReference(CHAT_MESSAGES_NODE_NAME).child(listId);
-    }
-
-    private void deleteListItem(DatabaseReference listItemsRef, final String itemId)
-    {
-        listItemsRef.child(itemId).removeValue((DatabaseError databaseError, DatabaseReference databaseReference) ->
-                logDbOperationResult("Deleting list item " + itemId, databaseError, databaseReference));
     }
 
     /** Returns a Completable that will delete all list collaborators for the specified list, followed by all other related list nodes:
@@ -801,6 +804,7 @@ public class DbHelper
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot)
                 {
+                    if (emitter.isDisposed()) return;
                     T obj = getValueFromSnapshot(dataSnapshot, cl);
                     if (obj==null)
                     {
@@ -819,6 +823,7 @@ public class DbHelper
                 @Override
                 public void onCancelled(DatabaseError databaseError)
                 {
+                    if (emitter.isDisposed()) return;
                     // Workaround issue where onCancelled will get called when addValueEventListener was created while offline (ex: create a list offline; ListLoader calls getPineTaskList()).
                     // Check if onDataChange() has previously been called successfully, and if so, just log the error and call onComplete.
                     if (dataReturnedWrapper.Item)
@@ -981,7 +986,7 @@ public class DbHelper
         return getKeysAt(query, "get list items to purge").flatMapCompletable(itemId -> removeNode(listItemsRef.child(itemId)));
     }
 
-    public static <T> T getValueFromSnapshot(DataSnapshot dataSnapshot, Class<T> cl)
+    private <T> T getValueFromSnapshot(DataSnapshot dataSnapshot, Class<T> cl)
     {
         T value = (T) dataSnapshot.getValue(cl);
         if (value instanceof UsesKeyIdentifier)
@@ -991,5 +996,17 @@ public class DbHelper
             keyIdentifier.setId(dataSnapshot.getKey());
         }
         return value;
+    }
+
+    public void setShoppingTripForActiveList(String listId, boolean isActive)
+    {
+        DatabaseReference dbRef = getShoppingTripActiveReference(listId);
+        setValue(dbRef, isActive, "set 'shopping trip active' flag");
+    }
+
+    public Observable<Boolean> subscribeToShoppingTripActiveEventsForList(String listId)
+    {
+        DatabaseReference dbRef = getShoppingTripActiveReference(listId);
+        return subscribeValueEvents(Boolean.class, dbRef, "subscribe to 'shopping trip active' events");
     }
 }

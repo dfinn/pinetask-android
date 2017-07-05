@@ -11,4 +11,6 @@ public interface MainActivityPresenter
     void onListSelected(PineTaskList list);
     void purgeCompletedItems(String listId);
     void onPurgeCompletedItemsSelected();
+    void startShoppingTrip();
+    void stopShoppingTrip();
 }
