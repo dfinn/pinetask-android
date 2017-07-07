@@ -269,7 +269,7 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         if (currentList != null)
         {
             logMsg("startShoppingTrip: start shopping trip for list %s", currentList.getId());
-            mActiveListManager.startShoppingTripForList(currentList);
+            mDbHelper.setShoppingTripForActiveList(currentList.getId(), true);
         }
         else
         {

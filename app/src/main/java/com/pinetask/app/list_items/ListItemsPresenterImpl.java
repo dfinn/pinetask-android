@@ -5,6 +5,7 @@ import com.pinetask.app.active_list_manager.ActiveListEvent;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.active_list_manager.ListLoadedEvent;
 import com.pinetask.app.active_list_manager.NoListsAvailableEvent;
+import com.pinetask.app.active_list_manager.ShoppingTripStartedEvent;
 import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.BasePresenter;
 import com.pinetask.app.common.ChildEventBase;
@@ -53,6 +54,10 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
             {
                 mView.hideListItemsLayouts();
             }
+        }
+        else if (event instanceof ShoppingTripStartedEvent)
+        {
+            if (mView != null) mView.showCostFields();
         }
     }
 
@@ -188,6 +193,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         }
         item.setIsCompleted(isCompleted);
         updateItem(item);
+        if (isCompleted && mView != null) mView.showCostInputDialog(item);
     }
 
     /** Make async request to delete item from database, and immediately remove item from the view. **/

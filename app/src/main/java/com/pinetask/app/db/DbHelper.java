@@ -986,7 +986,7 @@ public class DbHelper
         return getKeysAt(query, "get list items to purge").flatMapCompletable(itemId -> removeNode(listItemsRef.child(itemId)));
     }
 
-    private <T> T getValueFromSnapshot(DataSnapshot dataSnapshot, Class<T> cl)
+    public static <T> T getValueFromSnapshot(DataSnapshot dataSnapshot, Class<T> cl)
     {
         T value = (T) dataSnapshot.getValue(cl);
         if (value instanceof UsesKeyIdentifier)

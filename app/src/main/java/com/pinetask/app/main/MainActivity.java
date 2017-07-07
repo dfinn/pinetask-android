@@ -354,7 +354,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 }
                 return true;
             case R.id.startShoppingTrip:
-                startShoppingTrip();
+                mPresenter.startShoppingTrip();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -683,12 +683,6 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
                 });
             });
         }
-    }
-
-    public void showCostInputDialog(PineTaskItemExt item)
-    {
-        CostInputDialogFragment dialog = CostInputDialogFragment.Factory.newInstance(item);
-        safeShowDialog(dialog);
     }
 }
 

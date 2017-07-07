@@ -29,6 +29,11 @@ public class PineTaskItemExt extends PineTaskItem implements Serializable, UsesK
     public String getListId() { return mListId; }
     public PineTaskItemExt setListId(String listId) { mListId = listId; return this; }
 
+    /** Cost of the item (used in shopping trip mode) **/
+    private Float mCost;
+    public Float getCost() { return mCost; }
+    public void setCost(Float cost) { mCost = cost; }
+
     public PineTaskItemExt(String key, String itemDescription, boolean isNew, String listId)
     {
         super(itemDescription);

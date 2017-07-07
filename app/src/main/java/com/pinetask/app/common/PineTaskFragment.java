@@ -90,4 +90,10 @@ public class PineTaskFragment extends DialogFragment
         PineTaskActivity pineTaskActivity = (PineTaskActivity) getActivity();
         if (pineTaskActivity != null) pineTaskActivity.hideSoftKeyboard();
     }
+
+    public void safeShowDialog(DialogFragment dialog)
+    {
+        getFragmentManager().beginTransaction().add(dialog, dialog.getClass().getSimpleName()).commitAllowingStateLoss();
+    }
+
 }

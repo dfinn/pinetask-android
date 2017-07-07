@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.pinetask.app.R;
 import com.pinetask.app.hints.HintManager;
@@ -15,6 +16,7 @@ import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskFragment;
 import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.hints.HintType;
+import com.pinetask.app.main.CostInputDialogFragment;
 import com.pinetask.app.main.MainActivity;
 
 import java.util.ArrayList;
@@ -32,6 +34,8 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
 
     @BindView(R.id.itemsRecyclerView) RecyclerView mItemsRecyclerView;
     @BindView(R.id.addItemButton) FloatingActionButton mAddItemButton;
+    @BindView(R.id.costLayout) View mCostLayout;
+    @BindView(R.id.totalTextView) TextView mTotalTextView;
 
     @Inject ListItemsPresenter mPresenter;
     @Inject protected HintManager mHintManager;
@@ -148,5 +152,26 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
     public void showError(String message, Object... args)
     {
         showUserMessage(false, message, args);
+    }
+
+    @Override
+    public void showCostInputDialog(PineTaskItemExt item)
+    {
+        CostInputDialogFragment dialog = CostInputDialogFragment.Factory.newInstance(item);
+        safeShowDialog(dialog);
+    }
+
+    @Override
+    public void showCostFields()
+    {
+        mCostLayout.setVisibility(View.VISIBLE);
+        mItemsListAdapter.setShowCostField(true);
+    }
+
+    @Override
+    public void hideCostFields()
+    {
+        mCostLayout.setVisibility(View.GONE);
+        mItemsListAdapter.setShowCostField(false);
     }
 }

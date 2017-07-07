@@ -74,7 +74,6 @@ public class OnboardingTests
     @Test
     public void firstLaunchSignUpWithEmailAndAddListItems()
     {
-        mTestHelper.skipIntroTutorial();
         signUpOrLoginWithEmail();
         onView(withId(R.id.email)).check(matches(withText(TEST_EMAIL_ADDRESS)));
         onView(withId(R.id.name)).perform(replaceText(USERNAME));
@@ -129,7 +128,6 @@ public class OnboardingTests
     @Test
     public void firstLaunchLoginWithExistingEmailAndVerifyItems()
     {
-        mTestHelper.skipIntroTutorial();
         signUpOrLoginWithEmail();
         onView(withText("Welcome back!")).check(matches(isDisplayed()));
         onView(withId(R.id.password)).perform(replaceText(PASSWORD));

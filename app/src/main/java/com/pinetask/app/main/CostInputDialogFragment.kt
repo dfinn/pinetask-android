@@ -9,8 +9,13 @@ import butterknife.BindView
 import butterknife.ButterKnife
 import butterknife.OnClick
 import com.pinetask.app.R
+import com.pinetask.app.common.PineTaskApplication
 import com.pinetask.app.common.PineTaskDialogFragment
+import com.pinetask.app.list_items.ListItemsPresenter
 import com.pinetask.app.list_items.PineTaskItemExt
+import kotlinx.android.synthetic.main.cost_input_dialog.*
+import kotlinx.android.synthetic.main.dialog_button_bar.*
+import javax.inject.Inject
 
 /** Dialog which prompts the user to input the price of a specified item.  When the user clicks OK, makes a request for the price to be saved with the item. **/
 class CostInputDialogFragment : PineTaskDialogFragment() {
@@ -25,19 +30,23 @@ class CostInputDialogFragment : PineTaskDialogFragment() {
         }
     }
 
-    @BindView(R.id.costEditText) var mCostEditText: EditText? = null
+    @Inject lateinit var mListItemsPresenter: ListItemsPresenter
 
-    override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater!!.inflate(R.layout.cost_input_dialog, container, false)
-        ButterKnife.bind(this, view)
-        return view
+    override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater!!.inflate(R.layout.cost_input_dialog, container, false)
+
+    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        PineTaskApplication.getInstance().userComponent.inject(this)
+        okButton.setOnClickListener(this::okButtonOnClick)
     }
 
-    @OnClick(R.id.okButton)
+    @Suppress("UNUSED_PARAMETER")
     fun okButtonOnClick(view: View) {
-        val strCost = mCostEditText!!.text.toString()
+        val strCost = costEditText.text.toString()
         val cost = strCost.toFloat()
         val item = arguments.getSerializable(ITEM_KEY) as PineTaskItemExt
         logMsg("Storing cost %.2f for item %s", cost, item.id)
+        item.cost = cost
+        mListItemsPresenter.updateItem(item)
     }
 }

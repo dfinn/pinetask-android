@@ -56,7 +56,6 @@ public class QuickTest
     public void runQuickTest() throws UiObjectNotFoundException, RemoteException
     {
         mTestHelper.rotateScreenRightAndBack();
-        mTestHelper.viewAllTutorialSlides();
         mTestHelper.rotateScreenRightAndBack();
         mTestHelper.chooseAnonymousLoginOption();
         mTestHelper.rotateScreenRightAndBack();
@@ -79,7 +78,6 @@ public class QuickTest
         mTestHelper.completeListItem(0);
         mTestHelper.purgeCompletedItems();
         mTestHelper.openSettingsActivityAndChangeName();
-        mTestHelper.openAndCloseHelpActivity();
         mTestHelper.openAndCloseAboutActivity();
         mTestHelper.openManageListsActivity();
         mTestHelper.deleteList(0, LIST_NAME_1);

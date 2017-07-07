@@ -158,7 +158,8 @@
     <string name="list_selector_hint">Click here to change lists</string>
     <string name="side_menu_hint">Open the side menu to manage your lists and change app settings</string>
 
-    <!-- Cost input dialog -->
+    <!-- Shopping Trip Feature -->
     <string name="cost">Cost</string>
+    <string name="total">Total:</string>
 
 </resources>

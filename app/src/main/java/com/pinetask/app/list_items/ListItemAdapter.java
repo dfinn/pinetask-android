@@ -22,10 +22,14 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemViewHolder>
 {
     private List<PineTaskItemExt> mItems;
     private ListItemsFragment mListItemsFragment;
+    private boolean mShowCostField;
     @Inject DbHelper mDbHelper;
     @Inject ListItemsPresenter mListItemsPresenter;
     @Inject PrefsManager mPrefsManager;
@@ -46,18 +50,18 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
 
     public static class ItemViewHolder extends RecyclerView.ViewHolder
     {
-        ImageButton mClaimImageButton, mCompletedImageButton;
-        TextView mItemDescriptionTextView, mClaimedByTextView;
+        @BindView(R.id.claimImageButton) ImageButton mClaimImageButton;
+        @BindView(R.id.completedImageButton) ImageButton mCompletedImageButton;
+        @BindView(R.id.itemCostTextView) TextView mItemCostTextView;
+        @BindView(R.id.itemDescriptionTextView) TextView mItemDescriptionTextView;
+        @BindView(R.id.claimedByTextView) TextView mClaimedByTextView;
         ViewGroup mMainLayout;
 
         public ItemViewHolder(View itemView)
         {
             super(itemView);
             mMainLayout = (ViewGroup) itemView.findViewById(R.id.mainLayout);
-            mItemDescriptionTextView = (TextView) itemView.findViewById(R.id.itemDescriptionTextView);
-            mClaimImageButton = (ImageButton) itemView.findViewById(R.id.claimImageButton);
-            mClaimedByTextView = (TextView) itemView.findViewById(R.id.claimedByTextView);
-            mCompletedImageButton = (ImageButton) itemView.findViewById(R.id.completedImageButton);
+            ButterKnife.bind(this, mMainLayout);
         }
     }
 
@@ -123,6 +127,18 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
 
         // Show pop-up hints if this is the first list item that has been added.
         if (!mHintManager.isHintDisplayed(HintType.FIRST_LIST_ITEM_ADDED) && mHintManager.isHintDisplayed(HintType.FIRST_LIST_ADDED)) showFirstListItemHints(holder);
+
+        // Show cost field if shopping trip mode is active.
+        if (mShowCostField)
+        {
+            holder.mItemCostTextView.setVisibility(View.VISIBLE);
+            String costStr = (item.getCost() == null) ? "" : String.format("%.2f", item.getCost());
+            holder.mItemCostTextView.setText(costStr);
+        }
+        else
+        {
+            holder.mItemCostTextView.setVisibility(View.GONE);
+        }
     }
 
     /** If this is the first time an item has been added, show tips popup. **/
@@ -225,4 +241,9 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         Logger.logError(getClass(), msg, args);
     }
 
+    public void setShowCostField(boolean show)
+    {
+        mShowCostField = show;
+        notifyDataSetChanged();
+    }
 }

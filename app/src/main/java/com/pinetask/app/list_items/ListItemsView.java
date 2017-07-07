@@ -26,4 +26,13 @@ public interface ListItemsView
 
     /** Show error message to the user **/
     void showError(String message, Object... args);
+
+    /** Show dialog prompting the user to enter cost of the item. **/
+    void showCostInputDialog(PineTaskItemExt item);
+
+    /** Show cost fields on each list item, and the total cost field at the bottom of the view. **/
+    void showCostFields();
+
+    /** Hide per-item cost fields and total cost field **/
+    void hideCostFields();
 }

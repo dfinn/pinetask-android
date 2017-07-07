@@ -10,6 +10,7 @@ import com.pinetask.app.list_items.ListItemsPresenter;
 import com.pinetask.app.list_members.MembersAdapter;
 import com.pinetask.app.list_members.MembersFragment;
 import com.pinetask.app.list_members.MembersPresenter;
+import com.pinetask.app.main.CostInputDialogFragment;
 import com.pinetask.app.main.MainActivity;
 import com.pinetask.app.main.MainActivityPresenter;
 import com.pinetask.app.main.PurgeCompletedItemsDialogFragment;
@@ -36,4 +37,5 @@ public interface UserComponent
     void inject(MembersAdapter target);
     void inject(AddOrEditItemDialog target);
     void inject(ListItemAdapter target);
+    void inject(CostInputDialogFragment target);
 }

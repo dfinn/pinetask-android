@@ -29,6 +29,13 @@ public class ActiveListManager extends LoggingBase
     Disposable mListsAddedOrDeletedSubscription;
     private HintManager mHintManager;
     private Disposable mShoppingTripActiveSubscription;
+    private boolean mShoppingTripActive;
+
+    public PineTaskList getActiveList()
+    {
+        return mCurrentList;
+    }
+    public boolean isShoppingTripActive() { return mShoppingTripActive; }
 
     /** Use a BehaviorSubject so that subscribers will get the most recent event, plus all subsequent events. **/
     BehaviorSubject<ActiveListEvent> mSubject;
@@ -93,11 +100,6 @@ public class ActiveListManager extends LoggingBase
         mSubject.onNext(new ChatMessageEvent(chatMessage));
     }
 
-    public PineTaskList getActiveList()
-    {
-        return mCurrentList;
-    }
-
     /** Set mCurrentList, set current list ID in shared prefs, and notify listeners. **/
     public void setActiveList(PineTaskList list)
     {
@@ -115,14 +117,32 @@ public class ActiveListManager extends LoggingBase
         mCurrentList = list;
         mPrefsManager.setCurrentListId(list.getKey());
         mSubject.onNext(new ListLoadedEvent(list));
-        initListsAddedOrDeletedSubscription();
+        if (mListsAddedOrDeletedSubscription != null) initListsAddedOrDeletedSubscription();
+        initShoppingTripActiveSubscription(list);
+    }
+
+    private void initShoppingTripActiveSubscription(PineTaskList list)
+    {
+        if (mShoppingTripActiveSubscription != null) mShoppingTripActiveSubscription.dispose();
+        mShoppingTripActiveSubscription = mDbHelper.subscribeToShoppingTripActiveEventsForList(list.getId()).subscribe(shoppingTripActive ->
+        {
+            mShoppingTripActive = shoppingTripActive;
+            logMsg("subscribeToShoppingTripActiveEventsForList: shoppingTripActive=%b", shoppingTripActive);
+            if (shoppingTripActive) mSubject.onNext(new ShoppingTripStartedEvent());
+            else mSubject.onNext(new ShoppingTripEndedEvent());
+        }, ex ->
+        {
+            logError("Error in subscription for shopping trip active events for list %s", list.getId());
+            logException(ex);
+        });
     }
 
     private void initListsAddedOrDeletedSubscription()
     {
+        if (mListsAddedOrDeletedSubscription != null) mListsAddedOrDeletedSubscription.dispose();
         logMsg("initListsAddedOrDeletedSubscription is running");
         mListsAddedOrDeletedSubscription = mDbHelper.getListAddedOrDeletedEvents(mUserId)
-                .subscribe(this::onListAddedOrDeleted, ex -> logErrorAndException(ex, "Error getting added/deleted events"));
+                    .subscribe(this::onListAddedOrDeleted, ex -> logErrorAndException(ex, "Error getting added/deleted events"));
     }
 
     private void onListLoadError(Throwable ex)
@@ -177,23 +197,4 @@ public class ActiveListManager extends LoggingBase
             return Maybe.empty();
         });
     }
-
-    /** Set the "shopping trip active" flag in the database for the list specified.  Then, publish an event to let listeners know that shopping mode is active. **/
-    public void startShoppingTripForList(PineTaskList list)
-    {
-        logMsg("startShoppingTripForList: setting 'shopping trip active' flag for list %s (%s)", list.getId(), list.getName());
-        mDbHelper.setShoppingTripForActiveList(list.getId(), true);
-        mShoppingTripActiveSubscription = mDbHelper.subscribeToShoppingTripActiveEventsForList(list.getId()).subscribe(shoppingTripActive ->
-        {
-            logMsg("subscribeToShoppingTripActiveEventsForList: shoppingTripActive=%b", shoppingTripActive);
-            mSubject.onNext(new ShoppingTripStartedEvent());
-        }, ex ->
-        {
-            logError("Error in subscription for shopping trip active events for list %s", list.getId());
-            logException(ex);
-        });
-    }
-
-
-
 }

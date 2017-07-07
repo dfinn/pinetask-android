@@ -98,7 +98,6 @@ public class TestHelper
 
     public void firstLaunchCreateAnonymousAccountAndAddListItems()
     {
-        skipIntroTutorial();
         chooseAnonymousLoginOption();
         enterUserName();
         firstLaunchCreateListAndAddItems();
@@ -168,7 +167,7 @@ public class TestHelper
         verifyItemClaimedState(0, false);
         onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(0, R.id.claimImageButton)).perform(click());
         verifyItemClaimedState(0, true);
-        onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(0, R.id.optionsImageButton)).perform(click());
+        onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(0, R.id.itemDescriptionTextView)).perform(click());
         onView(withText("Unclaim")).perform(click());
         verifyItemClaimedState(0, false);
     }
@@ -176,7 +175,7 @@ public class TestHelper
     public void deleteListItem(int pos, String itemDescription)
     {
         onView(withRecyclerView(R.id.itemsRecyclerView).atPosition(pos)).check(matches(hasDescendant(withText(itemDescription))));
-        onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(pos, R.id.optionsImageButton)).perform(click());
+        onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(pos, R.id.itemDescriptionTextView)).perform(click());
         onView(withText("Delete")).inRoot(isPlatformPopup()).perform(click());
         delay(500, "wait for UI update after deleting item");
         onView(withText(itemDescription)).check(doesNotExist());
@@ -204,7 +203,7 @@ public class TestHelper
     public void completeAndUncompleteItem1()
     {
         completeListItem(0);
-        onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(0, R.id.optionsImageButton)).perform(click());
+        onView(withRecyclerView(R.id.itemsRecyclerView).atPositionOnView(0, R.id.itemDescriptionTextView)).perform(click());
         onView(withText("Uncomplete")).perform(click());
         verifyCompletedState(0, false);
     }
@@ -266,18 +265,6 @@ public class TestHelper
         onView(withText(R.string.account_setup_not_yet_completed)).check(matches(isDisplayed()));
         onView(withId(R.id.signUpOrLoginButton)).check(matches(isDisplayed()));
         onView(withId(R.id.nameEditText)).perform(replaceText(USERNAME +"_NewName"));
-        Espresso.pressBack();
-        delay(500, "temporary workaround to wait for navigation drawer to close");
-    }
-
-    /** Open the side drawer, open Help activity, verify some text, press back to exit. **/
-    public void openAndCloseHelpActivity()
-    {
-        logMsg("openSettingsActivityAndChangeName");
-        onView(withId(R.id.drawerLayout)).perform(DrawerActions.open());
-        onView(withId(R.id.helpTextView)).perform(click());
-        onView(withId(R.id.skip)).check(matches(isDisplayed()));
-        onView(withId(R.id.next)).check(matches(isDisplayed()));
         Espresso.pressBack();
         delay(500, "temporary workaround to wait for navigation drawer to close");
     }

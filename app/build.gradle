@@ -1,7 +1,8 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 apply plugin: 'me.tatarka.retrolambda'
-
 apply plugin: 'io.fabric'
 
 repositories {
@@ -38,8 +39,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //minifyEnabled true
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -52,6 +53,7 @@ android {
 }
 
 dependencies {
+    kapt "com.android.databinding:compiler:$plugin_version"
     compile "com.android.support:multidex:1.0.1"
     compile fileTree(include: ['*.jar'], dir: 'libs')
 
@@ -87,7 +89,7 @@ dependencies {
 
     // Butterknife for easier view binding.
     compile 'com.jakewharton:butterknife:8.4.0'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'
+    kapt 'com.jakewharton:butterknife-compiler:8.4.0'
 
     // RxJava 2.0
     compile 'io.reactivex.rxjava2:rxjava:2.0.6'
@@ -98,7 +100,7 @@ dependencies {
 
     // Dagger2 for dependency injection
     compile 'com.google.dagger:dagger:2.10'
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.10'
+    kapt 'com.google.dagger:dagger-compiler:2.10'
 
     // Module dependencies
     compile project(':auth')
