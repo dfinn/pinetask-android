@@ -5,6 +5,7 @@ import com.pinetask.app.active_list_manager.ActiveListEvent;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.active_list_manager.ListLoadedEvent;
 import com.pinetask.app.active_list_manager.NoListsAvailableEvent;
+import com.pinetask.app.active_list_manager.ShoppingTripEndedEvent;
 import com.pinetask.app.active_list_manager.ShoppingTripStartedEvent;
 import com.pinetask.app.common.AddedEvent;
 import com.pinetask.app.common.BasePresenter;
@@ -58,6 +59,11 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         else if (event instanceof ShoppingTripStartedEvent)
         {
             if (mView != null) mView.showCostFields();
+            updateDisplayedTotalCost();
+        }
+        else if (event instanceof ShoppingTripEndedEvent)
+        {
+            if (mView != null) mView.hideCostFields();
         }
     }
 
@@ -70,6 +76,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
             showListItemLayouts();
             mView.clearListItems();
             for (PineTaskItemExt item : mListItemsRepository.getItems()) addItemToViewAndNotifyIfNewItem(item);
+            updateDisplayedTotalCost();
         }
     }
 
@@ -126,6 +133,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
                 UpdatedEvent<PineTaskItemExt> updatedEvent = (UpdatedEvent<PineTaskItemExt>) childEvent;
                 mView.updateItem(updatedEvent.Item);
             }
+            updateDisplayedTotalCost();
         }
     }
 
@@ -170,7 +178,13 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
                 item.setIsNewItem(false);
                 mSoundManager.playItemAddedSound();
             }
+            updateDisplayedTotalCost();
         }
+    }
+
+    private void updateDisplayedTotalCost()
+    {
+        if (mView != null) mView.showTotalCost(mListItemsRepository.getTotalCost());
     }
 
     /** Make async request to perform database update, and then update the view immediately. **/

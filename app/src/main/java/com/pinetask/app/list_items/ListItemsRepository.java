@@ -87,4 +87,14 @@ public class ListItemsRepository extends LoggingBase
     {
         mSubscription.dispose();
     }
+
+    public float getTotalCost()
+    {
+        float total = 0;
+        for (PineTaskItemExt item : mItems)
+        {
+            if (item.getCost() != null) total += item.getCost();
+        }
+        return total;
+    }
 }

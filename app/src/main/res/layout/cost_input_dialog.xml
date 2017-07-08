@@ -24,7 +24,7 @@
         android:layout_marginRight="24dp"
         android:layout_marginBottom="20dp"
         android:maxHeight="300dp"
-        android:inputType="number"
+        android:inputType="numberDecimal"
         android:layout_width="300dp"
         android:layout_height="wrap_content"/>
 

@@ -23,4 +23,10 @@
         android:title="@string/start_shopping_trip"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/endShoppingTrip"
+        android:orderInCategory="104"
+        android:title="@string/end_shopping_trip"
+        app:showAsAction="never" />
+
 </menu>

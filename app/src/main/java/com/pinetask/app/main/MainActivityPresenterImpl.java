@@ -275,12 +275,20 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         {
             showErrorMessage(mApplication.getString(R.string.error_no_current_list));
         }
-
     }
 
     @Override
     public void stopShoppingTrip()
     {
-        // TODO
+        PineTaskList currentList = mActiveListManager.getActiveList();
+        if (currentList != null)
+        {
+            logMsg("stopShoppingTrip: end shopping trip for list %s", currentList.getId());
+            mDbHelper.setShoppingTripForActiveList(currentList.getId(), false);
+        }
+        else
+        {
+            showErrorMessage(mApplication.getString(R.string.error_no_current_list));
+        }
     }
 }

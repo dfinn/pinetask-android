@@ -356,6 +356,9 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             case R.id.startShoppingTrip:
                 mPresenter.startShoppingTrip();
                 return true;
+            case R.id.endShoppingTrip:
+                mPresenter.stopShoppingTrip();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

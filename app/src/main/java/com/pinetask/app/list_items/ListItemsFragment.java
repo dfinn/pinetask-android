@@ -174,4 +174,10 @@ public class ListItemsFragment extends PineTaskFragment implements ListItemsView
         mCostLayout.setVisibility(View.GONE);
         mItemsListAdapter.setShowCostField(false);
     }
+
+    @Override
+    public void showTotalCost(float total)
+    {
+        mTotalTextView.setText(String.format("$%.2f", total));
+    }
 }

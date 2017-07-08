@@ -18,6 +18,7 @@ import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.app.hints.HintType;
 
+import java.text.NumberFormat;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -100,8 +101,8 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
             return true;
         });
 
-        // Configure the description textview to show the pop-up menu when clicked.
-        holder.mItemDescriptionTextView.setOnClickListener(__ -> popupMenu.show());
+        // Configure the background layout to show the pop-up menu when clicked.
+        holder.mMainLayout.setOnClickListener(__ -> popupMenu.show());
 
         // Set "claim" button to claim the item.
         holder.mClaimImageButton.setOnClickListener(__ -> mListItemsPresenter.claimItem(item));
@@ -132,7 +133,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         if (mShowCostField)
         {
             holder.mItemCostTextView.setVisibility(View.VISIBLE);
-            String costStr = (item.getCost() == null) ? "" : String.format("%.2f", item.getCost());
+            String costStr = (item.getCost() == null) ? "" : NumberFormat.getCurrencyInstance().format(item.getCost());
             holder.mItemCostTextView.setText(costStr);
         }
         else

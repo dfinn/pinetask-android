@@ -35,4 +35,7 @@ public interface ListItemsView
 
     /** Hide per-item cost fields and total cost field **/
     void hideCostFields();
+
+    /** Show total cost of all displayed items **/
+    void showTotalCost(float total);
 }

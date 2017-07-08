@@ -22,6 +22,7 @@
     <string name="purge_completed_items">Purge Completed Items</string>
     <string name="export_list">Export List</string>
     <string name="start_shopping_trip">Start Shopping Trip</string>
+    <string name="end_shopping_trip">End Shopping Trip</string>
 
     <!-- Other -->
     <string name="share_list">Share List</string>

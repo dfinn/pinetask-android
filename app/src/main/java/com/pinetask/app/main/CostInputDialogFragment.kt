@@ -1,6 +1,7 @@
 package com.pinetask.app.main
 
 import android.os.Bundle
+import android.support.v4.app.DialogFragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +27,7 @@ class CostInputDialogFragment : PineTaskDialogFragment() {
             val dialog: CostInputDialogFragment = CostInputDialogFragment()
             dialog.arguments = Bundle()
             dialog.arguments.putSerializable(ITEM_KEY, item)
+            dialog.setStyle(DialogFragment.STYLE_NO_TITLE, 0)
             return dialog
         }
     }
@@ -38,6 +40,7 @@ class CostInputDialogFragment : PineTaskDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         PineTaskApplication.getInstance().userComponent.inject(this)
         okButton.setOnClickListener(this::okButtonOnClick)
+        cancelButton.setOnClickListener { dismiss() }
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -48,5 +51,6 @@ class CostInputDialogFragment : PineTaskDialogFragment() {
         logMsg("Storing cost %.2f for item %s", cost, item.id)
         item.cost = cost
         mListItemsPresenter.updateItem(item)
+        dismiss()
     }
 }
