@@ -227,7 +227,7 @@ public class ListItemAdapter extends RecyclerView.Adapter<ListItemAdapter.ItemVi
         int i = findItem(updatedItem.getId());
         if (i != -1)
         {
-            PineTaskItem oldItem = mItems.get(i);
+            PineTaskItemExt oldItem = mItems.get(i);
             oldItem.updateFrom(updatedItem);
             notifyItemChanged(i);
         }

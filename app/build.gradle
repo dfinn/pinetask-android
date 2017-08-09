@@ -18,8 +18,8 @@ android {
         applicationId "com.pinetask.app"
         minSdkVersion minSdk
         targetSdkVersion targetSdk
-        versionCode 3
-        versionName "1.02"
+        versionCode 4
+        versionName "1.03"
         multiDexEnabled true
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }

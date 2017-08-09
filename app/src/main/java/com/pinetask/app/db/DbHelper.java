@@ -528,7 +528,7 @@ public class DbHelper
     /** Returns an Observable that will emit any changes to the PineTaskList with the ID provided.  Caller must dispose Observable when no longer needed. **/
     public Observable<PineTaskList> subscribeListInfo(String listId)
     {
-        return subscribeValueEvents(PineTaskList.class, getListInfoReference(listId), "subscribe to list info");
+        return subscribeValueEvents(PineTaskList.class, getListInfoReference(listId), null, "subscribe to list info");
     }
 
     /** Returns a Single that emits the count of chat messages in the list specified. **/
@@ -793,7 +793,7 @@ public class DbHelper
     /** Returns an Observable that emits the object at the specified database location, deserialized based on the type provided.
      *  Continues to emit items via onNext() whenever data at dbRef changes.  When the Observable is disposed, the ValueEventListener is disconnected.
      **/
-    public <T> Observable<T> subscribeValueEvents(Class<T> cl, final DatabaseReference ref, final String operationDescription)
+    public <T> Observable<T> subscribeValueEvents(Class<T> cl, final DatabaseReference ref, T defaultValue, final String operationDescription)
     {
         ObjectWrapper<ValueEventListener> eventListenerWrapper = new ObjectWrapper<>();
         ObjectWrapper<Boolean> dataReturnedWrapper = new ObjectWrapper<>(false);
@@ -806,11 +806,17 @@ public class DbHelper
                 {
                     if (emitter.isDisposed()) return;
                     T obj = getValueFromSnapshot(dataSnapshot, cl);
-                    if (obj==null)
+                    if (obj == null)
                     {
-                        // Null value means the database location was deleted.
-                        logMsg("onDataChange: null value at %s, calling onComplete", ref);
-                        emitter.onComplete();
+                        if (defaultValue != null)
+                        {
+                            logMsg("onDataChange: null value at %s, returning default value '%s'", ref, defaultValue);
+                            emitter.onNext(defaultValue);
+                        }
+                        else
+                        {
+                            logMsg("onDataChange: null value at %s, but no default value provided", ref);
+                        }
                     }
                     else
                     {
@@ -1007,6 +1013,6 @@ public class DbHelper
     public Observable<Boolean> subscribeToShoppingTripActiveEventsForList(String listId)
     {
         DatabaseReference dbRef = getShoppingTripActiveReference(listId);
-        return subscribeValueEvents(Boolean.class, dbRef, "subscribe to 'shopping trip active' events");
+        return subscribeValueEvents(Boolean.class, dbRef, false, "subscribe to 'shopping trip active' events");
     }
 }

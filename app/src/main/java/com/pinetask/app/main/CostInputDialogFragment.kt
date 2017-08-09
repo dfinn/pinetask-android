@@ -34,23 +34,32 @@ class CostInputDialogFragment : PineTaskDialogFragment() {
 
     @Inject lateinit var mListItemsPresenter: ListItemsPresenter
 
-    override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater!!.inflate(R.layout.cost_input_dialog, container, false)
+    override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater!!.inflate(R.layout.cost_input_dialog, container, false)
 
     override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         PineTaskApplication.getInstance().userComponent.inject(this)
+        showSoftKeyboard(costEditText)
         okButton.setOnClickListener(this::okButtonOnClick)
-        cancelButton.setOnClickListener { dismiss() }
+        cancelButton.setOnClickListener { hideSoftKeyboard(); dismiss() }
     }
 
     @Suppress("UNUSED_PARAMETER")
     fun okButtonOnClick(view: View) {
         val strCost = costEditText.text.toString()
-        val cost = strCost.toFloat()
-        val item = arguments.getSerializable(ITEM_KEY) as PineTaskItemExt
-        logMsg("Storing cost %.2f for item %s", cost, item.id)
-        item.cost = cost
-        mListItemsPresenter.updateItem(item)
+        if (strCost.isNotEmpty()) {
+            try {
+                val cost = strCost.toFloat()
+                val item = arguments.getSerializable(ITEM_KEY) as PineTaskItemExt
+                logMsg("Storing cost %.2f for item %s", cost, item.id)
+                item.cost = cost
+                mListItemsPresenter.updateItem(item)
+            }
+            catch (ex: NumberFormatException) {
+                logMsg("Invalid cost '%s'", strCost)
+            }
+        }
+        hideSoftKeyboard()
         dismiss()
     }
 }

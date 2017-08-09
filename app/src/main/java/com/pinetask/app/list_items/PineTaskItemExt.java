@@ -3,9 +3,11 @@ package com.pinetask.app.list_items;
 import android.text.TextUtils;
 
 import com.google.firebase.database.Exclude;
+import com.pinetask.app.common.PineTaskUtil;
 import com.pinetask.app.db.UsesKeyIdentifier;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /** Extension for PineTaskItem to hold additional properties used at runtime but not stored in the database. **/
 public class PineTaskItemExt extends PineTaskItem implements Serializable, UsesKeyIdentifier
@@ -62,7 +64,21 @@ public class PineTaskItemExt extends PineTaskItem implements Serializable, UsesK
 
     public boolean exactlyEqual(PineTaskItemExt other)
     {
-        return TextUtils.equals(getId(), other.getId()) && TextUtils.equals(getListId(), other.getListId()) && (getIsNewItem() == other.getIsNewItem()) && super.exactlyEqual(other);
+        return TextUtils.equals(getId(), other.getId()) && TextUtils.equals(getListId(), other.getListId()) && (getIsNewItem() == other.getIsNewItem()) && super.exactlyEqual(other)
+                && PineTaskUtil.equalsOrNull(getCost(), other.getCost());
     }
 
+    public void updateFrom(PineTaskItemExt updatedItem)
+    {
+        super.updateFrom(updatedItem);
+        mKey = updatedItem.getId();
+        mIsNewItem = updatedItem.getIsNewItem();
+        mListId = updatedItem.getListId();
+        mCost = updatedItem.getCost();
+    }
+
+    public String getDebugInfo()
+    {
+        return String.format("key=%s, cost=%.2f, completed=%b", mKey, mCost, mIsCompleted);
+    }
 }

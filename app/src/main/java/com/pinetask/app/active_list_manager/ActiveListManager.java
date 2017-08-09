@@ -124,6 +124,7 @@ public class ActiveListManager extends LoggingBase
     private void initShoppingTripActiveSubscription(PineTaskList list)
     {
         if (mShoppingTripActiveSubscription != null) mShoppingTripActiveSubscription.dispose();
+        mSubject.onNext(new ShoppingTripEndedEvent());
         mShoppingTripActiveSubscription = mDbHelper.subscribeToShoppingTripActiveEventsForList(list.getId()).subscribe(shoppingTripActive ->
         {
             mShoppingTripActive = shoppingTripActive;

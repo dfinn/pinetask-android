@@ -193,6 +193,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     {
         mDbHelper.updateItem(item, this::showErrorMessage);
         if (mView != null) mView.updateItem(item);
+        updateDisplayedTotalCost();
     }
 
     /** Sets the "is completed" status for the item to the state specified, and then updates the item in the database. **/

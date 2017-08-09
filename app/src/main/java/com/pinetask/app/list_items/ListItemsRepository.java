@@ -31,6 +31,7 @@ public class ListItemsRepository extends LoggingBase
                 .doOnSuccess(lastItemTimestamp -> logMsg("Last item's timestamp for list %s is %s", list.getId(), getTimestamp(lastItemTimestamp)))
                 .doOnSuccess(lastOpenTimestamp -> mLastItemTimestamp = lastOpenTimestamp)
                 .flatMapObservable(__ -> dbHelper.subscribeListItems(list.getId()))
+                .doOnNext(this::printDebugInfo)
                 .doOnNext(childEvent -> childEvent.Item.setListId(list.getId()))
                 .filter(event -> event.Item.getId() != null)
                 .filter(event -> !((event instanceof AddedEvent) && (mItems.contains(event.Item))))
@@ -39,6 +40,16 @@ public class ListItemsRepository extends LoggingBase
                 .doOnNext(childEvent -> childEvent.Item.setIsNewItem(childEvent.Item.getCreatedAtMs() > mLastItemTimestamp))
                 .doOnNext(childEvent -> logMsg("Loaded item %s, createdAt=%s, isNew=%b", childEvent.Item.getId(), getTimestamp(childEvent.Item.getCreatedAtMs()), childEvent.Item.getIsNewItem()))
                 .subscribe(onChildEvent, onError);
+    }
+
+    private void printDebugInfo(ChildEventBase<PineTaskItemExt> childEvent)
+    {
+        logMsg("printDebugInfo: childEvent is type %s. Item info: %s", childEvent.getClass().getSimpleName(), childEvent.Item.getDebugInfo());
+        logMsg("printDebugInfo: mItems contains %d entries:", mItems.size());
+        for (PineTaskItemExt item : mItems)
+        {
+            logMsg("--- %s", item.getDebugInfo());
+        }
     }
 
     private String getTimestamp(Long ms)
