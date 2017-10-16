@@ -314,6 +314,12 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+        MenuItem startShoppingTrip = menu.findItem(R.id.startShoppingTrip);
+        MenuItem endShoppingTrip = menu.findItem(R.id.endShoppingTrip);
+        boolean shoppingTripActive = mPresenter.isShoppingTripActive();
+        logMsg("onCreateOptionsMenu: shoppingTripActive=%b", shoppingTripActive);
+        startShoppingTrip.setVisible(!shoppingTripActive);
+        endShoppingTrip.setVisible(shoppingTripActive);
         return true;
     }
 
@@ -528,6 +534,13 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             mNumUnreadChatMessages++;
             updateUnreadChatMessageCount();
         }
+    }
+
+    @Override
+    public void updateShoppingTripMenuOptions()
+    {
+        logMsg("updateShoppingTripMenuOptions: invalidating menu");
+        invalidateOptionsMenu();
     }
 
     @OnClick(R.id.listNameTextView)

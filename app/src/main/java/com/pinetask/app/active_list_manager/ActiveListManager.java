@@ -10,6 +10,7 @@ import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.db.DbHelper;
 import com.pinetask.app.common.LoggingBase;
 import com.pinetask.app.hints.HintManager;
+import com.pinetask.app.list_items.PineTaskItemExt;
 
 import javax.inject.Named;
 

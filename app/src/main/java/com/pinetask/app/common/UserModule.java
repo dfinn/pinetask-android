@@ -63,9 +63,9 @@ public class UserModule extends LoggingBase
     @Provides
     @UserScope
     public ListItemsPresenter providesListItemsPresenter(PineTaskApplication application, DbHelper dbHelper, ActiveListManager activeListManager, @Named("user_id") String userId,
-                                                         SoundManager soundManager)
+                                                         SoundManager soundManager, PrefsManager prefsManager)
     {
-        return new ListItemsPresenterImpl(application, dbHelper, activeListManager, userId, soundManager);
+        return new ListItemsPresenterImpl(application, dbHelper, activeListManager, userId, soundManager, prefsManager);
     }
 
     @Provides

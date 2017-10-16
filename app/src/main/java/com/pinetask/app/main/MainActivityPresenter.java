@@ -13,4 +13,5 @@ public interface MainActivityPresenter
     void onPurgeCompletedItemsSelected();
     void startShoppingTrip();
     void stopShoppingTrip();
+    boolean isShoppingTripActive();
 }

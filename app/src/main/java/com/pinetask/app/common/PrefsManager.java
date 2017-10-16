@@ -35,4 +35,9 @@ public class PrefsManager
     /** Boolean values indicating whether the first launch tooltips have been shown for various app features. **/
     public boolean isTipShown(String key) { return mSharedPreferences.getBoolean(key, false); }
     public void setTipShown(String key) { mSharedPreferences.edit().putBoolean(key, true).apply(); }
+
+    /** String value to temporarily store description of an item which is to automatically be added to the active list (specified in launch intent). **/
+    private final String LIST_ITEM_TO_ADD_KEY = "ListItemToAdd";
+    public void setListItemToAdd(String listItemToAdd) { mSharedPreferences.edit().putString(LIST_ITEM_TO_ADD_KEY, listItemToAdd).apply(); }
+    public String getListItemToAdd() { return mSharedPreferences.getString(LIST_ITEM_TO_ADD_KEY, null); }
 }

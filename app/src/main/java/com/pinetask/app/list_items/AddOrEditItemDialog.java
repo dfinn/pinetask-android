@@ -59,7 +59,6 @@ public class AddOrEditItemDialog extends PineTaskDialogFragment
         // OK button will add/update the item in the database.
         okButton.setOnClickListener(__ ->
         {
-            ListItemsFragment listItemsFragment = (ListItemsFragment) getTargetFragment();
             String description = descriptionEditText.getText().toString();
             if (item != null)
             {

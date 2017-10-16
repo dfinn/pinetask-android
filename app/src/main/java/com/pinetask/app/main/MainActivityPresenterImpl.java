@@ -14,6 +14,8 @@ import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.active_list_manager.ListLoadErrorEvent;
 import com.pinetask.app.active_list_manager.ListLoadedEvent;
 import com.pinetask.app.active_list_manager.NoListsAvailableEvent;
+import com.pinetask.app.active_list_manager.ShoppingTripEndedEvent;
+import com.pinetask.app.active_list_manager.ShoppingTripStartedEvent;
 import com.pinetask.app.chat.ChatMessage;
 import com.pinetask.app.common.BasePresenter;
 import com.pinetask.app.common.ChatMessageEvent;
@@ -100,6 +102,17 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
             ChatMessageEvent chatMessageEvent = (ChatMessageEvent) activeListEvent;
             notifyChatMessage(chatMessageEvent.Message);
         }
+        else if (activeListEvent instanceof ShoppingTripStartedEvent || activeListEvent instanceof ShoppingTripEndedEvent)
+        {
+            // Shopping trip started or ended --- update the displayed menu options
+            if (mView != null) mView.updateShoppingTripMenuOptions();
+        }
+    }
+
+    @Override
+    public boolean isShoppingTripActive()
+    {
+        return mActiveListManager.isShoppingTripActive();
     }
 
     private void notifyChatMessage(ChatMessage chatMessage)

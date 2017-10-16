@@ -22,4 +22,5 @@ public interface MainActivityView
     void showPurgeCompletedItemsDialog(String listId, String listName);
     boolean isVisible();
     void notifyOfChatMessage(ChatMessage chatMessage);
+    void updateShoppingTripMenuOptions();
 }

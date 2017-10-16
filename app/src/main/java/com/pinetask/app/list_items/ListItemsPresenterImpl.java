@@ -13,6 +13,7 @@ import com.pinetask.app.common.ChildEventBase;
 import com.pinetask.app.common.DeletedEvent;
 import com.pinetask.app.common.PineTaskApplication;
 import com.pinetask.app.common.PineTaskList;
+import com.pinetask.app.common.PrefsManager;
 import com.pinetask.app.common.SoundManager;
 import com.pinetask.app.common.UpdatedEvent;
 import com.pinetask.app.db.DbHelper;
@@ -31,14 +32,16 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
     private PineTaskApplication mApplication;
     private ActiveListManager mActiveListManager;
     private SoundManager mSoundManager;
+    private PrefsManager mPrefsManager;
 
-    public ListItemsPresenterImpl(PineTaskApplication application, DbHelper dbHelper, ActiveListManager activeListManager, String userId, SoundManager soundManager)
+    public ListItemsPresenterImpl(PineTaskApplication application, DbHelper dbHelper, ActiveListManager activeListManager, String userId, SoundManager soundManager, PrefsManager prefsManager)
     {
         mApplication = application;
         mDbHelper = dbHelper;
         mUserId = userId;
         mActiveListManager = activeListManager;
         mSoundManager = soundManager;
+        mPrefsManager = prefsManager;
         mActiveListSubscription = activeListManager.subscribe(this::onActiveListEvent, ex -> logError("Error getting event from ActiveListManager"));
     }
 
@@ -78,6 +81,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
             for (PineTaskItemExt item : mListItemsRepository.getItems()) addItemToViewAndNotifyIfNewItem(item);
             updateDisplayedTotalCost();
         }
+        checkForItemToAutoAdd();
     }
 
     @Override
@@ -112,6 +116,19 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
             mView.showListItemsLayouts();
         }
         mListItemsRepository = new ListItemsRepository(mDbHelper, list, this::processChildEvent, this::onListItemsLoadError);
+        checkForItemToAutoAdd();
+    }
+
+    /** If the app was launched with an Intent to automatically add a list item, add it now. **/
+    private void checkForItemToAutoAdd() {
+        PineTaskList activeList = mActiveListManager.getActiveList();
+        String itemToAdd = mPrefsManager.getListItemToAdd();
+        if (activeList != null && itemToAdd != null)
+        {
+            logMsg("setActiveList: adding item '%s' specified in launch intent", itemToAdd);
+            addItem(itemToAdd);
+            mPrefsManager.setListItemToAdd(null);
+        }
     }
 
     private void processChildEvent(ChildEventBase childEvent)
@@ -208,7 +225,7 @@ public class ListItemsPresenterImpl extends BasePresenter implements ListItemsPr
         }
         item.setIsCompleted(isCompleted);
         updateItem(item);
-        if (isCompleted && mView != null) mView.showCostInputDialog(item);
+        if (isCompleted && mView != null && mActiveListManager.isShoppingTripActive()) mView.showCostInputDialog(item);
     }
 
     /** Make async request to delete item from database, and immediately remove item from the view. **/
