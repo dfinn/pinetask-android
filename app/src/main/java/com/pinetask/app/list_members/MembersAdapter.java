@@ -1,6 +1,7 @@
 package com.pinetask.app.list_members;
 
 import android.graphics.Typeface;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,7 +28,7 @@ import butterknife.ButterKnife;
 public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberViewHolder>
 {
     List<MemberInfo> mMembers = new ArrayList<>();
-    MainActivity mActivity;
+    FragmentActivity mActivity;
     @Inject ActiveListManager mActiveListManager;
 
     class MemberViewHolder extends RecyclerView.ViewHolder
@@ -50,7 +51,7 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
         }
     }
 
-    public MembersAdapter(MainActivity activity)
+    public MembersAdapter(FragmentActivity activity)
     {
         mActivity = activity;
         PineTaskApplication.getInstance().getUserComponent().inject(this);

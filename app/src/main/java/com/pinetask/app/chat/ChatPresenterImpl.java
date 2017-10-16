@@ -20,17 +20,15 @@ public class ChatPresenterImpl extends BasePresenter implements ChatPresenter
     ChatView mChatView;
     String mUserId;
     ActiveListManager mActiveListManager;
-    FirebaseDatabase mDatabase;
     DbHelper mDbHelper;
     ChatMessagesRepository mChatMessagesRepository;
     Disposable mActiveListManagerSubscription;
     PineTaskApplication mApplication;
 
-    public ChatPresenterImpl(String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper, PineTaskApplication application)
+    public ChatPresenterImpl(String userId, ActiveListManager activeListManager, DbHelper dbHelper, PineTaskApplication application)
     {
         mUserId = userId;
         mActiveListManager = activeListManager;
-        mDatabase = db;
         mDbHelper = dbHelper;
         mApplication = application;
         mActiveListManagerSubscription = activeListManager.subscribe(this::processActiveListEvent, ex -> logError("Error from activeListManager: %s", ex.getMessage()));

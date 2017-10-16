@@ -1,6 +1,7 @@
 package com.pinetask.app.common;
 
-import com.google.firebase.database.FirebaseDatabase;
+import com.pinetask.app.db.DbHelper;
+import com.pinetask.app.db.DbHelperImpl;
 
 import javax.inject.Singleton;
 
@@ -20,13 +21,9 @@ public class AppModule
 
     @Provides
     @Singleton
-    PineTaskApplication providesApplication() { return mPineTaskApplication; }
-
+    public PineTaskApplication providesApplication() { return mPineTaskApplication; }
 
     @Provides
     @Singleton
-    FirebaseDatabase providesFirebaseDb()
-    {
-        return FirebaseDatabase.getInstance();
-    }
+    public DbHelper providesDbHelper() { return new DbHelperImpl(); }
 }

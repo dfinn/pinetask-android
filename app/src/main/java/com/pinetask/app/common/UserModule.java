@@ -1,7 +1,6 @@
 package com.pinetask.app.common;
 
 import com.crashlytics.android.Crashlytics;
-import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.BuildConfig;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatPresenter;
@@ -79,9 +78,9 @@ public class UserModule extends LoggingBase
 
     @Provides
     @UserScope
-    public ChatPresenter providesChatPresenter(@Named("user_id") String userId, ActiveListManager activeListManager, FirebaseDatabase db, DbHelper dbHelper, PineTaskApplication application)
+    public ChatPresenter providesChatPresenter(@Named("user_id") String userId, ActiveListManager activeListManager, DbHelper dbHelper, PineTaskApplication application)
     {
         logMsg("Creating ChatPresenter");
-        return new ChatPresenterImpl(userId, activeListManager, db, dbHelper, application);
+        return new ChatPresenterImpl(userId, activeListManager, dbHelper, application);
     }
 }

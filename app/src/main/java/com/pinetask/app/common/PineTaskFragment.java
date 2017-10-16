@@ -22,7 +22,6 @@ public class PineTaskFragment extends DialogFragment
         Logger.logError(getClass(), msg, args);
     }
 
-    @Inject protected FirebaseDatabase mDatabase;
     @Inject protected PrefsManager mPrefsManager;
 
     @Override

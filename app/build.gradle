@@ -59,6 +59,9 @@ dependencies {
 
     // Unit test dependencies
     testCompile 'junit:junit:4.12'
+    testCompile "org.robolectric:robolectric:3.4.2"
+    testCompile "org.robolectric:shadows-support-v4:3.3.2"
+    testCompile "org.robolectric:shadows-multidex:3.0"
 
     // Instrumentation test dependencies
     androidTestCompile "com.android.support:support-annotations:$supportLibraryVersion"

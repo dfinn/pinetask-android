@@ -50,7 +50,7 @@ public class MembersFragment extends PineTaskFragment implements MembersView
         ButterKnife.bind(this, view);
         PineTaskApplication.getInstance().getUserComponent().inject(this);
         logMsg("onCreateView: creating membersAdapter");
-        mAdapter = new MembersAdapter((MainActivity)getActivity());
+        mAdapter = new MembersAdapter(getActivity());
         mMembersRecyclerView.setAdapter(mAdapter);
         mMembersRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         return view;

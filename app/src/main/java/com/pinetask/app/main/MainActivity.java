@@ -33,6 +33,7 @@ import com.pinetask.app.R;
 import com.pinetask.app.active_list_manager.ActiveListManager;
 import com.pinetask.app.chat.ChatFragment;
 import com.pinetask.app.chat.ChatMessage;
+import com.pinetask.app.common.UserModule;
 import com.pinetask.app.hints.HintManager;
 import com.pinetask.app.common.PineTaskActivity;
 import com.pinetask.app.common.PineTaskApplication;
@@ -128,7 +129,7 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
         {
             String userId = getIntent().getStringExtra(USER_ID_KEY);
             logMsg("Creating user component for user %s", userId);
-            PineTaskApplication.getInstance().createUserComponent(userId);
+            PineTaskApplication.getInstance().createUserComponent(new UserModule(userId));
         }
 
         // Inject UserScope dependencies

@@ -3,6 +3,7 @@ package com.pinetask.app.common;
 import android.support.multidex.MultiDexApplication;
 
 import com.crashlytics.android.Crashlytics;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.FirebaseDatabase;
 import com.pinetask.app.BuildConfig;
 
@@ -12,12 +13,12 @@ import io.reactivex.plugins.RxJavaPlugins;
 public class PineTaskApplication extends MultiDexApplication
 {
     /** Dagger2 component for injection of application-wide dependencies **/
-    AppComponent mAppComponent;
+    protected AppComponent mAppComponent;
     public AppComponent getAppComponent() { return mAppComponent; }
 
     /** Dagger2 component for injection of user-scoped dependencies (Main Activity, etc) **/
     UserComponent mUserComponent;
-    public void createUserComponent(String userId) { mUserComponent = mAppComponent.userComponent(new UserModule(userId)); }
+    public void createUserComponent(UserModule userModule) { mUserComponent = mAppComponent.userComponent(userModule); }
     public UserComponent getUserComponent() { return mUserComponent; }
     public void destroyUserComponent()
     {
@@ -81,12 +82,8 @@ public class PineTaskApplication extends MultiDexApplication
         // Initialize Crashlytics if this is a release build
         if (! BuildConfig.DEBUG) Fabric.with(this, new Crashlytics());
 
-        // Instantiate Dagger2 dependency injection component, and inject dependencies.
-        logMsg("Creating AppModule");
-        mAppComponent = DaggerAppComponent.builder().appModule(new AppModule(this)).build();
-
-        // Enable Firebase offline sync
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        // Instantiate Dagger2 dependency injection for application-scoped components
+        createAppModule();
 
         // Set handler for uncaught exceptions thrown from RxJava2. New behavior in 2.x will throw exception if an onError event is deemed undeliverable
         // because the observable has been disposed.  Read more here: https://github.com/ReactiveX/RxJava/wiki/What's-different-in-2.0#error-handling
@@ -95,6 +92,12 @@ public class PineTaskApplication extends MultiDexApplication
             logError("RxJava global uncaught exception occured:");
             logException(ex);
         });
+    }
+
+    protected void createAppModule()
+    {
+        logMsg("Creating AppModule");
+        mAppComponent = DaggerAppComponent.builder().appModule(new AppModule(this)).build();
     }
 
     protected void logMsg(String msg, Object...args)
