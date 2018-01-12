@@ -77,6 +77,7 @@ public class PineTaskItemExt extends PineTaskItem implements Serializable, UsesK
         mCost = updatedItem.getCost();
     }
 
+    @Exclude
     public String getDebugInfo()
     {
         return String.format("key=%s, cost=%.2f, completed=%b", mKey, mCost, mIsCompleted);

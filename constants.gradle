@@ -4,7 +4,7 @@ project.ext {
     targetSdk = 25
     minSdk = 18
 
-    buildTools = '25.0.2'
+    buildTools = '26.0.2'
 
     firebaseVersion = '10.2.0'
     supportLibraryVersion = '25.1.1'

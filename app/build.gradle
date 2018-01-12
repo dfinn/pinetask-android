@@ -2,7 +2,6 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
-apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'io.fabric'
 
 repositories {
@@ -35,14 +34,16 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //minifyEnabled true
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
             //minifyEnabled true
             //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    flavorDimensions "default"
 
     productFlavors {
         development {
@@ -54,7 +55,7 @@ android {
 
 dependencies {
     kapt "com.android.databinding:compiler:$plugin_version"
-    compile "com.android.support:multidex:1.0.1"
+    compile "com.android.support:multidex:1.0.2"
     compile fileTree(include: ['*.jar'], dir: 'libs')
 
     // Unit test dependencies
@@ -97,9 +98,6 @@ dependencies {
     // RxJava 2.0
     compile 'io.reactivex.rxjava2:rxjava:2.0.6'
     compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
-
-    // Retrolambda for lambda support
-    retrolambdaConfig 'net.orfjackal.retrolambda:retrolambda:2.5.1'
 
     // Dagger2 for dependency injection
     compile 'com.google.dagger:dagger:2.10'
