@@ -18,8 +18,8 @@ import javax.inject.Inject;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-/** Dialog which prompts the user to purge all completed items in the current list. **/
-public class PurgeCompletedItemsDialogFragment extends PineTaskDialogFragment
+/** Dialog which prompts the user to uncomplete all completed items in the current list. **/
+public class UncompleteAllItemsDialogFragment extends PineTaskDialogFragment
 {
     public static String LIST_ID_KEY = "ListId";
     public static String LIST_NAME_KEY = "ListName";
@@ -31,12 +31,12 @@ public class PurgeCompletedItemsDialogFragment extends PineTaskDialogFragment
     @Inject
     MainActivityPresenter mPresenter;
 
-    public static PurgeCompletedItemsDialogFragment newInstance(String listId, String listName)
+    public static UncompleteAllItemsDialogFragment newInstance(String listId, String listName)
     {
         Bundle args = new Bundle();
         args.putString(LIST_ID_KEY, listId);
         args.putString(LIST_NAME_KEY, listName);
-        PurgeCompletedItemsDialogFragment dialog = new PurgeCompletedItemsDialogFragment();
+        UncompleteAllItemsDialogFragment dialog = new UncompleteAllItemsDialogFragment();
         dialog.setArguments(args);
         return dialog;
     }
@@ -49,18 +49,18 @@ public class PurgeCompletedItemsDialogFragment extends PineTaskDialogFragment
         ButterKnife.bind(this, view);
         PineTaskApplication.getInstance().getUserComponent().inject(this);
         final String listId = getArguments().getString(LIST_ID_KEY);
-        mTitleTextView.setText(String.format(getString(R.string.really_purge_completed_items_in_list_x), getArguments().getString(LIST_NAME_KEY)));
-        mOkButton.setText(R.string.delete);
+        mTitleTextView.setText(String.format(getString(R.string.really_uncomplete_completed_items_in_list_x), getArguments().getString(LIST_NAME_KEY)));
+        mOkButton.setText(R.string.uncomplete);
 
         mOkButton.setOnClickListener(__ ->
         {
-            mPresenter.purgeCompletedItems(listId);
+            mPresenter.uncompleteAllItems(listId);
             dismiss();
         });
 
         mCancelButton.setOnClickListener(__ ->
         {
-            logMsg("Purge completed items cancelled");
+            logMsg("Uncomplete-all cancelled");
             dismiss();
         });
 

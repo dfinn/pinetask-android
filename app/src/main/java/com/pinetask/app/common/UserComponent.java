@@ -14,6 +14,7 @@ import com.pinetask.app.main.CostInputDialogFragment;
 import com.pinetask.app.main.MainActivity;
 import com.pinetask.app.main.MainActivityPresenter;
 import com.pinetask.app.main.PurgeCompletedItemsDialogFragment;
+import com.pinetask.app.main.UncompleteAllItemsDialogFragment;
 
 import dagger.Subcomponent;
 
@@ -31,6 +32,7 @@ public interface UserComponent
 
     void inject(MainActivity target);
     void inject(PurgeCompletedItemsDialogFragment target);
+    void inject(UncompleteAllItemsDialogFragment target);
     void inject(MembersFragment target);
     void inject(ListItemsFragment target);
     void inject(ChatFragment target);

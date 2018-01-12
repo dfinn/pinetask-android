@@ -20,6 +20,7 @@ public interface MainActivityView
     void showNoListsFoundMessage();
     void hideNoListsFoundMessage();
     void showPurgeCompletedItemsDialog(String listId, String listName);
+    void showUncompleteAllItemsDialog(String listId, String listName);
     boolean isVisible();
     void notifyOfChatMessage(ChatMessage chatMessage);
     void updateShoppingTripMenuOptions();

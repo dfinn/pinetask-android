@@ -12,6 +12,13 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/uncompleteAllItems"
+        android:orderInCategory="104"
+        android:title="@string/uncomplete_all"
+        android:icon="@drawable/ic_delete_white_24dp"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/exportList"
         android:orderInCategory="104"
         android:title="@string/export_list"

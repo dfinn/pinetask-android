@@ -12,6 +12,7 @@ import java.util.Objects;
 /** Extension for PineTaskItem to hold additional properties used at runtime but not stored in the database. **/
 public class PineTaskItemExt extends PineTaskItem implements Serializable, UsesKeyIdentifier
 {
+    @Exclude
     protected String mKey;
     @Exclude    // No need to include this when writing the object to Firebase.
     @Override
@@ -20,18 +21,21 @@ public class PineTaskItemExt extends PineTaskItem implements Serializable, UsesK
     public void setId(String key) { mKey = key; }
 
     /** Indicates if the item is new (ie, has not yet been displayed to the user) **/
+    @Exclude
     private boolean mIsNewItem;
     @Exclude
     public boolean getIsNewItem() { return mIsNewItem; }
     public PineTaskItemExt setIsNewItem(boolean isNew) { mIsNewItem = isNew; return this; }
 
     /** ID of the list that this item belongs to **/
+    @Exclude
     private String mListId;
     @Exclude
     public String getListId() { return mListId; }
     public PineTaskItemExt setListId(String listId) { mListId = listId; return this; }
 
     /** Cost of the item (used in shopping trip mode) **/
+    @Exclude
     private Float mCost;
     public Float getCost() { return mCost; }
     public void setCost(Float cost) { mCost = cost; }

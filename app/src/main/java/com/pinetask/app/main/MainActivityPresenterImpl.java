@@ -261,6 +261,18 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
     }
 
     @Override
+    public void uncompleteAllItems(String listId)
+    {
+        mDbHelper.uncompleteAllItems(listId).subscribe(() ->
+        {
+            logMsg("Uncomplete all items completed");
+        }, ex ->
+        {
+            logAndShowError(ex, mApplication.getString(R.string.error_uncompleting_all_items));
+        });
+    }
+
+    @Override
     public void onPurgeCompletedItemsSelected()
     {
         PineTaskList currentList = mActiveListManager.getActiveList();
@@ -268,6 +280,21 @@ public class MainActivityPresenterImpl extends BasePresenter implements MainActi
         {
             logMsg("onPurgeCompletedItemsSelected: starting purge for list %s", currentList.getId());
             if (mView != null) mView.showPurgeCompletedItemsDialog(currentList.getId(), currentList.getName());
+        }
+        else
+        {
+            showErrorMessage(mApplication.getString(R.string.error_no_current_list));
+        }
+    }
+
+    @Override
+    public void onUncompleteAllSelected()
+    {
+        PineTaskList currentList = mActiveListManager.getActiveList();
+        if (currentList != null)
+        {
+            logMsg("onUncompleteAllSelected: starting uncomplete-all for list %s", currentList.getId());
+            if (mView != null) mView.showUncompleteAllItemsDialog(currentList.getId(), currentList.getName());
         }
         else
         {

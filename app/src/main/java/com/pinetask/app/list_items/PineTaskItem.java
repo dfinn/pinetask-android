@@ -14,21 +14,25 @@ import java.util.Map;
 public class PineTaskItem implements Serializable
 {
     /** OperationDescription of the item (ex: "bananas") **/
+    @Exclude
     protected String mItemDescription;
     public String getItemDescription() { return mItemDescription; }
     public void setItemDescription(String description) { mItemDescription = description; }
 
     /** ID of the person who has claimed the item, or null if unclaimed. **/
+    @Exclude
     protected String mClaimedBy;
     public String getClaimedBy() { return mClaimedBy; }
     public void setClaimedBy(String claimedBy) { mClaimedBy = claimedBy; }
 
     /** Set to true after the item has been completed (ie, purchased) **/
+    @Exclude
     protected boolean mIsCompleted;
     public boolean getIsCompleted() { return mIsCompleted; }
     public void setIsCompleted(boolean isCompleted) { mIsCompleted = isCompleted; }
 
     /** Timestamp when the item was created. **/
+    @Exclude
     long mCreatedAt;
     public Map<String, String> getCreatedAt() { return ServerValue.TIMESTAMP; }
     @Exclude

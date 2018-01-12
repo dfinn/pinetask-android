@@ -1001,6 +1001,20 @@ public class DbHelperImpl implements DbHelper
         return getKeysAt(query, "get list items to purge").flatMapCompletable(itemId -> removeNode(listItemsRef.child(itemId)));
     }
 
+    /** Uncomplete all completed items in the list with the ID specified. **/
+    @Override
+    public Completable uncompleteAllItems(String listId)
+    {
+        logMsg("Uncompleting all items from list %s", listId);
+        DatabaseReference listItemsRef = FirebaseDatabase.getInstance().getReference(LIST_ITEMS_NODE_NAME).child(listId);
+        Query query = listItemsRef.orderByChild(IS_COMPLETED_KEY_NAME).equalTo(true);
+        return getKeysAt(query, "get list items to uncomplete").flatMapCompletable(itemId -> {
+            DatabaseReference isCompletedRef = listItemsRef.child(itemId).child(IS_COMPLETED_KEY_NAME);
+            logMsg(" - Setting to false: %s", isCompletedRef);
+            return setValueRx(isCompletedRef, false, "uncomplete item " + itemId);
+        });
+    }
+
     public static <T> T getValueFromSnapshot(DataSnapshot dataSnapshot, Class<T> cl)
     {
         T value = (T) dataSnapshot.getValue(cl);

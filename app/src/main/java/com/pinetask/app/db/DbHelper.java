@@ -97,6 +97,8 @@ public interface DbHelper
 
     Completable purgeCompletedItems(String listId);
 
+    Completable uncompleteAllItems(String listId);
+
     void setShoppingTripForActiveList(String listId, boolean isActive);
 
     Observable<Boolean> subscribeToShoppingTripActiveEventsForList(String listId);

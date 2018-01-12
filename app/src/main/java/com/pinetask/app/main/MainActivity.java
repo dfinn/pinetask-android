@@ -338,6 +338,9 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
             case R.id.purgeCompletedItems:
                 mPresenter.onPurgeCompletedItemsSelected();
                 return true;
+            case R.id.uncompleteAllItems:
+                mPresenter.onUncompleteAllSelected();
+                return true;
             case R.id.exportList:
                 if (currentListId != null)
                 {
@@ -625,6 +628,13 @@ public class MainActivity extends PineTaskActivity implements ViewPager.OnPageCh
     {
         PurgeCompletedItemsDialogFragment dialog = PurgeCompletedItemsDialogFragment.newInstance(listId, listName);
         getSupportFragmentManager().beginTransaction().add(dialog, PurgeCompletedItemsDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
+    }
+
+    @Override
+    public void showUncompleteAllItemsDialog(String listId, String listName)
+    {
+        UncompleteAllItemsDialogFragment dialog = UncompleteAllItemsDialogFragment.newInstance(listId, listName);
+        getSupportFragmentManager().beginTransaction().add(dialog, UncompleteAllItemsDialogFragment.class.getSimpleName()).commitAllowingStateLoss();
     }
 
     @Override
