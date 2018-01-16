@@ -11,3 +11,4 @@ common/fabric.properties
 app/src/development/google-services.json
 app/src/production/google-services.json
 app/*.apk
+app/production/release/*.apk
